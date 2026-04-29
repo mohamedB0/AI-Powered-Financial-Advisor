@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Financial Advisor</title>
+    <link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Icons and Plotly -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                        head: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            bg: '#eef2ee',
+                            text: '#2d4a36',
+                        },
+                        ui: {
+                            base: '#ffffff',
+                            sidebar: '#ffffff',
+                            border: '#e5e7eb',
+                            text: '#111827',
+                            muted: '#6b7280',
+                            input: '#f9fafb'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Fallback/Extra custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .sidebar-icon {
+            color: #4b5563;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-[#f2f2f2] text-ui-text font-sans h-screen overflow-hidden selection:bg-brand-bg selection:text-brand-text p-2 sm:p-4">
+
+    <!-- The container card mirroring the user's outer macOS window style -->
+    <div class="flex h-full w-full bg-ui-base rounded-xl border border-ui-border shadow-lg overflow-hidden">
+
+        <!-- Ultra-thin Sidebar -->
+        <aside
+            class="w-[72px] flex-shrink-0 bg-ui-sidebar border-r border-ui-border flex flex-col items-center py-6 relative z-10 h-full">
+            <nav class="flex-grow flex flex-col gap-4 mt-8 w-full items-center">
+
+                <a href="/chat"
+                    class="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-200 hover:bg-gray-100 group {% if active_page == 'chat' %}bg-brand-bg relative{% endif %}"
+                    title="Chat">
+                    <i
+                        class="fa-regular fa-message text-[1.1rem] transition-colors {% if active_page == 'chat' %}text-brand-text{% else %}text-gray-500 group-hover:text-gray-800{% endif %}"></i>
+                </a>
+
+                <a href="/pipeline"
+                    class="flex items-center justify-center w-11 h-11 rounded-lg transition-all duration-200 hover:bg-gray-100 group {% if active_page == 'pipeline' %}bg-brand-bg relative{% endif %}"
+                    title="Pipeline">
+                    <i
+                        class="fa-regular fa-star text-[1.1rem] transition-colors {% if active_page == 'pipeline' %}text-brand-text{% else %}text-gray-500 group-hover:text-gray-800{% endif %}"></i>
+                </a>
+            </nav>
+
+            <!-- Bottom icons -->
+            <div class="flex flex-col gap-4 items-center">
+                <button class="w-11 h-11 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                    <i class="fa-solid fa-gear text-[1.1rem]"></i>
+                </button>
+                <div
+                    class="w-8 h-8 rounded-full bg-blue-100 shadow-sm border border-gray-200 overflow-hidden flex items-center justify-center">
+                    <!-- Fallback avatar placeholder -->
+                    <i class="fa-solid fa-user text-blue-500 text-xs"></i>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-grow relative overflow-y-auto w-full h-full flex flex-col bg-white">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+
+</html>

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Top sub-tabs -->
+<div class="flex items-center justify-between border-b border-ui-border px-6 pt-4">
+    <div class="flex items-center gap-2">
+        <div
+            class="flex items-center gap-2 border-b-2 border-gray-900 pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer">
+            New Chat <i class="fa-solid fa-xmark text-[10px] text-gray-400 hover:text-gray-600 ml-1"></i>
+        </div>
+        <div
+            class="flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
+            Company Analysis <i class="fa-solid fa-xmark text-[10px] text-gray-300 hover:text-gray-500 ml-1"></i>
+        </div>
+        <div
+            class="flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
+            Market Macro <i class="fa-solid fa-xmark text-[10px] text-gray-300 hover:text-gray-500 ml-1"></i>
+        </div>
+    </div>
+
+    <!-- Explicit Visible Ingestion Button -->
+    <div class="pb-2">
+        <button onclick="document.getElementById('file-upload').click()"
+            class="bg-white hover:bg-gray-50 shadow-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
+            <i class="fa-solid fa-upload mr-2 text-gray-400"></i> Ingest Data
+        </button>
+        <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.txt,.csv,.md,.html,.docx">
+    </div>
+</div>
+
+<!-- Center canvas -->
+<div
+    class="flex-grow flex flex-col items-center justify-center p-8 max-w-4xl mx-auto w-full h-[calc(100vh-140px)] relative">
+
+    <!-- Empty State Content (Visible when no chat history) -->
+    <div class="flex flex-col items-center text-center w-full" id="empty-state">
+        <!-- Flowery Logo Icon -->
+        <div
+            class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <i class="fa-brands fa-pagelines text-gray-400 text-xl"></i>
+        </div>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-3">Let's chat! What's on your mind?</h1>
+        <p class="text-[14px] text-gray-500 mb-10 max-w-lg leading-relaxed">
+            Choose from the prompts below or start asking queries. I'm here to help with whatever financial analysis you
+            need.
+        </p>
+
+        <div class="text-[12px] text-gray-400 mb-4">Try these prompts:</div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-[13px]">
+            <button
+                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                Analyze AAPL's latest financials.
+            </button>
+            <button
+                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                What's the inflation macro indicator?
+            </button>
+            <button
+                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                Show me the top market movers.
+            </button>
+            <button
+                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                Retrieve from my ingested document.
+            </button>
+        </div>
+    </div>
+
+    <!-- Real Chat History View (Hidden until user types) -->
+    <div id="chat-history" class="hidden w-full max-w-3xl flex-grow overflow-y-auto pb-24 flex-col gap-6">
+        <!-- Messages rendered via JS -->
+    </div>
+
+    <!-- Bottom Input Area (Sticky) -->
+    <div class="absolute bottom-8 w-full max-w-2xl px-4 z-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
+
+        <!-- Upload Progress UI -->
+        <div id="upload-progress-container"
+            class="hidden w-full mb-3 bg-white border border-gray-200 shadow-[0_4px_15px_rgba(0,0,0,0.05)] rounded-2xl p-4 text-[13px] text-gray-700 flex flex-col gap-2 transition-all">
+            <div class="flex justify-between font-semibold"><span class="flex items-center gap-2"><i
+                        class="fa-solid fa-folder-open text-brand-text"></i> Ingesting Document...</span><span
+                    id="upload-status-text" class="text-gray-500 font-normal">Uploading</span></div>
+            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                <div id="upload-progress-bar" class="bg-brand-text h-1.5 rounded-full transition-all duration-300"
+                    style="width: 10%"></div>
+            </div>
+        </div>
+
+        <div
+            class="relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
+
+            <button onclick="document.getElementById('file-upload').click()"
+                class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
+                title="Attach Document">
+                <i class="fa-solid fa-paperclip text-lg"></i>
+            </button>
+
+            <textarea id="chat-input"
+                class="w-full bg-transparent border-none text-gray-900 text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-gray-400"
+                placeholder="Ask Something" rows="1"></textarea>
+
+            <button id="send-btn"
+                class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-800 transition-colors bg-transparent border-none">
+                <i class="fa-solid fa-paper-plane text-lg"></i>
+            </button>
+        </div>
+
+        <div class="text-center mt-3 text-[11px] text-gray-400 flex items-center justify-center gap-3">
+            <button id="clear-btn" class="hover:text-gray-600 transition-colors font-medium">Clear History</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Slight tweak to chat UI specific logic to toggle empty state
+    document.addEventListener("DOMContentLoaded", () => {
+        const input = document.getElementById("chat-input");
+        const sendBtn = document.getElementById("send-btn");
+        const emptyState = document.getElementById("empty-state");
+        const chatHistory = document.getElementById("chat-history");
+        const promptBtns = document.querySelectorAll(".prompt-btn");
+
+        function submitMsg() {
+            if (input.value.trim().length > 0) {
+                emptyState.style.display = "none";
+                chatHistory.classList.remove("hidden");
+                chatHistory.classList.add("flex");
+                // The actual logic is handled in main.js, this just handles UI toggles
+            }
+        }
+
+        sendBtn.addEventListener("click", submitMsg);
+        input.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && !e.shiftKey) submitMsg();
+        });
+
+        // Wire up example prompts
+        promptBtns.forEach(btn => {
+            btn.addEventListener("click", () => {
+                input.value = btn.innerText;
+                input.focus();
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,55 @@
+[
+    {
+        "name": "bank_al_maghrib",
+        "display_name": "Bank Al-Maghrib (BKAM)",
+        "base_url": "https://www.bkam.ma",
+        "listing_urls": [
+            "https://www.bkam.ma/Publications-et-recherche/Publications-institutionnelles/Rapport-annuel-presente-a-sm-le-roi",
+            "https://www.bkam.ma/Publications-et-recherche/Documents-d-analyse/Rapport-sur-la-politique-monetaire",
+            "https://www.bkam.ma/Publications-et-recherche/Publications-institutionnelles/Rapport-annuel-sur-la-stabilite-financiere"
+        ],
+        "pdf_link_pattern": ".pdf",
+        "use_playwright": false,
+        "output_folder": "bank_al_maghrib",
+        "enabled": true
+    },
+    {
+        "name": "cdc",
+        "display_name": "Cour des Comptes (CDC)",
+        "base_url": "https://www.courdescomptes.ma",
+        "listing_urls": [
+            "https://www.courdescomptes.ma/publications/"
+        ],
+        "pdf_link_pattern": ".pdf",
+        "use_playwright": true,
+        "output_folder": "cdc",
+        "enabled": false
+    },
+    {
+        "name": "hcp",
+        "display_name": "Haut-Commissariat au Plan (HCP)",
+        "base_url": "https://www.hcp.ma",
+        "listing_urls": [
+            "https://www.hcp.ma/Publications-Conjoncture-et-prevision-economique_r330.html",
+            "https://www.hcp.ma/Publications-Comptes-nationaux_r340.html",
+            "https://www.hcp.ma/downloads/?tag=Annuaires+statistiques+du+Maroc+%28Format+PDF%29"
+        ],
+        "pdf_link_pattern": ".pdf",
+        "use_playwright": false,
+        "output_folder": "hcp",
+        "enabled": false
+    },
+    {
+        "name": "ammc",
+        "display_name": "Autorité Marocaine du Marché des Capitaux (AMMC)",
+        "base_url": "https://www.ammc.ma",
+        "listing_urls": [
+            "https://www.ammc.ma/fr/publications",
+            "https://www.ammc.ma/fr/rapports-annuels"
+        ],
+        "pdf_link_pattern": ".pdf",
+        "use_playwright": false,
+        "output_folder": "ammc",
+        "enabled": true
+    }
+]

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-8 max-w-6xl mx-auto w-full pt-8">
+    <div class="flex justify-between items-start mb-8 w-full">
+        <div>
+            <h2 class="text-[1.8rem] font-bold text-gray-900 mt-0 mb-1">Pipeline Monitor</h2>
+            <p class="text-gray-500 text-[14px] m-0">Live view of Celery task history from the distributed pipeline.</p>
+        </div>
+        <button
+            class="bg-[#eef2ee] hover:bg-[#dcead8] text-[#2d4a36] border border-[#d1ebd7] rounded-lg px-5 py-2 hover:shadow-sm transition-all text-[14px] font-semibold flex items-center"
+            id="refresh-pipeline">
+            <i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh
+        </button>
+    </div>
+
+    <div class="flex gap-4 mb-8">
+        <div class="flex-1 bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div class="text-gray-500 text-[13px] font-medium mb-1">Total Tasks</div>
+            <div class="text-gray-900 text-[2rem] font-bold tracking-tight" id="metric-total">0</div>
+        </div>
+        <div class="flex-1 bg-white border border-green-200 shadow-sm rounded-xl p-6 relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-green-50 rounded-full z-0"></div>
+            <div class="relative z-10">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">Success</div>
+                <div class="text-green-600 text-[2rem] font-bold tracking-tight drop-shadow-sm" id="metric-success">0
+                </div>
+            </div>
+        </div>
+        <div class="flex-1 bg-white border border-red-200 shadow-sm rounded-xl p-6 relative overflow-hidden">
+            <div class="absolute -right-4 -top-4 w-16 h-16 bg-red-50 rounded-full z-0"></div>
+            <div class="relative z-10">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">Failures</div>
+                <div class="text-red-500 text-[2rem] font-bold tracking-tight drop-shadow-sm" id="metric-fail">0</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+        <h3 class="mt-0 mb-4 text-lg font-bold text-gray-800">Recent Tasks</h3>
+        <div class="max-h-[500px] overflow-y-auto pr-2">
+            <table class="w-full text-left border-collapse min-w-full divide-y divide-gray-100">
+                <thead class="sticky top-0 bg-white/90 backdrop-blur-sm z-10">
+                    <tr>
+                        <th class="p-3 text-gray-400 font-semibold text-[13px]">Task ID</th>
+                        <th class="p-3 text-gray-400 font-semibold text-[13px]">Name</th>
+                        <th class="p-3 text-gray-400 font-semibold text-[13px]">Status</th>
+                        <th class="p-3 text-gray-400 font-semibold text-[13px]">Date Done</th>
+                    </tr>
+                </thead>
+                <tbody id="pipeline-tasks" class="divide-y divide-gray-50 text-[14px]">
+                    <!-- Javascript will load tasks here -->
+                    <tr>
+                        <td colspan="4" class="p-4 text-center text-gray-400">Loading tasks...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

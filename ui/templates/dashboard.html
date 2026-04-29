@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="px-8 max-w-6xl mx-auto w-full pt-8">
+    <h2 class="text-[1.8rem] font-bold text-gray-900 mt-0 mb-8">Financial Dashboard</h2>
+
+    <div class="flex bg-gray-50 border border-gray-200 rounded-xl p-1 gap-1 flex-row mb-8 w-full shadow-sm">
+        <div class="tab flex-1 py-2 px-4 rounded-lg text-gray-600 font-medium cursor-pointer text-center transition-colors hover:bg-gray-200 active:bg-white active:shadow-sm active:text-gray-900 active"
+            data-target="tab-prices">Stock Prices</div>
+        <div class="tab flex-1 py-2 px-4 rounded-lg text-gray-600 font-medium cursor-pointer text-center transition-colors hover:bg-gray-200"
+            data-target="tab-financials">Company Financials</div>
+        <div class="tab flex-1 py-2 px-4 rounded-lg text-gray-600 font-medium cursor-pointer text-center transition-colors hover:bg-gray-200"
+            data-target="tab-macro">Macro Indicators</div>
+        <div class="tab flex-1 py-2 px-4 rounded-lg text-gray-600 font-medium cursor-pointer text-center transition-colors hover:bg-gray-200"
+            data-target="tab-movers">Market Movers</div>
+        <div class="tab flex-1 py-2 px-4 rounded-lg text-gray-600 font-medium cursor-pointer text-center transition-colors hover:bg-gray-200"
+            data-target="tab-bvc">BVC Live</div>
+    </div>
+
+    <div class="tab-content active" id="tab-prices">
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex gap-4 items-end mb-6 w-full">
+            <div class="flex-[2]">
+                <label class="block mb-1.5 text-[13px] font-medium text-gray-500">Ticker Symbol</label>
+                <input type="text"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-sans px-3 py-2 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-colors"
+                    id="ticker-input" value="AAPL" placeholder="e.g. AAPL, MSFT">
+            </div>
+            <div class="flex-[2]">
+                <label class="block mb-1.5 text-[13px] font-medium text-gray-500">Compare With</label>
+                <input type="text"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-sans px-3 py-2 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-colors"
+                    id="compare-input" placeholder="e.g. MSFT, TSLA">
+            </div>
+            <div class="flex-1">
+                <label class="block mb-1.5 text-[13px] font-medium text-gray-500">History (days)</label>
+                <input type="number"
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-sans px-3 py-2 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-colors"
+                    id="days-slider" value="90" min="10" max="365">
+            </div>
+            <div>
+                <button
+                    class="bg-[#eef2ee] hover:bg-[#dcead8] text-[#2d4a36] border border-[#d1ebd7] rounded-lg px-5 py-2 font-semibold transition-all hover:shadow-sm"
+                    id="refresh-prices"><i class="fa-solid fa-arrows-rotate mr-2 text-[13px]"></i> Load</button>
+            </div>
+        </div>
+
+        <div class="flex gap-4 mb-6">
+            <div class="flex-1 bg-white border border-gray-200 shadow-sm rounded-xl p-5">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">Close</div>
+                <div class="text-gray-900 text-[1.6rem] font-bold tracking-tight" id="metric-close">--</div>
+            </div>
+            <div class="flex-1 bg-white border border-gray-200 shadow-sm rounded-xl p-5">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">Open</div>
+                <div class="text-gray-900 text-[1.6rem] font-bold tracking-tight" id="metric-open">--</div>
+            </div>
+            <div class="flex-1 bg-white border border-gray-200 shadow-sm rounded-xl p-5">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">High</div>
+                <div class="text-gray-900 text-[1.6rem] font-bold tracking-tight" id="metric-high">--</div>
+            </div>
+            <div class="flex-1 bg-white border border-gray-200 shadow-sm rounded-xl p-5">
+                <div class="text-gray-500 text-[13px] font-medium mb-1">Volume</div>
+                <div class="text-gray-900 text-[1.6rem] font-bold tracking-tight" id="metric-vol">--</div>
+            </div>
+        </div>
+
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div id="stock-chart-container" style="height: 500px;"></div>
+        </div>
+    </div>
+
+    <div class="tab-content hidden" id="tab-financials">
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex gap-4 items-end mb-6">
+            <div class="flex-1">
+                <label class="block mb-1.5 text-[13px] font-medium text-gray-500">Company</label>
+                <select
+                    class="w-full bg-gray-50 border border-gray-200 rounded-lg text-gray-900 font-sans px-3 py-2 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-colors"
+                    id="company-input">
+                    <option value="Apple">Apple</option>
+                    <option value="Microsoft">Microsoft</option>
+                    <option value="Amazon">Amazon</option>
+                    <option value="Alphabet">Alphabet</option>
+                    <option value="Meta">Meta</option>
+                </select>
+            </div>
+            <div>
+                <button
+                    class="bg-[#eef2ee] hover:bg-[#dcead8] text-[#2d4a36] border border-[#d1ebd7] rounded-lg px-5 py-2 font-semibold transition-all hover:shadow-sm"
+                    id="refresh-financials"><i class="fa-solid fa-arrows-rotate mr-2"></i> Load</button>
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div id="financials-chart" style="height: 500px;"></div>
+        </div>
+    </div>
+
+    <div class="tab-content hidden" id="tab-macro">
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div id="macro-chart" style="height: 500px;"></div>
+        </div>
+    </div>
+
+    <div class="tab-content hidden" id="tab-movers">
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div id="movers-chart" style="height: 500px;"></div>
+        </div>
+    </div>
+
+    <div class="tab-content hidden" id="tab-bvc">
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6 flex gap-4 items-end mb-6">
+            <div class="flex-1">
+                <label class="block mb-1.5 text-[13px] font-medium text-gray-500">BVC Market</label>
+                <div class="text-gray-900 font-semibold">Casablanca Stock Exchange</div>
+            </div>
+            <div>
+                <button
+                    class="bg-[#eef2ee] hover:bg-[#dcead8] text-[#2d4a36] border border-[#d1ebd7] rounded-lg px-5 py-2 font-semibold transition-all hover:shadow-sm"
+                    id="refresh-bvc"><i class="fa-solid fa-arrows-rotate mr-2"></i> Refresh</button>
+            </div>
+        </div>
+        <div class="bg-white border border-gray-200 shadow-sm rounded-xl p-6">
+            <div id="bvc-status" class="text-sm text-gray-500 mb-4"></div>
+            <div id="bvc-table-container"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

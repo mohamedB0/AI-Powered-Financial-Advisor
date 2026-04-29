@@ -1,0 +1,132 @@
+/* ui/static/css/style.css - Refactored to let Tailwind do the heavy lifting */
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+}
+
+/* Markdown Content Styling for msg-bubble */
+.msg-bubble p {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+}
+
+.msg-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.msg-bubble pre,
+.msg-bubble code {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.msg-bubble pre {
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0.5rem 0;
+}
+
+.msg-bubble ul,
+.msg-bubble ol {
+    padding-left: 1.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+}
+
+/* Chat Message Styles */
+.chat-msg {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.chat-msg.user {
+    justify-content: flex-end;
+}
+
+.chat-msg.user .msg-bubble {
+    background-color: #2d4a36;
+    color: #ffffff;
+    border-radius: 18px 18px 4px 18px;
+    padding: 12px 16px;
+    max-width: 75%;
+}
+
+.chat-msg.assistant {
+    justify-content: flex-start;
+}
+
+.chat-msg.assistant .msg-bubble {
+    background-color: #ffffff;
+    color: #111827;
+    border-radius: 18px 18px 18px 4px;
+    padding: 12px 16px;
+    max-width: 90%;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.chat-msg .msg-bubble p {
+    margin-bottom: 0.5rem;
+}
+
+.chat-msg .msg-bubble p:last-child {
+    margin-bottom: 0;
+}
+
+.chat-msg .msg-bubble ul,
+.chat-msg .msg-bubble ol {
+    padding-left: 1.5rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
+    color: inherit;
+}
+
+.chat-msg .msg-bubble pre,
+.chat-msg .msg-bubble code {
+    background: rgba(0, 0, 0, 0.15);
+    padding: 2px 4px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.msg-context {
+    font-size: 12px;
+}
+
+.msg-context table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+}
+
+.msg-context th,
+.msg-context td {
+    padding: 4px 8px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.msg-context th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.msg-context tr:last-child td {
+    border-bottom: none;
+}

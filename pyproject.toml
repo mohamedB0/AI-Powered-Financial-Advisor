@@ -1,0 +1,9 @@
+[project]
+name = "financial-advisor"
+version = "1.0.0"
+description = "AI-Powered Financial Advisor — Hybrid RAG backend (PFE 2026)"
+requires-python = ">=3.10"
+
+[tool.fastapi]
+# `fastapi dev` and `fastapi run` will find the app automatically
+entrypoint = "api.main:app"
