@@ -45,6 +45,14 @@ def _build_history(history: Optional[List[HistoryMessage]]):
             messages.append(AIMessage(content=msg.content))
     return messages
 
+_semantic_cache = None
+def _get_cache():
+    global _semantic_cache
+    if _semantic_cache is None:
+        from retrieval.semantic_cache import SemanticCache
+        _semantic_cache = SemanticCache()
+    return _semantic_cache
+
 
 @router.post("/")
 def query(request: QueryRequest) -> QueryResponse:
@@ -58,9 +66,30 @@ def query(request: QueryRequest) -> QueryResponse:
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     try:
+        # 1. Check Semantic Cache
+        cache = _get_cache()
+        cached = cache.get(request.question)
+        if cached:
+            return QueryResponse(
+                question=request.question,
+                answer="🟢 **[Semantic Cache Hit]**\n\n" + cached["answer"],
+                context=cached["context"],
+                route="cache"
+            )
+
         from agents.financial_agent import ask
         lc_history = _build_history(request.history)
         result = ask(request.question, history=lc_history)
+        
+        # 2. Update Cache
+        if result.get("answer"):
+            cache.set(
+                query=request.question,
+                answer=result["answer"],
+                context=result.get("context", ""),
+                route=result.get("route", "")
+            )
+
         return QueryResponse(
             question=request.question,
             answer=result.get("answer", ""),
@@ -98,6 +127,15 @@ def query_stream(request: QueryRequest):
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
         from retrieval.query_router import QueryRoute
 
+        # ── 0. Check Semantic Cache ─────────────────────────────────────
+        cache = _get_cache()
+        cached = cache.get(request.question)
+        if cached:
+            yield f"data: {{ \"token\": \"🟢 **[Semantic Cache Hit]**\\n\\n\" }}\n\n"
+            yield f"data: {{ \"token\": {json.dumps(cached['answer'])} }}\n\n"
+            yield f"data: {{ \"done\": true, \"context\": {json.dumps(cached['context'])}, \"route\": \"cache\" }}\n\n"
+            return
+            
         # ── 1. Retrieval phase (synchronous) ────────────────────────────
         lc_history = _build_history(request.history)
         state: AgentState = {
@@ -136,10 +174,22 @@ def query_stream(request: QueryRequest):
         ]
 
         try:
+            full_answer = ""
             for chunk in llm.stream(messages):
                 token = chunk.content if hasattr(chunk, "content") else str(chunk)
                 if token:
+                    full_answer += token
                     yield f"data: {json.dumps({'token': token})}\n\n"
+            
+            # Cache the newly generated answer
+            if full_answer:
+                cache.set(
+                    query=request.question,
+                    answer=full_answer,
+                    context=context,
+                    route=route
+                )
+
         except Exception as e:
             yield f"data: {json.dumps({'token': f'[Error: {str(e)}]'})}\n\n"
 

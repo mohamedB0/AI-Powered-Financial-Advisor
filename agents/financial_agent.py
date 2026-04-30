@@ -26,10 +26,10 @@ from pydantic import BaseModel, Field
 
 from retrieval.query_router import route_query, QueryRoute
 from retrieval.vector_search import VectorSearch
-from retrieval.sql_search import SQLSearch
 from retrieval.web_search import WebSearch
 from retrieval.hybrid_merger import HybridMerger
-from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT
+from retrieval.reranker import Reranker
+from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT
 from agents.tools import TOOLS
 
 
@@ -43,6 +43,7 @@ class AgentState(TypedDict):
     answer           : str
     route            : str
     context_relevant : str
+    is_safe          : str                        # CRAG guard: safety flag
     retry_count      : int                        # CRAG guard: max 2 rewrites
 
 
@@ -92,6 +93,13 @@ def _get_merger():
     if _merger is None:
         _merger = HybridMerger()
     return _merger
+
+_reranker = None
+def _get_reranker():
+    global _reranker
+    if _reranker is None:
+        _reranker = Reranker()
+    return _reranker
 
 
 UNSUPPORTED_REGIONS = ["morocco", "maroc", "casa", "casablanca", "bvc", "moroccan", "البورصة", "الدار البيضاء"]
@@ -193,12 +201,18 @@ def retrieve_context(state: AgentState) -> AgentState:
         except Exception as e:
             print(f"[Router] SQL error: {e}")
 
-    # ── 2. Vector Search ─────────────────────────────────────────────────
+    # ── 2. Vector Search (with Cross-Encoder Reranking) ──────────────────
     if need_vector:
         try:
-            vector_results = _get_vector_search().search(question, top_k=15)
+            # Over-fetch with fast vector search
+            vector_results = _get_vector_search().search(question, top_k=30)
+            
+            # Re-rank with precision cross-encoder if results exist
+            if vector_results:
+                print(f"[Router] Reranking {len(vector_results)} vector results...")
+                vector_results = _get_reranker().rerank(question, vector_results, top_n=15)
         except Exception as e:
-            print(f"[Router] Vector error: {e}")
+            print(f"[Router] Vector/Reranker error: {e}")
 
     # ── 3. Web Search ────────────────────────────────────────────────────
     if need_web:
@@ -295,6 +309,30 @@ def should_use_tools(state: AgentState) -> str:
         return "tools"
     return END
 
+# ── Guardrail Node ────────────────────────────────────────────────────────────
+
+def guardrail_check(state: AgentState) -> dict:
+    """Node: Fast safety check before hitting retrieval or generation."""
+    print("[Guardrail] Checking safety...")
+    llm = _get_llm()
+    prompt = GUARDRAIL_PROMPT.format(question=state["question"])
+    
+    try:
+        res = llm.invoke([SystemMessage(content=prompt)])
+        score = res.content.strip().lower()
+        is_safe = "no" if "unsafe" in score else "yes"
+    except Exception as e:
+        print(f"[Guardrail] Error: {e}. Defaulting to safe.")
+        is_safe = "yes"
+        
+    print(f"[Guardrail] Is safe? {is_safe}")
+    return {"is_safe": is_safe}
+
+def generate_blocked(state: AgentState) -> dict:
+    """Node: Returns standardized blocked message for unsafe queries."""
+    blocked_msg = "⛔ **Guardrail Alert**: As an AI Financial Advisor, I cannot provide direct guaranteed investment advice, illegal financial information, or discuss non-financial topics."
+    return {"answer": blocked_msg, "messages": [AIMessage(content=blocked_msg)]}
+
 # ── CRAG Reflection Nodes ─────────────────────────────────────────────────────
 
 def grade_documents(state: AgentState) -> dict:
@@ -374,6 +412,8 @@ def web_search_fallback(state: AgentState) -> dict:
 def build_agent():
     graph = StateGraph(AgentState)
 
+    graph.add_node("guardrail", guardrail_check)
+    graph.add_node("generate_blocked", generate_blocked)
     graph.add_node("retrieve",  retrieve_context)
     graph.add_node("grade_documents", grade_documents)
     graph.add_node("rewrite_query", rewrite_query)
@@ -381,7 +421,15 @@ def build_agent():
     graph.add_node("generate",  generate_answer)
     graph.add_node("tools",     ToolNode(TOOLS))
 
-    graph.set_entry_point("retrieve")
+    graph.set_entry_point("guardrail")
+    
+    # Guardrail logic
+    graph.add_conditional_edges(
+        "guardrail",
+        lambda state: "retrieve" if state.get("is_safe", "yes") == "yes" else "blocked",
+        {"retrieve": "retrieve", "blocked": "generate_blocked"}
+    )
+    graph.add_edge("generate_blocked", END)
     
     # Retrieve -> Grade (Reflection Loop)
     graph.add_edge("retrieve", "grade_documents")
@@ -433,6 +481,7 @@ def ask(question: str, history: List[BaseMessage] | None = None) -> dict:
         "context"     : "",
         "answer"      : "",
         "route"       : "",
+        "is_safe"     : "yes",
         "retry_count" : 0,
     })
     # Build updated history for the caller to persist
