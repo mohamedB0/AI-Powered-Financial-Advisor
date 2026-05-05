@@ -1,67 +1,127 @@
 # AI Financial Advisor
 
-A distributed Hybrid RAG (Retrieval-Augmented Generation) platform for financial analysis of Moroccan public finance institutions. Combines vector search over scraped documents with SQL queries over structured financial data to deliver structured insights via natural language.
+A distributed, multilingual Hybrid RAG (Retrieval-Augmented Generation) platform for financial analysis of Moroccan public finance institutions. Combines vector search over scraped documents with SQL queries over structured financial data and real-time web search to deliver structured insights via natural language — in **French, Arabic, and English**.
 
 **PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada - PFE2026a.lahrache**
 
 ---
 
+## ✨ Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **"Two-Brain" LLM Architecture** | Fast 8B model (Llama-3.1) for routing/orchestration + Heavy 72B model (Qwen-2.5) for high-quality generation |
+| **Multilingual RAG** | Native support for French, Arabic, and English queries with language-anchored responses |
+| **Focus Modes** | Chat tabs lock the AI into specific retrieval paths: *New Chat* (auto), *Company Analysis* (SQL), *Market Macro* (Vector/PDF) |
+| **Investment Persona** | Users can select Balanced, Prudent, or Aggressive personas via the Settings panel — dynamically injected into the LLM system prompt |
+| **In-UI PDF Viewer** | Clickable source citations open the original PDF page directly inside the chat interface |
+| **Export Tools** | Copy, Download .md, and Export Full Report buttons on every AI response |
+| **Live Settings Panel** | Adjust research depth, swap API keys, and change personas without restarting the server |
+| **Jina AI Reranker** | Multilingual semantic reranking of retrieved chunks for precision and token efficiency |
+| **CRAG Reflection Loop** | Automatic query rewriting and web search fallback when local context is insufficient |
+| **Guardrail System** | Fast safety check blocks illegal investment advice and off-topic queries |
+| **Background Ingestion** | Upload PDFs via the UI — Celery workers handle OCR, chunking, embedding, and storage asynchronously |
+| **Docker-Ready** | Full `docker-compose.yml` with 7 production services |
+
+---
+
 ## Architecture Overview
 
-![Architecture Overview](architecture_diagram.png)
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Flask UI   │────▶│  FastAPI API  │────▶│  LangGraph Agent │
+│  (Waitress)  │     │  (Uvicorn)   │     │   StateGraph     │
+│  Port 5000   │     │  Port 8000   │     └────────┬────────┘
+└─────────────┘     └──────────────┘              │
+                                          ┌───────┼───────┐
+                                          ▼       ▼       ▼
+                                     ┌────────┐ ┌─────┐ ┌─────┐
+                                     │ChromaDB│ │ SQL │ │ Web │
+                                     │ BGE-M3 │ │     │ │     │
+                                     └────────┘ └─────┘ └─────┘
+                                          │
+                                     ┌────┴────┐
+                                     │Jina AI  │
+                                     │Reranker │
+                                     └─────────┘
+```
 
 ---
 
 ## Quick Start
 
 ### Important Note on Data & PDFs
-> **Note:** The `data/` directory (containing raw downloaded PDFs) is ignored by git to keep the repository lightweight. You don't need to manually upload or push the PDFs! When you run the Celery workers locally (see step 3), they will automatically scrape, download, and save the PDFs into their associated folders under `data/`, and then ingest them into ChromaDB seamlessly.
+> **Note:** The `data/` directory (containing raw downloaded PDFs) is ignored by git to keep the repository lightweight. When you run the Celery workers, they will automatically scrape, download, and ingest the PDFs into ChromaDB.
 
-### 1. Setup environment
+### Option A: Local Development
+
+#### 1. Setup environment
 ```bash
 cd "Pfe 2026/financial-advisor"
+python -m venv venv
+venv\Scripts\activate        # Windows
 pip install -r requirements.txt
-# Edit .env with your keys (see Configuration section)
+# Edit .env with your API keys (see Configuration section)
 ```
 
-### 2. Start the API
+#### 2. Start Infrastructure (Docker)
+```bash
+docker-compose up -d postgres redis
+```
+
+#### 3. Start the API
 ```bash
 uvicorn api.main:app --reload
 # Swagger UI: http://localhost:8000/docs
 ```
 
-### 3. Start Celery Workers (3 separate terminals)
+#### 4. Start the UI
 ```bash
-# Worker A — Web scraping (CDC, HCP, config-driven sites)
-celery -A tasks.celery_app worker -Q scraping --pool=solo -n scraping_worker@%h --loglevel=INFO
-
-# Worker B — Document ingestion into ChromaDB
-celery -A tasks.celery_app worker -Q ingestion --pool=solo -n ingestion_worker@%h --loglevel=INFO
-
-# Worker C — Local docs folder ingestion
-celery -A tasks.celery_app worker -Q local_ingestion --pool=solo -n local_worker@%h --loglevel=INFO
+python ui/app.py
+# Open: http://localhost:5000/chat
 ```
 
-### 4. Trigger the pipeline
+#### 5. Start Celery Worker
 ```bash
-python scripts/trigger_all.py              # Trigger all workers
-python scripts/trigger_all.py --cdc-only   # CDC only
-python scripts/trigger_all.py --hcp-only   # HCP only
-python scripts/trigger_all.py --local-only # Local docs only
-python scripts/trigger_all.py --sites-only # Config-driven sites (sites.json)
+python scripts/run_celery.py --worker
 ```
 
-### 5. Monitor with Flower
+### Option B: Full Docker Production
+
 ```bash
-python scripts/run_flower.py
-# Open http://localhost:5555 — shows all 3 workers
+# Build and launch all 7 services
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
+
+# View logs
+docker-compose logs -f api
+
+# Stop everything
+docker-compose down
 ```
+
+#### Production Services
+
+| Service | Server | Port | Role |
+|---------|--------|------|------|
+| **postgres** | PostgreSQL 16 | 5432 | Relational data storage |
+| **redis** | Redis 7 | 6379 | Celery message broker |
+| **api** | Uvicorn (4 workers) | 8000 | FastAPI backend |
+| **ui** | Waitress (4 threads) | 5000 | Flask frontend |
+| **celery-worker** | Celery (4 threads) | — | Background ingestion |
+| **celery-beat** | Celery Beat | — | Scheduled tasks |
+| **flower** | Flower | 5555 | Celery monitoring dashboard |
 
 ---
 
-## Adding a New Data Source
+## Data Ingestion
 
-### Option 1 — Config-driven (recommended, no code needed)
+### Via the UI (Recommended)
+Click the **"Ingest Data"** button in the chat interface, select a PDF, and watch the live progress bar. The file is processed asynchronously by the Celery worker through: Upload → OCR → Chunking → Embedding → ChromaDB Storage.
+
+### Via Config-Driven Scraping
 Edit `config/scrapers/sites.json` and add a new entry:
 ```json
 {
@@ -76,15 +136,11 @@ Edit `config/scrapers/sites.json` and add a new entry:
 ```
 Then: `python scripts/trigger_all.py --sites-only`
 
-### Option 2 — Drop files manually
-Place any PDF or DOCX in `data/docs/` and run:
+### Via Manual Drop
+Place any PDF in `data/docs/` and run:
 ```bash
 python scripts/trigger_all.py --local-only
 ```
-Worker C will skip already-ingested files automatically.
-
-### Option 3 — Write a dedicated scraping task
-Copy `tasks/web_scraping_tasks.py`, adapt to the new site's HTML structure, register in `celery_config.py` and `tasks/__init__.py`.
 
 ---
 
@@ -93,43 +149,47 @@ Copy `tasks/web_scraping_tasks.py`, adapt to the new site's HTML structure, regi
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `POST /query/` | POST | Natural language financial question |
+| `POST /query/stream` | POST | Streaming (SSE) version with token-by-token output |
+| `POST /ingest/async` | POST | Upload a PDF for background ingestion |
+| `GET /ingest/status/{task_id}` | GET | Poll ingestion progress |
+| `GET /pdf/file?path=...` | GET | Serve an ingested PDF for in-UI preview |
 | `GET /stocks/{ticker}` | GET | Stock price snapshot |
 | `GET /stocks/{ticker}/history` | GET | Historical prices |
-| `GET /macro/{country}/{indicator}` | GET | Macro indicators |
-| `GET /metrics/{company}` | GET | Financial metrics |
+| `GET /bvc/prices` | GET | Live BVC (Casablanca Bourse) data |
+| `GET /health` | GET | API health check |
 
-### Query example (PowerShell)
-```powershell
-Invoke-RestMethod -Uri "http://localhost:8000/query/" -Method POST `
-  -ContentType "application/json" `
-  -Body '{"question": "quel est le bilan de la cour des comptes 2023 ?", "top_k": 5}'
-```
-
-### Query response structure
+### Query Example (with Focus Mode & Persona)
 ```json
+POST /query/stream
 {
-  "question": "...",
-  "answer": "### Direct Answer\n...\n### Key Figures\n...\n### Evidence from Documents\n...\n### Limitations\n...",
-  "context": "..."
+  "question": "Quel est le taux d'inflation au Maroc en 2024 ?",
+  "history": [],
+  "persona": "Prudent",
+  "top_k": 3,
+  "focus_mode": "Market Macro"
 }
 ```
 
 ---
 
-
 ## Technology Stack
 
 | Component | Technology |
 |-----------|-----------|
-| LLM | meta-llama/llama-3.1-8b-instruct via OpenRouter |
-| Embeddings | BAAI/bge-large-en-v1.5 (1024 dims) |
+| Heavy LLM | Qwen-2.5-72B-Instruct via OpenRouter |
+| Fast LLM | Llama-3.1-8B-Instruct via OpenRouter |
+| Embeddings | BAAI/bge-m3 (1024 dims, multilingual) |
+| Reranker | Jina AI Multilingual Reranker API |
 | Vector DB | ChromaDB (local persistent) |
-| Relational DB | PostgreSQL |
-| Task Queue | Celery + Redis (Upstash) |
-| Orchestration | LangGraph StateGraph |
+| Relational DB | PostgreSQL 16 |
+| Task Queue | Celery + Redis |
+| Orchestration | LangGraph StateGraph (CRAG pattern) |
+| Web Search | Tavily API |
 | Web Scraping | Playwright + BeautifulSoup |
-| API | FastAPI + Swagger UI |
+| Backend API | FastAPI + Uvicorn |
+| Frontend UI | Flask + Tailwind CSS |
 | Monitoring | Celery Flower |
+| Containerization | Docker + Docker Compose |
 
 ---
 
@@ -138,25 +198,63 @@ Invoke-RestMethod -Uri "http://localhost:8000/query/" -Method POST `
 Key environment variables in `.env`:
 
 ```bash
-# LLM (OpenRouter)
+# LLM (OpenRouter) — Two-Brain Architecture
 OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=meta-llama/llama-3.1-8b-instruct
+OPENROUTER_MODEL=qwen/qwen-2.5-72b-instruct       # Heavy brain (generation)
+FAST_LLM_MODEL=meta-llama/llama-3.1-8b-instruct    # Fast brain (routing/grading)
+
+# Embeddings (Multilingual)
+EMBEDDING_MODEL=BAAI/bge-m3
+EMBEDDING_DIMENSION=1024
 
 # ChromaDB
 CHROMA_PERSIST_DIR=./chroma_db
 CHROMA_COLLECTION=financial_data
 
-# Embeddings
-EMBEDDING_MODEL=BAAI/bge-large-en-v1.5
-EMBEDDING_DIMENSION=1024
+# Reranker
+JINA_API_KEY=jina_...
+
+# Web Search
+TAVILY_API_KEY=tvly-...
 
 # PostgreSQL
 DATABASE_URL=postgresql+psycopg2://postgres:root@localhost:5432/financial_advisor
 
-# Redis / Celery (Upstash)
-REDIS_HOST=your-redis-host.upstash.io
-REDIS_PASSWORD=your_redis_password
+# Redis / Celery
+REDIS_HOST=localhost
+REDIS_PORT=6379
 USE_CELERY=true
+```
+
+---
+
+## Project Structure
+
+```
+financial-advisor/
+├── agents/                  # LangGraph agent, prompts, tools
+│   ├── financial_agent.py   # Main RAG agent with CRAG reflection
+│   ├── prompts.py           # System prompts & templates
+│   └── tools.py             # Agent tools
+├── api/                     # FastAPI backend
+│   ├── main.py              # App entry point
+│   └── routes/              # Query, Ingest, PDF Viewer, Dashboard
+├── config/                  # Scraper configs (sites.json)
+├── data/                    # Raw PDFs & uploaded documents
+├── ingestion/               # Embedding & chunking logic
+├── retrieval/               # Vector, SQL, Web search + Reranker
+├── scripts/                 # CLI utilities (trigger, check, run)
+├── storage/                 # ChromaDB store wrapper
+├── tasks/                   # Celery task definitions
+├── ui/                      # Flask frontend
+│   ├── app.py               # Flask app
+│   ├── templates/           # HTML (chat, pipeline, base)
+│   └── static/              # CSS, JS, images
+├── Dockerfile               # Production container image
+├── docker-compose.yml       # 7-service orchestration
+├── celery_config.py         # Celery configuration
+├── requirements.txt         # Python dependencies
+└── .env                     # Environment variables (not in git)
 ```
 
 ---
@@ -164,11 +262,14 @@ USE_CELERY=true
 ## Diagnostic Tools
 
 ```bash
-# Check ChromaDB ingestion status (works from any directory)
+# Check ChromaDB ingestion status
 python scripts/check_chromadb.py
 
 # Run API unit tests
 pytest tests/test_api.py -v
+
+# Monitor Celery tasks
+python scripts/run_flower.py    # Open http://localhost:5555
 ```
 
 ---
