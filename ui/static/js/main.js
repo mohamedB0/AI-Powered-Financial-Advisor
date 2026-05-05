@@ -62,6 +62,14 @@ function highlightKeywordsInContext(containerEl, question) {
     });
 }
 
+// ── GLOBAL SETTINGS ─────────────────────────────────────────────────────────
+let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
+    persona: 'Balanced',
+    depth: 3,
+    apiKey: '',
+    focusMode: 'New Chat'
+};
+
 // CHAT LOGIC
 function initChat() {
     const chatHistory = document.getElementById('chat-history');
@@ -88,7 +96,7 @@ function initChat() {
         
         const avatarStr = role === 'user' 
             ? `<div class="shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm border border-blue-200 mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
-            : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-brands fa-pagelines text-sm"></i></div>`;
+            : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-solid fa-chart-line text-[13px]"></i></div>`;
         
         const bubbleColor = role === 'user' 
             ? 'bg-blue-600 text-white shadow-md border border-blue-700' 
@@ -129,7 +137,14 @@ function initChat() {
             const res = await fetch(`${API_BASE}/query/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ question: text, history: currentHistory })
+                body: JSON.stringify({ 
+                    question: text, 
+                    history: currentHistory,
+                    persona: appSettings.persona,
+                    top_k: parseInt(appSettings.depth),
+                    api_key: appSettings.apiKey,
+                    focus_mode: appSettings.focusMode
+                })
             });
 
             if (!res.ok) throw new Error("API error");
@@ -241,6 +256,24 @@ function initChat() {
     clearBtn?.addEventListener('click', () => {
         chatHistory.innerHTML = '';
         historyLog = [];
+    });
+
+    // Handle Focus Mode Tabs UI
+    const focusTabs = document.querySelectorAll('.focus-tab');
+    focusTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active from all
+            focusTabs.forEach(t => {
+                t.classList.remove('active', 'border-gray-900', 'text-gray-900', 'font-semibold');
+                t.classList.add('border-transparent', 'text-gray-500', 'font-medium');
+            });
+            // Add active to selected
+            tab.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
+            tab.classList.add('active', 'border-gray-900', 'text-gray-900', 'font-semibold');
+            
+            // Set global focus mode
+            appSettings.focusMode = tab.dataset.mode;
+        });
     });
 
     const dlReportBtn = document.getElementById('download-report-btn');
@@ -576,5 +609,69 @@ document.addEventListener('DOMContentLoaded', () => {
             // Re-render plotly charts to fix size issues when they are unhidden
             window.dispatchEvent(new Event('resize'));
         });
+    });
+
+    // SETTINGS MODAL LOGIC
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsContent = document.getElementById('settings-modal-content');
+    const closeBtn = document.getElementById('close-settings');
+    const cancelBtn = document.getElementById('cancel-settings');
+    const saveBtn = document.getElementById('save-settings');
+
+    const selectPersona = document.getElementById('setting-persona');
+    const sliderDepth = document.getElementById('setting-depth');
+    const depthVal = document.getElementById('depth-val');
+    const inputApiKey = document.getElementById('setting-api-key');
+
+    // Update slider value text dynamically
+    sliderDepth?.addEventListener('input', (e) => {
+        if(depthVal) depthVal.innerText = e.target.value;
+    });
+
+    function openSettings() {
+        if (!settingsModal) return;
+        // Load current
+        selectPersona.value = appSettings.persona;
+        sliderDepth.value = appSettings.depth;
+        if(depthVal) depthVal.innerText = appSettings.depth;
+        inputApiKey.value = appSettings.apiKey;
+
+        settingsModal.classList.remove('hidden');
+        setTimeout(() => {
+            settingsModal.classList.remove('opacity-0');
+            settingsContent.classList.remove('scale-95');
+            settingsContent.classList.add('scale-100');
+        }, 10);
+    }
+
+    function closeSettings() {
+        settingsContent.classList.remove('scale-100');
+        settingsContent.classList.add('scale-95');
+        setTimeout(() => {
+            settingsModal.classList.add('hidden');
+        }, 200);
+    }
+
+    settingsBtn?.addEventListener('click', openSettings);
+    closeBtn?.addEventListener('click', closeSettings);
+    cancelBtn?.addEventListener('click', closeSettings);
+    settingsModal?.addEventListener('click', (e) => {
+        if (e.target === settingsModal) closeSettings();
+    });
+
+    saveBtn?.addEventListener('click', () => {
+        // Save to global and local storage
+        appSettings.persona = selectPersona.value;
+        appSettings.depth = sliderDepth.value;
+        appSettings.apiKey = inputApiKey.value.trim();
+        
+        localStorage.setItem('ai_settings', JSON.stringify(appSettings));
+        closeSettings();
+
+        // Optional UX notification
+        const oldHtml = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fa-solid fa-check text-green-300 mr-1.5"></i> Saved!';
+        setTimeout(() => saveBtn.innerHTML = oldHtml, 2000);
     });
 });

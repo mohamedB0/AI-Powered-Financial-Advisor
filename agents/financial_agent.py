@@ -47,6 +47,9 @@ class AgentState(TypedDict):
     context_relevant : str
     is_safe          : str                        # CRAG guard: safety flag
     retry_count      : int                        # CRAG guard: max 2 rewrites
+    top_n            : int
+    persona          : str
+    focus_mode       : str
 
 
 # ── LLM Setup ─────────────────────────────────────────────────────────────────
@@ -195,6 +198,19 @@ def retrieve_context(state: AgentState) -> AgentState:
         need_vector = True
         need_web = True
 
+    # APPLY FOCUS MODE OVERRIDES
+    focus_mode = state.get("focus_mode", "New Chat").lower()
+    if "company" in focus_mode:
+        need_sql = True
+        need_vector = False
+        need_web = False
+        print("[Router] FOCUS MODE: Company Analysis. Forcing SQL Search.")
+    elif "macro" in focus_mode:
+        need_sql = False
+        need_vector = True
+        need_web = False
+        print("[Router] FOCUS MODE: Market Macro. Forcing Vector Search.")
+
     # ── 1. SQL Search (DISABLED) ─────────────────────────────────────────────
     if need_sql:
         try:
@@ -228,8 +244,9 @@ def retrieve_context(state: AgentState) -> AgentState:
             
             # Re-rank via Jina AI API to aggressively cut down token usage for free-tier LLMs
             if vector_results:
-                print(f"[Router] Reranking {len(vector_results)} vector results via Jina API...")
-                vector_results = _get_reranker().rerank(question, vector_results, top_n=3)
+                dynamic_top_n = state.get("top_n", 3)
+                print(f"[Router] Reranking {len(vector_results)} vector results via Jina API (top_n={dynamic_top_n})...")
+                vector_results = _get_reranker().rerank(question, vector_results, top_n=dynamic_top_n)
         except Exception as e:
             print(f"[Router] Vector/Reranker error: {e}")
 

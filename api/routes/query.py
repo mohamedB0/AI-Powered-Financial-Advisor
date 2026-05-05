@@ -22,8 +22,11 @@ class HistoryMessage(BaseModel):
 
 class QueryRequest(BaseModel):
     question: str
-    top_k: int = Field(default=15, ge=1, le=30)
+    top_k: int = Field(default=3, ge=1, le=30)
     history: Optional[List[HistoryMessage]] = []
+    persona: Optional[str] = "Balanced"
+    api_key: Optional[str] = ""
+    focus_mode: Optional[str] = "New Chat"
 
 
 class QueryResponse(BaseModel):
@@ -138,15 +141,24 @@ def query_stream(request: QueryRequest):
             
         # ── 1. Retrieval phase (synchronous) ────────────────────────────
         lc_history = _build_history(request.history)
+
+        # Dynamic overwrite of API key for this process if provided
+        if request.api_key and request.api_key.strip():
+            os.environ["OPENROUTER_API_KEY"] = request.api_key.strip()
+
         state: AgentState = {
             "messages"       : [],
             "history"        : lc_history,
             "question"       : request.question,
+            "original_question": request.question,
             "context"        : "",
             "answer"         : "",
             "route"          : "",
             "context_relevant": "",
             "retry_count"    : 0,
+            "persona"        : request.persona or "Balanced",
+            "top_n"          : request.top_k or 3,
+            "focus_mode"     : request.focus_mode or "New Chat",
         }
         state.update(retrieve_context(state))
         grade = grade_documents(state)
@@ -162,13 +174,16 @@ def query_stream(request: QueryRequest):
 
         # ── 2. Streaming generation ─────────────────────────────────────
         llm = _get_llm()
-        prior = lc_history[-6:]
+        prior = lc_history[-4:]
         prompt = QUERY_PROMPT_TEMPLATE.format(
             question=request.question,
             context=context,
         )
+        
+        persona_guide = f"You must strongly adopt the following Investment Persona: {state.get('persona', 'Balanced')}."
+        
         messages = [
-            SystemMessage(content=SYSTEM_PROMPT),
+            SystemMessage(content=SYSTEM_PROMPT + "\n\n" + persona_guide),
             *prior,
             HumanMessage(content=prompt),
         ]

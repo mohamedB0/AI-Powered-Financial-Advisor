@@ -1,0 +1,48 @@
+# ─── Docker Ignore ───────────────────────────────────────────────────────────
+# Prevents bloated images by excluding dev/local-only files
+
+# Virtual environment (will be rebuilt inside the container)
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing & caches
+.pytest_cache/
+.yfinance_cache/
+tests/
+htmlcov/
+
+# Local databases (Docker uses its own volumes)
+celery_broker.sqlite
+celery_results.sqlite
+celerybeat-schedule.db
+flower.db.*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Docker (prevent recursive copy)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs (mounted as volume instead)
+logs/
+
+# Large model caches (will be downloaded fresh inside container)
+*.bin
+*.safetensors

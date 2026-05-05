@@ -7,18 +7,18 @@
 {% block content %}
 <!-- Top sub-tabs -->
 <div class="flex items-center justify-between border-b border-ui-border px-6 pt-4">
-    <div class="flex items-center gap-2">
-        <div
-            class="flex items-center gap-2 border-b-2 border-gray-900 pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer">
-            New Chat <i class="fa-solid fa-xmark text-[10px] text-gray-400 hover:text-gray-600 ml-1"></i>
+    <div class="flex items-center gap-2" id="focus-tabs-container">
+        <div data-mode="New Chat"
+            class="focus-tab active flex items-center gap-2 border-b-2 border-gray-900 pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer transition-colors">
+            New Chat
         </div>
-        <div
-            class="flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
-            Company Analysis <i class="fa-solid fa-xmark text-[10px] text-gray-300 hover:text-gray-500 ml-1"></i>
+        <div data-mode="Company Analysis"
+            class="focus-tab flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
+            Company Analysis
         </div>
-        <div
-            class="flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
-            Market Macro <i class="fa-solid fa-xmark text-[10px] text-gray-300 hover:text-gray-500 ml-1"></i>
+        <div data-mode="Market Macro"
+            class="focus-tab flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
+            Market Macro
         </div>
     </div>
 
@@ -40,8 +40,8 @@
     <div class="flex flex-col items-center text-center w-full" id="empty-state">
         <!-- Flowery Logo Icon -->
         <div
-            class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-            <i class="fa-brands fa-pagelines text-gray-400 text-xl"></i>
+            class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-brand-bg shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+            <i class="fa-solid fa-chart-line text-brand-text text-xl"></i>
         </div>
 
         <h1 class="text-2xl font-bold text-gray-900 mb-3">Let's chat! What's on your mind?</h1>

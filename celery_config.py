@@ -18,8 +18,8 @@ if USE_UPSTASH and REDIS_HOST and REDIS_HOST not in ("local", "localhost"):
     # Cloud Redis (Upstash) — uses rediss:// (TLS)
     BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=CERT_NONE"
     RESULT_BACKEND = BROKER_URL
-elif REDIS_HOST in ("localhost", "127.0.0.1"):
-    # Local Docker Redis — uses redis:// (no TLS)
+elif REDIS_HOST in ("localhost", "127.0.0.1", "redis"):
+    # Local or Docker Redis — uses redis:// (no TLS)
     if REDIS_PASSWORD:
         BROKER_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
     else:

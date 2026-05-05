@@ -82,7 +82,7 @@
 
             <!-- Bottom icons -->
             <div class="flex flex-col gap-4 items-center">
-                <button class="w-11 h-11 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
+                <button id="settings-btn" class="w-11 h-11 rounded-lg text-gray-400 hover:bg-gray-100 transition-colors">
                     <i class="fa-solid fa-gear text-[1.1rem]"></i>
                 </button>
                 <div
@@ -97,6 +97,52 @@
         <main class="flex-grow relative overflow-y-auto w-full h-full flex flex-col bg-white">
             {% block content %}{% endblock %}
         </main>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-white m-4 rounded-xl shadow-2xl w-full max-w-md overflow-hidden transform scale-95 transition-transform duration-200" id="settings-modal-content">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="font-semibold text-gray-800"><i class="fa-solid fa-sliders text-brand-text mr-2"></i> Advisor Settings</h3>
+                <button id="close-settings" class="text-gray-400 hover:text-gray-600 transition-colors"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            
+            <div class="p-6 space-y-6">
+                <!-- Persona -->
+                <div>
+                    <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Investment Persona</label>
+                    <select id="setting-persona" class="w-full text-sm rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-all">
+                        <option value="Balanced">Balanced (Neutral & Objective)</option>
+                        <option value="Prudent">Prudent (Highly Risk-Averse)</option>
+                        <option value="Aggressive">Aggressive (Focus on Growth/Risk)</option>
+                    </select>
+                </div>
+                
+                <!-- RAG Depth -->
+                <div>
+                    <label class="block text-[13px] font-medium text-gray-700 mb-1.5 flex justify-between">
+                        <span>Research Depth (Passages)</span>
+                        <span id="depth-val" class="text-brand-text font-bold">3</span>
+                    </label>
+                    <input type="range" id="setting-depth" min="1" max="10" value="3" class="w-full accent-brand-text">
+                    <p class="text-[11px] text-gray-400 mt-1">Lower = Faster & prevents Token limit crashes.</p>
+                </div>
+
+                <!-- API Key -->
+                <div>
+                    <label class="block text-[13px] font-medium text-gray-700 mb-1.5 flex justify-between">
+                        <span>OpenRouter API Key Override</span>
+                    </label>
+                    <input type="password" id="setting-api-key" placeholder="sk-or-v1-..." class="w-full text-sm rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-all">
+                    <p class="text-[11px] text-red-400 mt-1"><i class="fa-solid fa-circle-info"></i> Replaces the .env key dynamically for this session.</p>
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button id="cancel-settings" class="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors">Cancel</button>
+                <button id="save-settings" class="px-5 py-2 text-sm font-medium text-white bg-brand-text rounded-lg shadow-sm hover:bg-[#203a27] transition-colors"><i class="fa-solid fa-check mr-1.5"></i> Save & Apply</button>
+            </div>
+        </div>
     </div>
 
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
