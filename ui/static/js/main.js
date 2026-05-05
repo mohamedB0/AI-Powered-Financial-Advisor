@@ -1,5 +1,67 @@
 const API_BASE = "http://localhost:8000";
 
+// ── Keyword Highlighter ───────────────────────────────────────────────────────
+// Highlights query keywords inside retrieved context blockquotes
+const STOPWORDS = new Set([
+    // English
+    "a","an","the","is","are","was","were","be","been","being","have","has","had",
+    "do","does","did","will","would","could","should","may","might","shall","must",
+    "and","or","but","if","in","on","at","to","for","of","with","by","from",
+    "about","what","when","where","who","why","how","which","that","this","these",
+    "those","i","you","he","she","it","we","they","me","him","her","us","them",
+    "my","your","his","its","our","their","can","not","no","yes","get","give",
+    // French
+    "le","la","les","un","une","des","du","de","et","ou","en","dans","sur","sous",
+    "pour","par","avec","sans","que","qui","quoi","dont","où","comment","quand",
+    "quel","quelle","quels","quelles","est","sont","était","être","avoir","je",
+    "tu","il","elle","nous","vous","ils","elles","me","te","se","lui","leur",
+    "ce","cet","cette","ces","mon","ton","son","ma","ta","sa","notre","votre",
+    // Arabic particles
+    "في","من","على","إلى","عن","هل","ما","مع","لا","هذا","هذه","ذلك",
+]);
+
+/**
+ * Walk all text nodes inside el and wrap words matching any keyword with <mark>.
+ */
+function highlightKeywordsInContext(containerEl, question) {
+    if (!containerEl || !question) return;
+
+    // Extract meaningful keywords (length ≥ 3, not a stopword)
+    const words = question
+        .replace(/[?!.,;:«»""''()\[\]{}]/g, " ")
+        .split(/\s+/)
+        .map(w => w.trim().toLowerCase())
+        .filter(w => w.length >= 3 && !STOPWORDS.has(w));
+
+    if (words.length === 0) return;
+
+    // Build a single regex alternation, escape special chars
+    const escaped = words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const pattern = new RegExp(`(${escaped.join("|")})`, "gi");
+
+    // Only highlight inside blockquote paragraphs (the chunk text)
+    const targets = containerEl.querySelectorAll("blockquote p, blockquote");
+
+    targets.forEach(el => {
+        // Walk text nodes to avoid breaking child elements (links, code, etc.)
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        const textNodes = [];
+        let node;
+        while ((node = walker.nextNode())) textNodes.push(node);
+
+        textNodes.forEach(tn => {
+            if (!pattern.test(tn.nodeValue)) return;
+            pattern.lastIndex = 0; // reset regex state
+
+            const span = document.createElement("span");
+            span.innerHTML = tn.nodeValue.replace(pattern,
+                m => `<mark class="ctx-highlight">${m}</mark>`
+            );
+            tn.parentNode.replaceChild(span, tn);
+        });
+    });
+}
+
 // CHAT LOGIC
 function initChat() {
     const chatHistory = document.getElementById('chat-history');
@@ -9,12 +71,40 @@ function initChat() {
 
     if (!chatHistory) return;
 
+    // Intercept clicks on links inside chat bubbles to ensure they open in a new tab
+    document.addEventListener('click', function(e) {
+        const link = e.target.closest('.msg-bubble a');
+        if (link && link.href && !link.href.startsWith('javascript:')) {
+            link.setAttribute('target', '_blank');
+            link.setAttribute('rel', 'noopener noreferrer');
+        }
+    });
+
     let historyLog = [];
 
     function addMessage(role, content, isHtml = false) {
         const msgDiv = document.createElement('div');
-        msgDiv.className = `chat-msg ${role}`;
-        msgDiv.innerHTML = `<div class="msg-bubble">${isHtml ? content : marked.parse(content)}</div>`;
+        msgDiv.className = `flex w-full mt-4 mb-2 gap-4 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+        
+        const avatarStr = role === 'user' 
+            ? `<div class="shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm border border-blue-200 mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
+            : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-brands fa-pagelines text-sm"></i></div>`;
+        
+        const bubbleColor = role === 'user' 
+            ? 'bg-blue-600 text-white shadow-md border border-blue-700' 
+            : 'bg-white text-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100';
+            
+        // Use Tailwind typography (prose) to flawlessly render tables, bold, and bullet points from markdown
+        const proseClass = role === 'user' ? 'prose-invert text-white' : 'prose-slate text-gray-700';
+
+        msgDiv.innerHTML = `
+            ${role === 'assistant' ? avatarStr : ''}
+            <div class="relative max-w-[85%] rounded-[20px] px-5 py-4 ${bubbleColor}">
+                <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${isHtml ? content : marked.parse(content)}</div>
+            </div>
+            ${role === 'user' ? avatarStr : ''}
+        `;
+        
         chatHistory.appendChild(msgDiv);
         chatHistory.scrollTop = chatHistory.scrollHeight;
         return msgDiv;
@@ -75,6 +165,39 @@ function initChat() {
                                 finalContext = data.context || "";
                                 finalRoute = data.route || "";
                                 historyLog.push({ role: 'assistant', content: fullText });
+
+                                // Add Export Actions
+                                const actionsDiv = document.createElement('div');
+                                actionsDiv.className = "flex items-center gap-3 mt-3 pt-3 border-t border-gray-100 text-[12px] text-gray-400 opacity-60 hover:opacity-100 transition-opacity";
+
+                                const copyBtn = document.createElement('button');
+                                copyBtn.className = "hover:text-gray-800 flex items-center gap-1 transition-colors outline-none";
+                                copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+                                copyBtn.onclick = () => {
+                                    navigator.clipboard.writeText(fullText);
+                                    copyBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Copied!';
+                                    setTimeout(() => copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy', 2000);
+                                };
+
+                                const dlBtn = document.createElement('button');
+                                dlBtn.className = "hover:text-gray-800 flex items-center gap-1 transition-colors outline-none";
+                                dlBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download .md';
+                                dlBtn.onclick = () => {
+                                    const a = document.createElement('a');
+                                    a.href = URL.createObjectURL(new Blob([fullText], {type: 'text/markdown'}));
+                                    a.download = 'Financial_Analysis_' + Date.now() + '.md';
+                                    a.click();
+                                };
+
+                                const sep = document.createElement('div');
+                                sep.className = "w-px h-3 bg-gray-300";
+
+                                actionsDiv.appendChild(copyBtn);
+                                actionsDiv.appendChild(sep);
+                                actionsDiv.appendChild(dlBtn);
+
+                                const bubbleWrap = assistantMsgDiv.querySelector('.relative');
+                                if (bubbleWrap) bubbleWrap.appendChild(actionsDiv);
                             }
                         } catch (e) { }
                     }
@@ -92,9 +215,14 @@ function initChat() {
                         <span class="font-medium">Retrieved Context</span>
                         ${finalRoute ? `<span class="px-2 py-0.5 bg-gray-100 rounded-full">${finalRoute}</span>` : ''}
                     </div>
-                    <div id="${contextId}" class="hidden text-[12px] text-gray-600 bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto mt-1">${marked.parse(finalContext)}</div>
+                    <div id="${contextId}" class="hidden text-[12px] text-gray-600 bg-gray-50 rounded-lg p-3 max-h-64 overflow-y-auto mt-1">${marked.parse(finalContext)}</div>
                 `;
                 bubble.appendChild(contextDiv);
+
+                // Highlight keywords from the user's question inside the blockquotes
+                const ctxEl = contextDiv.querySelector(`#${contextId}`);
+                highlightKeywordsInContext(ctxEl, text);
+
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
         } catch (e) {
@@ -113,6 +241,31 @@ function initChat() {
     clearBtn?.addEventListener('click', () => {
         chatHistory.innerHTML = '';
         historyLog = [];
+    });
+
+    const dlReportBtn = document.getElementById('download-report-btn');
+    dlReportBtn?.addEventListener('click', () => {
+        if (historyLog.length === 0) {
+            alert('No conversation history to export.');
+            return;
+        }
+
+        let reportStr = "# AI Financial Advisory Session Report\n\n";
+        reportStr += `*Generated on: ${new Date().toLocaleString()}*\n\n---\n\n`;
+
+        for (const msg of historyLog) {
+            if (msg.role === 'user') {
+                reportStr += `### 🧑 Question:\n${msg.content}\n\n`;
+            } else if (msg.role === 'assistant') {
+                reportStr += `**🤖 Advisor Analysis:**\n${msg.content}\n\n---\n\n`;
+            }
+        }
+
+        const blob = new Blob([reportStr], { type: 'text/markdown' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `Financial_Session_Report_${Date.now()}.md`;
+        a.click();
     });
 
     // File Upload / Ingestion Logic
@@ -152,8 +305,29 @@ function initChat() {
                 if (!res.ok) throw new Error(data.detail || "Upload failed");
 
                 const taskId = data.task_id;
-                statusText.innerText = `Processing (Task: ${taskId.substring(0, 8)}...)`;
-                progressBar.style.width = '50%';
+                statusText.innerText = `Queued (Task: ${taskId.substring(0, 8)}...)`;
+                progressBar.style.width = '15%';
+
+                const detailText = document.getElementById('upload-detail-text');
+                const stepOrder = ['loading', 'ocr', 'chunking', 'embedding', 'storing', 'done'];
+
+                function highlightStep(currentStep) {
+                    document.querySelectorAll('.step-indicator').forEach(el => {
+                        const s = el.dataset.step;
+                        const idx = stepOrder.indexOf(s);
+                        const curIdx = stepOrder.indexOf(currentStep);
+                        if (idx < curIdx) {
+                            el.classList.remove('text-gray-400', 'text-brand-text');
+                            el.classList.add('text-green-500');
+                        } else if (idx === curIdx) {
+                            el.classList.remove('text-gray-400', 'text-green-500');
+                            el.classList.add('text-brand-text');
+                        } else {
+                            el.classList.remove('text-brand-text', 'text-green-500');
+                            el.classList.add('text-gray-400');
+                        }
+                    });
+                }
 
                 let pollCount = 0;
                 const pollInterval = setInterval(async () => {
@@ -162,27 +336,38 @@ function initChat() {
                         const statusRes = await fetch(`${API_BASE}/ingest/status/${taskId}`);
                         const statusData = await statusRes.json();
 
-                        if (statusData.status === 'SUCCESS') {
+                        if (statusData.status === 'PROGRESS') {
+                            const pct = statusData.percent || Math.min(90, 15 + (pollCount * 3));
+                            progressBar.style.width = `${pct}%`;
+                            statusText.innerText = statusData.step ? statusData.step.charAt(0).toUpperCase() + statusData.step.slice(1) : 'Processing...';
+                            if (detailText) detailText.innerText = statusData.detail || '';
+                            if (statusData.step) highlightStep(statusData.step);
+                        } else if (statusData.status === 'SUCCESS') {
                             clearInterval(pollInterval);
                             progressBar.style.width = '100%';
-                            const storedStr = statusData.result ? (statusData.result.stored || statusData.result.total_stored || statusData.result.total_success || 'All') : 'All';
-                            statusText.innerText = `Completed! ${storedStr} vectors stored.`;
-                            setTimeout(() => progressContainer.classList.add('hidden'), 5000);
+                            highlightStep('done');
+                            const r = statusData.result || {};
+                            const storedStr = r.stored || r.total_stored || r.total_success || 'All';
+                            const ocrBadge = r.ocr_used ? ' (OCR+Vision)' : '';
+                            statusText.innerText = `Done! ${storedStr} vectors stored${ocrBadge}`;
+                            if (detailText) detailText.innerText = r.filename ? `${r.filename} → ${r.chunks || '?'} chunks` : '';
+                            setTimeout(() => progressContainer.classList.add('hidden'), 6000);
                             fileUpload.value = "";
                         } else if (statusData.status === 'FAILURE') {
                             clearInterval(pollInterval);
                             progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
                             statusText.innerText = 'Failed: ' + (statusData.info || 'Unknown error');
-                            setTimeout(() => progressContainer.classList.add('hidden'), 5000);
+                            if (detailText) detailText.innerText = '';
+                            setTimeout(() => progressContainer.classList.add('hidden'), 6000);
                             fileUpload.value = "";
                         } else {
-                            const w = Math.min(90, 50 + (pollCount * 2));
+                            const w = Math.min(90, 15 + (pollCount * 2));
                             progressBar.style.width = `${w}%`;
                         }
                     } catch (err) {
                         console.error("Polling error", err);
                     }
-                }, 1000);
+                }, 1500);
 
             } catch (e) {
                 progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';

@@ -24,7 +24,7 @@ def _get_router_llm():
     if _router_llm is None:
         from langchain_openai import ChatOpenAI
         _router_llm = ChatOpenAI(
-            model=os.getenv("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free"),
+            model=os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct"),
             base_url="https://openrouter.ai/api/v1",
             api_key=os.getenv("OPENROUTER_API_KEY"),
             temperature=0.0,
@@ -41,54 +41,7 @@ class QueryRoute(str, Enum):
     HYBRID = "hybrid"
 
 
-SQL_KEYWORDS = [
-    r"\bprice\b", r"\bstock\b", r"\breturn\b", r"\bclose\b", r"\bopening\b",
-    r"\brevenue\b", r"\bebitda\b", r"\bnet.?income\b", r"\beps\b", r"\bearnings\b",
-    r"\bgdp\b", r"\binflation\b", r"\bunemployment\b", r"\bfiscal\b", r"\bquarterly\b",
-    r"\bvolume\b", r"\bhigh\b", r"\blow\b", r"\bopen\b", r"\bmarket.?cap\b",
-    r"\b(p/e|pe.?ratio)\b", r"\bdividend\b", r"\byield\b",
-    r"\b(aapl|msft|amzn|googl|meta|tsla|nvda|apple|microsoft|amazon|google|tesla|nvidia)\b",
-    r"\bmarket.?mover", r"\btop.?perform", r"\bbest.?stock",
-]
-
-WEB_SEARCH_SIGNALS = [
-    r"\bnews\b", r"\blatest\b", r"\btoday\b", r"\brecent\b",
-    r"\bwhat.?happened\b", r"\bevents?\b", r"\bmarket.?news\b",
-    r"\bmerger\b", r"\bacquisition\b", r"\bearnings.?call\b",
-    r"\bforecast\b", r"\bprediction\b", r"\b展望\b", r"\b预测\b",
-    r"\bhow.?is.*doing\b", r"\bperformance\b", r"\btrending\b",
-    r"\bsec.?filing\b", r"\b10-[kq]\b", r"\bquarter.*result\b",
-    r"\bwhat's happening\b", r"\bgoing on\b",
-    r"\b(morocco|maroc|casa|casablanca)\b", r"\bbvc\b",
-    r"\b(attijariwafa|banque populaire|cih|maroc telecom)\b",
-]
-
-VECTOR_SIGNALS = [
-    # English document signals
-    r"\buploaded\b", r"\bfile\b", r"\bpdf\b", r"\bdocument\b",
-    r"\breport\b", r"\bpresentation\b", r"\bexcel\b", r"\bcsv\b",
-    r"\bfrom.*doc", r"\bdata.*from\b", r"\bin.*doc",
-    # French financial terms (Moroccan public finance)
-    r"\bmonnaie\b", r"\bdette\b", r"\bbudget\b", r"\bcomptes\b",
-    r"\bbilan\b", r"\brecettes\b", r"\bd\u00e9penses\b", r"\bfiscal\b",
-    r"\bconjoncture\b", r"\bcroissance\b", r"\br\u00e9cession\b",
-    r"\btaux\b", r"\bd\u00e9ficit\b", r"\bexc\u00e9dent\b",
-    r"\bcour.?des.?comptes\b", r"\bhcp\b", r"\bbkam\b", r"\bammc\b",
-    r"\bbank.?al.?maghrib\b", r"\bautorit\u00e9.?marocain\b",
-    r"\br\u00e9sultats\b", r"\br\u00e9sultats\b", r"\br\u00e9sum\u00e9\b",
-    r"\brapport\b", r"\bannuel\b", r"\bstat\b", r"\bstatistique\b",
-    r"\bpib\b", r"\b\u00e9conomique\b", r"\bpr\u00e9vision\b",
-    r"\bplan\b", r"\bprogramme\b", r"\binvestissement\b",
-    r"\bsecteur\b", r"\bindustrie\b", r"\bcommerce\b",
-    r"\bexportation\b", r"\bimportation\b", r"\bbalance\b",
-    r"\bmarocain\b", r"\bmaroc\b", r"\bnational\b",
-]
-
-
-def _matches_any(text: str, patterns: List[str]) -> bool:
-    return any(re.search(pat, text.lower()) for pat in patterns)
-
-
+# ── Ticker Extraction (Standardized helper) ──────────────────────────────
 def _extract_ticker(query: str) -> Optional[str]:
     us_tickers = {
         "AAPL": r"\b(aapl|apple)\b", "MSFT": r"\b(msft|microsoft)\b",
@@ -122,135 +75,77 @@ def _extract_ticker(query: str) -> Optional[str]:
             return f"BVC.{ticker}"
     return None
 
+import json
 
-def _is_bvc_ticker(ticker: Optional[str]) -> bool:
-    return ticker is not None and ticker.startswith("BVC.")
-
-
-def _is_supported_ticker(query: str) -> Tuple[bool, Optional[str]]:
-    """Check if query mentions a ticker we actually support in SQL."""
-    ticker = _extract_ticker(query)
-    if ticker is None:
-        return False, None
-    if ticker.startswith("BVC."):
-        return False, ticker
-    return True, ticker
-
-
-def _region_is_unsupported(query: str) -> bool:
-    """Check if query mentions a region we don't have data for in SQL."""
-    q = query.lower()
-    unsupported_regions = [
-        "morocco", "maroc", "casa", "casablanca", "bvc",
-        "moroccan", "البورصة", "الدار البيضاء",
-        "attijariwafa", "banque populaire", "cih", "maroc telecom",
-        "attijari", "wafa", "bank al maghrib", "al morocco"
-    ]
-    return any(region in q for region in unsupported_regions)
-
-
-def _classify_intent(query: str) -> Tuple[QueryRoute, Optional[str]]:
-    """
-    Classify query intent and determine the primary route.
+def _classify_intent_llm(query: str) -> dict:
+    """Uses the LLM to structurally understand and route the user's intent."""
+    from langchain_core.messages import SystemMessage, HumanMessage
+    llm = _get_router_llm()
     
-    Priority order:
-      1. Unsupported region / BVC ticker → WEB (hard override)
-      2. Web signals (news, events, live) → WEB
-      3. SQL-only (financial data, no vector signals) → SQL
-      4. Vector-only (documents, no SQL signals) → VECTOR
-      5. Both SQL + vector → HYBRID
-      6. No clear signal → LLM fallback → VECTOR (default)
+    system_prompt = """You are an elite financial RAG router managing requests in English, French, and Arabic.
+Analyze the user's question and strictly return ONLY a JSON dictionary deciding which database to query.
+
+ROUTES:
+- "sql": ONLY if asking for strict stock market data, market cap, yields, P/E ratios, or exact numeric ticker metrics.
+- "vector": IF asking about policies, macroeconomics, inflation, employment, text reports, general facts, AMMC, Bank Al-Maghrib, HCP, or unknown concepts.
+- "web": IF asking about literally today's news, latest world events, or sudden future predictions.
+- "hybrid": IF asking for both stock market hard numbers AND report literature.
+
+JSON SCHEMA:
+{
+  "route": "sql" | "vector" | "web" | "hybrid",
+  "reason": "A 1-sentence analytical justification"
+}"""
     
-    Returns:
-        Tuple of (route, detail) where:
-        - route: Primary QueryRoute
-        - detail: Optional hint (e.g., ticker symbol)
-    """
-    q = query.lower()
-
-    sql_match = _matches_any(query, SQL_KEYWORDS)
-    web_match = _matches_any(query, WEB_SEARCH_SIGNALS)
-    vector_match = _matches_any(query, VECTOR_SIGNALS)
-    unsupported_region = _region_is_unsupported(query)
-
-    has_supported_ticker, extracted_ticker = _is_supported_ticker(query)
-    is_bvc_ticker = extracted_ticker is not None and extracted_ticker.startswith("BVC.")
-
-    # 1. Hard override: unsupported region or BVC ticker → always WEB
-    if unsupported_region or is_bvc_ticker:
-        return QueryRoute.WEB, None
-
-    # 2. Web signals take priority for news/event queries
-    if web_match:
-        return QueryRoute.WEB, None
-
-    # 3. Pure SQL queries (financial data, metrics, prices) — only if no vector overlap
-    if sql_match and not vector_match:
-        ticker = _extract_ticker(query)
-        return QueryRoute.SQL, ticker
-
-    # 4. Pure vector/document queries
-    if vector_match and not sql_match:
-        return QueryRoute.VECTOR, None
-
-    # 5. Hybrid: both SQL and vector signals present
-    if sql_match:
-        ticker = _extract_ticker(query)
-        return QueryRoute.HYBRID, ticker
-    
-    # 6. LLM Fallback: no clear regex signal
     try:
-        from agents.prompts import ROUTER_PROMPT
-        from langchain_core.messages import HumanMessage
-        llm = _get_router_llm()
-        resp = llm.invoke([HumanMessage(content=ROUTER_PROMPT.format(question=query))])
-        label = resp.content.strip().lower().split()[0]  # first word only
-        if label in ("sql", "vector", "web", "hybrid"):
-            route = QueryRoute(label)
-            ticker = _extract_ticker(query) if label in ("sql", "hybrid") else None
-            print(f"[Router] LLM fallback classified as: {label}")
-            return route, ticker
+        resp = llm.invoke([
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=query)
+        ])
+        
+        # Clean JSON formatting securely
+        text = resp.content.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.endswith("```"):
+            text = text[:-3]
+            
+        data = json.loads(text.strip())
+        
+        valid_routes = [r.value for r in QueryRoute]
+        route_str = data.get("route", "vector").lower()
+        if route_str not in valid_routes:
+            route_str = "vector"
+            
+        return {
+            "route": QueryRoute(route_str),
+            "reason": data.get("reason", "Intelligent LLM Default Override")
+        }
     except Exception as e:
-        print(f"[Router] LLM fallback error: {e}. Defaulting to VECTOR.")
-    # Final fallback
-    return QueryRoute.VECTOR, None
+        print(f"[Router] Semantic routing failed: {e}. Defaulting to VECTOR.")
+        return {"route": QueryRoute.VECTOR, "reason": "Fallback due to LLM error"}
 
 
 def classify_query(query: str) -> dict:
     """
-    Classify a query and return routing information.
-    
-    Args:
-        query: The user's question
-        
-    Returns:
-        dict with:
-            - route: QueryRoute enum value
-            - detail: Optional routing hint
-            - sql_keywords: List of matched SQL keywords
-            - web_keywords: List of matched web search keywords
-            - reason: Human-readable explanation
+    Classify a query and return routing information via Semantic LLM Routing.
     """
-    route, detail = _classify_intent(query)
+    llm_decision = _classify_intent_llm(query)
+    route = llm_decision["route"]
+    reason = llm_decision["reason"]
     
-    matched_sql = [p for p in SQL_KEYWORDS if re.search(p, query.lower())]
-    matched_web = [p for p in WEB_SEARCH_SIGNALS if re.search(p, query.lower())]
-    matched_vector = [p for p in VECTOR_SIGNALS if re.search(p, query.lower())]
-    
-    reason_map = {
-        QueryRoute.SQL: "Query matched SQL/structured data keywords (stocks, financials, macro)",
-        QueryRoute.WEB: "Query matched web search signals or is a general question",
-        QueryRoute.VECTOR: "Query is document/knowledge-based",
-        QueryRoute.HYBRID: "Query matches both SQL and vector patterns - using hybrid approach",
-    }
-    
+    # Retrieve structured ticker cleanly using Regex if going to SQL
+    detail = None
+    if route in (QueryRoute.SQL, QueryRoute.HYBRID):
+        detail = _extract_ticker(query)
+        
     return {
         "route": route.value,
         "detail": detail,
-        "sql_keywords": matched_sql[:5],
-        "web_keywords": matched_web[:5],
-        "vector_keywords": matched_vector[:5],
-        "reason": reason_map.get(route, "Default routing"),
+        "sql_keywords": [],
+        "web_keywords": [],
+        "vector_keywords": [],
+        "reason": reason,
     }
 
 

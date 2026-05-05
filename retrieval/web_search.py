@@ -25,41 +25,67 @@ class WebSearch:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
     
-    def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        """
-        Search the web and return results.
-        
-        Args:
-            query: Search query
-            max_results: Maximum number of results to return
-            
-        Returns:
-            List of dicts with 'title', 'url', 'snippet'
-        """
+    def _search_duckduckgo(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """Fallback: scrape DuckDuckGo HTML results."""
         try:
             url = f"https://html.duckduckgo.com/html/?q={requests.utils.quote(query)}"
             response = requests.get(url, headers=self.headers, timeout=self.timeout)
             response.raise_for_status()
-            
             soup = BeautifulSoup(response.text, "html.parser")
             results = []
-            
             for result in soup.select(".result")[:max_results]:
                 title_elem = result.select_one(".result__title a")
                 snippet_elem = result.select_one(".result__snippet")
-                
                 if title_elem:
                     results.append({
                         "title": self._clean_text(title_elem.get_text()),
                         "url": title_elem.get("href", ""),
                         "snippet": self._clean_text(snippet_elem.get_text()) if snippet_elem else "",
                     })
-            
             return results
         except Exception as e:
-            print(f"[WebSearch] Search failed: {e}")
+            print(f"[WebSearch] DuckDuckGo fallback failed: {e}")
             return []
-    
+
+    def search(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
+        """
+        Search the web using Tavily AI (primary) with DuckDuckGo as automatic fallback.
+        Tavily is optimized for RAG: returns full content excerpts, not just snippets.
+        """
+        import os
+        api_key = os.getenv("TAVILY_API_KEY")
+
+        if api_key:
+            try:
+                from tavily import TavilyClient
+                client = TavilyClient(api_key=api_key)
+                # Tavily max query length is 400 chars — truncate safely
+                tavily_query = query[:400] if len(query) > 400 else query
+                response = client.search(
+                    tavily_query,
+                    max_results=max_results,
+                    search_depth="advanced",   # richer content extraction
+                    include_answer=True,        # Tavily can synthesize a quick answer too
+                )
+                results = []
+                for item in response.get("results", []):
+                    results.append({
+                        "title":   item.get("title", "No Title"),
+                        "url":     item.get("url", ""),
+                        "snippet": item.get("content", "")[:600],
+                    })
+                if results:
+                    print(f"[WebSearch] Tavily returned {len(results)} results.")
+                    return results
+                print("[WebSearch] Tavily returned 0 results, falling back to DuckDuckGo.")
+            except Exception as e:
+                print(f"[WebSearch] Tavily failed ({e}), falling back to DuckDuckGo.")
+
+        # Fallback: DuckDuckGo
+        print("[WebSearch] Using DuckDuckGo.")
+        return self._search_duckduckgo(query, max_results)
+
+
     def search_financial_news(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
         """
         Search for financial news specifically.

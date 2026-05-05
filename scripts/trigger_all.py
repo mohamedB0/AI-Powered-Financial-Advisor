@@ -20,8 +20,15 @@ from tasks.config_driven_scraping_tasks import scrape_all_configured_sites
 
 
 def trigger_local():
-    promise = scan_and_ingest_local_docs.apply_async(queue="local_ingestion")
-    print(f"  [Local Docs]        Task sent → UUID: {promise.id}")
+    directories = [
+        "data/docs",
+        "data/collected_data/documents/ammc",
+        "data/collected_data/documents/hcp",
+        "data/collected_data/documents/bank_al_maghrib"
+    ]
+    for folder in directories:
+        promise = scan_and_ingest_local_docs.apply_async(args=[folder], queue="local_ingestion")
+        print(f"  [{folder}] Task sent → UUID: {promise.id}")
 
 
 def trigger_sites():

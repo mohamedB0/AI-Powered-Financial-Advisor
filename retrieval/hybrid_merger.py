@@ -52,8 +52,8 @@ class HybridMerger:
         # ── Vector (Document) Context ─────────────────────────────────────────
         if has_vector:
             parts.append("### 📄 Retrieved Documents Summary\n")
-            parts.append("| # | Source | Page | Relevance |")
-            parts.append("|---|--------|------|-----------|")
+            parts.append("| # | Source | Metadata | Relevance |")
+            parts.append("|---|--------|----------|-----------|")
             
             seen_texts = set()
             filtered_results = []
@@ -68,21 +68,57 @@ class HybridMerger:
                     break
                     
             for count, r in enumerate(filtered_results, 1):
-                source = r.get("source", "unknown")
-                page = r.get("page", "N/A")
+                # Safely get metadata, fallback to empty dict if it's purely a string or missing
+                meta = r.get("metadata", {}) if isinstance(r.get("metadata"), dict) else r
+                
+                # Fetch various possible keys across old and new pipelines
+                source = meta.get("source_file") or meta.get("source") or "unknown"
+                page = meta.get("page", "")
+                
+                # Build extra metadata tags
+                tags = []
+                if page: tags.append(f"Pg {page}")
+                if meta.get("ocr") == "true" or meta.get("extraction_method") == "ocr_vision": tags.append("OCR/Vision")
+                if meta.get("year"): tags.append(f"{meta.get('year')}")
+                
+                meta_str = ", ".join(tags) if tags else "N/A"
+                
                 score = r.get("score", 0)
                 relevance_pct = min(int(score * 100), 100)
                 relevance_bar = "█" * (relevance_pct // 10) + "░" * (10 - relevance_pct // 10)
-                parts.append(f"| {count} | {source} | {page} | {relevance_bar} {relevance_pct}% |")
+                parts.append(f"| {count} | {source} | {meta_str} | {relevance_bar} {relevance_pct}% |")
                 
             parts.append("\n### 🔍 Document Excerpts\n")
             for count, r in enumerate(filtered_results, 1):
-                source = r.get("source", "unknown")
-                page = r.get("page", "N/A")
+                meta = r.get("metadata", {}) if isinstance(r.get("metadata"), dict) else r
+                source = meta.get("source_file") or meta.get("source") or "unknown"
+
+                # Only show the concise fields the user cares about
+                allowed_keys = ("page", "collection", "rerank_score", "doc_type")
+                meta_details = []
+                for k in allowed_keys:
+                    v = meta.get(k)
+                    if v is not None and v != "":
+                        if k == "rerank_score":
+                            meta_details.append(f"score: {float(v):.4f}")
+                        else:
+                            meta_details.append(f"{k}: {v}")
+
+                meta_label = (" | " + " | ".join(meta_details)) if meta_details else ""
+
                 text = r.get("text", "").strip()
-                # Prominent source label so LLM can cite it directly
                 quoted_text = text.replace('\n', '\n> ')
-                parts.append(f"**Excerpt {count}** — `[SOURCE: {source} | Page {page}]`")
+
+                # Build a clickable link if we have a file path — JS will intercept pdf-viewer: links
+                file_path = meta.get("file_path") or meta.get("path") or ""
+                page_num  = meta.get("page", 1) or 1
+                if file_path:
+                    import urllib.parse
+                    encoded_path = urllib.parse.quote(str(file_path), safe="")
+                    pdf_link = f"[📄 {source}{meta_label}](pdf-viewer:{encoded_path}&page={page_num})"
+                    parts.append(f"**Excerpt {count}** — {pdf_link}")
+                else:
+                    parts.append(f"**Excerpt {count}** — `[SOURCE: {source}{meta_label}]`")
                 parts.append(f"> {quoted_text}\n")
 
         # ── SQL (Structured Data) Context ─────────────────────────────────────

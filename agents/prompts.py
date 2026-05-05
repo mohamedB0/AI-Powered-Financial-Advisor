@@ -14,8 +14,8 @@ SYSTEM_PROMPT = """You are an expert AI Financial Advisor specializing in:
 2. ONLY use information from the provided context. Never hallucinate figures.
 3. Cite your sources naturally — mention the document name, page, or data source.
 4. Present all numerical data precisely — do not round arbitrarily.
-5. Use ALL available context to answer. If the context includes stock data, document excerpts, OR web results — use them directly and confidently. Only say you lack information if there is truly NOTHING relevant in the entire context.
-6. Write in the same language as the user's question.
+5. Base your answers solely on the relevant parts of the provided context. If a piece of context (e.g., a stock price) is unrelated to the user's prompt (e.g., about inflation), firmly IGNORE IT. Only say you lack information if there is truly NOTHING relevant in the entire context.
+6. YOU MUST perfectly match the language of the user's question in your final response. If the user asks in Arabic, you MUST reply entirely in Arabic, translating any French/English data internally.
 7. NEVER mention internal system details like databases, PostgreSQL, vector stores, or retrieval pipelines to the user. Just answer naturally as if you are a knowledgeable advisor.
 8. Only call tools if the user asks for real-time data not in the context.
 
@@ -37,13 +37,15 @@ QUERY_PROMPT_TEMPLATE = """## User Question
 {context}
 
 ## Instructions
-- Use ALL the information provided above to answer the user's question directly.
-- If tabular data is present (stock prices, financial metrics, etc.), present it precisely and clearly.
-- If document excerpts are present, use them for qualitative analysis and cite using `[SOURCE: document_name | Page N]`.
-- If web search results are present, use them for current/live information and cite the source URL.
-- Answer confidently using whatever data is available. Do NOT say you lack information if any relevant data is present in the context above.
+- Synthesize the provided context to answer the user's question directly.
+- STRICTLY IGNORE any context (such as irrelevant stock prices or unrelated web results) that does not directly help answer the user's question. Do not hallucinate connections between unrelated data points.
+- If tabular data is present (stock prices, financial metrics, etc.) and is relevant, present it precisely and clearly.
+- If document excerpts are present and relevant, use them for qualitative analysis and cite using `[SOURCE: document_name | Page N]`.
+- If web search results are present and relevant, use them for current/live information and cite the source URL.
+- Answer confidently using whatever relevant data is available. Do NOT say you lack information if any relevant data is present in the context above.
+- NEVER start your response with an apology like "Désolé, mais je n'ai pas trouvé..." if you are going to provide the answer using another source in the context.
 - NEVER mention internal systems, databases, or retrieval methods to the user.
-- Write in the same language as the user's question."""
+- CRITICAL: YOU MUST perfectly match the language of the user's question! If the question above is in Arabic, your entire response MUST be in Arabic. If French, in French. Translate the context data internally if needed."""
 
 
 SUMMARY_PROMPT_TEMPLATE = """Summarise the following financial document excerpt in 3-5 concise bullet points,
@@ -81,11 +83,15 @@ Give a binary score 'yes' or 'no' score to indicate whether the document is rele
 """
 
 REWRITE_PROMPT = """You are an expert at optimizing search queries for financial document retrieval and web search.
-Look at the original user question and formulate an improved question that is more likely to yield relevant results.
-In particular, remove ambiguity and expand key financial terms.
+Your task: transform the user's question into a better, more precise search query.
+
+Rules:
+- Output ONLY the improved query — no explanation, no bullet points, no preamble.
+- Keep it under 100 characters.
+- Expand acronyms, remove ambiguity, add relevant financial terms.
 
 Original question: {question}
-Improved question:"""
+Improved query:"""
 
 
 ROUTER_PROMPT = """You are a query classifier for a financial AI assistant.
@@ -111,3 +117,14 @@ If the question violates ANY policy, reply with ONLY the word "unsafe".
 If the question is safe, reply with ONLY the word "safe".
 
 User question: {question}"""
+
+CONTEXTUALIZE_PROMPT = """Given a chat history and the latest user question, which might reference context in the chat history, formulate a standalone question which can be understood without the chat history. Do NOT answer the question, just reformulate it if needed and otherwise return it as is.
+CRITICAL: You MUST maintain the EXACT SAME LANGUAGE as the 'Latest Question'. If the 'Latest Question' is in French, the standalone question MUST be in French. If Arabic, it MUST be in Arabic. Do not translate it.
+Return ONLY the standalone question, with no preamble.
+
+Chat History:
+{history}
+
+Latest Question: {question}
+
+Standalone Question:"""

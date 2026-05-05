@@ -7,19 +7,28 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_HOST = os.getenv("REDIS_HOST", "")
 REDIS_PORT = int(os.getenv("REDIS_PORT", "6379"))
 REDIS_DB = int(os.getenv("REDIS_DB", "0"))
 REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "")
 
 USE_UPSTASH = os.getenv("USE_UPSTASH", "false").lower() == "true"
 
-if not REDIS_HOST or REDIS_HOST == "local" or not USE_UPSTASH:
-    BROKER_URL = "sqla+sqlite:///celery_broker.sqlite"
-    RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
-else:
+if USE_UPSTASH and REDIS_HOST and REDIS_HOST not in ("local", "localhost"):
+    # Cloud Redis (Upstash) — uses rediss:// (TLS)
     BROKER_URL = f"rediss://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}?ssl_cert_reqs=CERT_NONE"
     RESULT_BACKEND = BROKER_URL
+elif REDIS_HOST in ("localhost", "127.0.0.1"):
+    # Local Docker Redis — uses redis:// (no TLS)
+    if REDIS_PASSWORD:
+        BROKER_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+    else:
+        BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
+    RESULT_BACKEND = BROKER_URL
+else:
+    # Fallback: SQLite file-based broker (no Redis available)
+    BROKER_URL = "sqla+sqlite:///celery_broker.sqlite"
+    RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
 
 broker_url = BROKER_URL
 result_backend = RESULT_BACKEND

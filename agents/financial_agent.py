@@ -26,10 +26,11 @@ from pydantic import BaseModel, Field
 
 from retrieval.query_router import route_query, QueryRoute
 from retrieval.vector_search import VectorSearch
+from retrieval.sql_search import SQLSearch
 from retrieval.web_search import WebSearch
 from retrieval.hybrid_merger import HybridMerger
 from retrieval.reranker import Reranker
-from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT
+from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT, CONTEXTUALIZE_PROMPT
 from agents.tools import TOOLS
 
 
@@ -39,6 +40,7 @@ class AgentState(TypedDict):
     messages         : Annotated[List[BaseMessage], lambda a, b: a + b]
     history          : List[BaseMessage]          # prior conversation turns
     question         : str
+    original_question: str                        # Anchor for language matching
     context          : str
     answer           : str
     route            : str
@@ -50,12 +52,21 @@ class AgentState(TypedDict):
 # ── LLM Setup ─────────────────────────────────────────────────────────────────
 
 def _get_llm():
-    model = os.getenv("OPENROUTER_MODEL", "google/gemma-4-26b-a4b-it:free")
+    model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
     base_url = "https://openrouter.ai/api/v1"
     api_key = os.getenv("OPENROUTER_API_KEY")
     return ChatOpenAI(
         model=model, base_url=base_url, api_key=api_key,
-        temperature=0.1, max_tokens=1024, max_retries=0, request_timeout=60,
+        temperature=0.3, max_tokens=1024, max_retries=0, request_timeout=60,
+    )
+
+def _get_fast_llm():
+    model = os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct")
+    base_url = "https://openrouter.ai/api/v1"
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    return ChatOpenAI(
+        model=model, base_url=base_url, api_key=api_key,
+        temperature=0.0, max_tokens=256, max_retries=0, request_timeout=15,
     )
 
 class GradeDocuments(BaseModel):
@@ -174,11 +185,17 @@ def retrieve_context(state: AgentState) -> AgentState:
     sql_results = []
     web_results = []
 
-    need_sql    = route in ("sql", "hybrid")
-    need_vector = route in ("vector", "hybrid")
-    need_web    = route in ("web", "hybrid")
+    # Dynamically respect the Semantic Router's decisions
+    required_tools = routing.get("required_tools", [])
+    need_sql    = "sql" in required_tools
+    need_vector = "vector" in required_tools
+    need_web    = "web_search" in required_tools
+    
+    if "hybrid" in str(route).lower():
+        need_vector = True
+        need_web = True
 
-    # ── 1. SQL Search ────────────────────────────────────────────────────
+    # ── 1. SQL Search (DISABLED) ─────────────────────────────────────────────
     if need_sql:
         try:
             if routing["detail"]:
@@ -201,39 +218,39 @@ def retrieve_context(state: AgentState) -> AgentState:
         except Exception as e:
             print(f"[Router] SQL error: {e}")
 
-    # ── 2. Vector Search (with Cross-Encoder Reranking) ──────────────────
+    # ── 2. Vector Search (with Jina Reranker API) ──────────────────────────
     if need_vector:
         try:
-            # Over-fetch with fast vector search
-            vector_results = _get_vector_search().search(question, top_k=30)
+            # OVER-FETCHING: Because our local BGE model is English-only, it ranks French/Arabic 
+            # matches poorly. We fetch a broader chunk (60) and let the Multilingual
+            # Jina API find the needle in the haystack.
+            vector_results = _get_vector_search().search(question, top_k=60)
             
-            # Re-rank with precision cross-encoder if results exist
+            # Re-rank via Jina AI API to aggressively cut down token usage for free-tier LLMs
             if vector_results:
-                print(f"[Router] Reranking {len(vector_results)} vector results...")
-                vector_results = _get_reranker().rerank(question, vector_results, top_n=15)
+                print(f"[Router] Reranking {len(vector_results)} vector results via Jina API...")
+                vector_results = _get_reranker().rerank(question, vector_results, top_n=3)
         except Exception as e:
             print(f"[Router] Vector/Reranker error: {e}")
 
     # ── 3. Web Search ────────────────────────────────────────────────────
     if need_web:
-        bvc_tickers = ["atw", "bcp", "bcm", "cfg", "cih", "iam", "lhm", "mng", "sam", "slf", "waa", "tqm", "boa", "msa", "adh", "lbv"]
-        is_bvc_query = any(t in q_lower for t in bvc_tickers) or any(r in q_lower for r in ["morocco", "maroc", "casablanca", "bvc", "attijariwafa", "attijari", "banque populaire"])
-
-        if is_bvc_query:
-            web_results = _get_web_search().get_morocco_market_data(question)
-            if not web_results:
-                # Append "Morocco Casablanca stock" so DuckDuckGo finds the right company
-                morocco_query = f"{question} Morocco Casablanca stock exchange"
-                web_results = _get_web_search().search_financial_news(morocco_query, max_results=5)
-        else:
-            web_results = _get_web_search().search_financial_news(question, max_results=5)
+        # Casablanca Bourse specific scraping temporarily disabled to prevent context bloat
+        web_results = _get_web_search().search(question, max_results=3)
 
     # ── 4. Merge only the sources that were fetched ──────────────────────
     context = _get_merger().merge(vector_results, sql_results, web_results)
 
+    # Determine dynamic route name for the UI label
+    executed = []
+    if sql_results: executed.append("SQL")
+    if vector_results: executed.append("Vector")
+    if web_results: executed.append("Web Search")
+    route_label = " + ".join(executed) if executed else "No Sources"
+
     return {
         "context": context,
-        "route": route,
+        "route": route_label,
     }
 
 
@@ -243,13 +260,16 @@ def generate_answer(state: AgentState) -> AgentState:
     # Tool execution is handled separately by the ToolNode via should_use_tools edge.
     llm = _get_llm()
 
+    # CRITICAL: Always use the 'original_question' for generation. 
+    # The 'question' might have been rewritten/translated by the 8B LLM in english.
+    # Using original_question guarantees the LLM sees the user's explicit Arabic/French text.
     prompt = QUERY_PROMPT_TEMPLATE.format(
-        question=state["question"],
+        question=state["original_question"],
         context=state["context"] or "No context available.",
     )
 
-    # Prepend prior conversation history (last 6 messages = 3 turns)
-    prior = state.get("history", [])[-6:]
+    # Prepend prior conversation history (last 4 messages = 2 turns) to save tokens
+    prior = state.get("history", [])[-4:]
     messages = [
         SystemMessage(content=SYSTEM_PROMPT),
         *prior,
@@ -314,7 +334,7 @@ def should_use_tools(state: AgentState) -> str:
 def guardrail_check(state: AgentState) -> dict:
     """Node: Fast safety check before hitting retrieval or generation."""
     print("[Guardrail] Checking safety...")
-    llm = _get_llm()
+    llm = _get_fast_llm()
     prompt = GUARDRAIL_PROMPT.format(question=state["question"])
     
     try:
@@ -333,62 +353,71 @@ def generate_blocked(state: AgentState) -> dict:
     blocked_msg = "⛔ **Guardrail Alert**: As an AI Financial Advisor, I cannot provide direct guaranteed investment advice, illegal financial information, or discuss non-financial topics."
     return {"answer": blocked_msg, "messages": [AIMessage(content=blocked_msg)]}
 
+# ── Conversational Context ────────────────────────────────────────────────────
+
+def contextualize_query(state: AgentState) -> dict:
+    """Node: Contextualizes the query using the conversation history."""
+    history = state.get("history", [])
+    question = state["question"]
+    
+    if not history:
+        return {"question": question}
+        
+    print("[Contextualizer] Contextualizing query with history...")
+    llm = _get_fast_llm()
+    
+    # Format history into a string (last 4 messages = 2 conversation turns)
+    historical_text = "\n".join([f"{msg.type}: {msg.content}" for msg in history[-4:]])
+    
+    prompt = CONTEXTUALIZE_PROMPT.format(history=historical_text, question=question)
+    
+    try:
+        res = llm.invoke([SystemMessage(content=prompt)])
+        new_q = res.content.strip()
+        if new_q.startswith("Standalone Question:"):
+            new_q = new_q.split("Standalone Question:")[1].strip()
+        new_q = new_q.strip('"').strip("'")
+        print(f"[Contextualizer] Contextualized to: {new_q}")
+        return {"question": new_q}
+    except Exception as e:
+        print(f"[Contextualizer] Error: {e}. Keeping original.")
+        return {"question": question}
+
 # ── CRAG Reflection Nodes ─────────────────────────────────────────────────────
 
 def grade_documents(state: AgentState) -> dict:
     """Node: Evaluate if the retrieved context is relevant."""
     print("[Grader] Evaluating relevance of context...")
 
-    # CRAG guard: if we've already retried twice, stop the loop
-    retry_count = state.get("retry_count", 0)
-    if retry_count >= 2:
-        print("[Grader] Max retries reached — forcing generate.")
-        return {"context_relevant": "yes", "retry_count": retry_count}
-
-    if not state["context"] or state["context"] == "No relevant documents found.":
-        print("[Grader] Relevance: no")
-        return {"context_relevant": "no", "retry_count": retry_count + 1}
-
-    # Skip grader LLM call for vector/sql routes — context is curated and always relevant.
-    # This saves one API call per query and avoids hitting rate limits.
-    route = state.get("route", "")
-    if route in (QueryRoute.VECTOR.value, QueryRoute.SQL.value):
-        print(f"[Grader] Skipping grader for {repr(route)} route - assuming relevant.")
-        return {"context_relevant": "yes", "retry_count": retry_count}
-
-    # Use plain text generation instead of with_structured_output
-    # (free OpenRouter models don't support structured output / tool calling)
-    llm = _get_llm()
-    prompt = GRADER_PROMPT.format(context=state["context"], question=state["question"])
-
-    try:
-        res = llm.invoke([SystemMessage(content=prompt)])
-        text = res.content.strip().lower()
-        # Parse the yes/no from the plain text response
-        score = "yes" if "yes" in text[:50] else "no"
-    except Exception as e:
-        print(f"[Grader] Error: {e}. Defaulting to relevant.")
-        score = "yes"
-
-    new_retry = retry_count + (1 if score == "no" else 0)
-    print(f"[Grader] Relevance: {score} (retry_count={new_retry})")
-    return {"context_relevant": score, "retry_count": new_retry}
+    # Because we now use the Jina AI Multilingual Reranker API during retrieval, 
+    # the vector documents are inherently pre-graded and ranked by strict semantic relevance.
+    # Running a secondary 8B LLM grader on dense French/Arabic text proved too aggressive 
+    # and was falsely tossing out valid local PDFs in favor of web search.
+    # We bypass LLM grading and trust the Jina Reranker + the 72B Generator's innate filtering.
+    
+    return {"context_relevant": "yes", "retry_count": state.get("retry_count", 0)}
 
 
 def rewrite_query(state: AgentState) -> dict:
     """Node: Rewrite the user query for better retrieval."""
     print("[Rewriter] Rewriting query...")
-    llm = _get_llm()
+    llm = _get_fast_llm()
     prompt = REWRITE_PROMPT.format(question=state["question"])
     
     try:
         res = llm.invoke([SystemMessage(content=prompt)])
         new_q = res.content.strip()
+        # Extract only the first line — LLMs sometimes add explanations after
+        new_q = new_q.split("\n")[0].strip().strip('"').strip("'")
+        # Hard cap at 300 chars (Tavily limit is 400)
+        new_q = new_q[:300] if len(new_q) > 300 else new_q
+        if not new_q:
+            new_q = state["question"]
     except Exception as e:
         print(f"[Rewriter] Error: {e}. Keeping original.")
         new_q = state["question"]
-        
-    print(f"[Rewriter] Old query: {state['question']} -> New query: {new_q}")
+
+    print(f"[Rewriter] Old: {state['question'][:80]} -> New: {new_q}")
     return {"question": new_q}
 
 
@@ -403,7 +432,7 @@ def web_search_fallback(state: AgentState) -> dict:
     
     return {
         "context": new_context,
-        "route": "web_fallback"
+        "route": "Web Search"
     }
 
 
@@ -414,6 +443,7 @@ def build_agent():
 
     graph.add_node("guardrail", guardrail_check)
     graph.add_node("generate_blocked", generate_blocked)
+    graph.add_node("contextualize_query", contextualize_query)
     graph.add_node("retrieve",  retrieve_context)
     graph.add_node("grade_documents", grade_documents)
     graph.add_node("rewrite_query", rewrite_query)
@@ -426,10 +456,13 @@ def build_agent():
     # Guardrail logic
     graph.add_conditional_edges(
         "guardrail",
-        lambda state: "retrieve" if state.get("is_safe", "yes") == "yes" else "blocked",
-        {"retrieve": "retrieve", "blocked": "generate_blocked"}
+        lambda state: "contextualize_query" if state.get("is_safe", "yes") == "yes" else "blocked",
+        {"contextualize_query": "contextualize_query", "blocked": "generate_blocked"}
     )
     graph.add_edge("generate_blocked", END)
+    
+    # Contextualizer to Retrieve
+    graph.add_edge("contextualize_query", "retrieve")
     
     # Retrieve -> Grade (Reflection Loop)
     graph.add_edge("retrieve", "grade_documents")
@@ -475,14 +508,15 @@ def ask(question: str, history: List[BaseMessage] | None = None) -> dict:
     """
     agent = get_agent()
     state = agent.invoke({
-        "messages"    : [],
-        "history"     : history or [],
-        "question"    : question,
-        "context"     : "",
-        "answer"      : "",
-        "route"       : "",
-        "is_safe"     : "yes",
-        "retry_count" : 0,
+        "messages"         : [],
+        "history"          : history or [],
+        "question"         : question,
+        "original_question": question,
+        "context"          : "",
+        "answer"           : "",
+        "route"            : "",
+        "is_safe"          : "yes",
+        "retry_count"      : 0,
     })
     # Build updated history for the caller to persist
     updated_history = list(history or []) + [

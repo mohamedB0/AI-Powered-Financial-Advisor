@@ -54,10 +54,25 @@ class Embedder:
         if self._is_bge and is_query:
             texts = [_BGE_QUERY_PREFIX + t for t in texts]
 
-        embeddings = self.model.encode(
-            texts, show_progress_bar=True, convert_to_numpy=True
-        )
-        return embeddings.tolist()
+        batch_size = 4  # Dramatically reduced batch size to prevent PyTorch memory locks / RAM overflows
+        all_embeddings = []
+        total_batches = (len(texts) + batch_size - 1) // batch_size
+        
+        for i in range(0, len(texts), batch_size):
+            batch = texts[i:i+batch_size]
+            batch_emb = self.model.encode(batch, show_progress_bar=False, convert_to_numpy=True)
+            all_embeddings.extend(batch_emb.tolist())
+            
+            # Print a brilliant visual ASCII text bar for project screenshots
+            batch_num = (i // batch_size) + 1
+            progress_percent = batch_num / total_batches
+            bar_length = 25
+            filled_length = int(bar_length * progress_percent)
+            bar = '█' * filled_length + '░' * (bar_length - filled_length)
+            
+            logger.info("[EMBEDDER] BAAI/bge-m3 ─ [%s] %3d%% ─ (Batch %d/%d)", bar, int(progress_percent * 100), batch_num, total_batches)
+                
+        return all_embeddings
 
     def embed_one(self, text: str, *, is_query: bool = False) -> List[float]:
         """Embed a single text string."""

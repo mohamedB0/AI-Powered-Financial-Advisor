@@ -55,7 +55,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-[13px]">
             <button
                 class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
-                Analyze AAPL's latest financials.
+                Who is the governor of Bank Al-Maghrib?
             </button>
             <button
                 class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
@@ -90,6 +90,39 @@
                 <div id="upload-progress-bar" class="bg-brand-text h-1.5 rounded-full transition-all duration-300"
                     style="width: 10%"></div>
             </div>
+            <!-- Pipeline step indicators -->
+            <div id="pipeline-steps" class="flex items-center justify-between mt-2 text-[11px] text-gray-400 px-1">
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="loading">
+                    <i class="fa-solid fa-file-arrow-up"></i>
+                    <span>Upload</span>
+                </div>
+                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="ocr">
+                    <i class="fa-solid fa-eye"></i>
+                    <span>OCR</span>
+                </div>
+                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="chunking">
+                    <i class="fa-solid fa-scissors"></i>
+                    <span>Chunk</span>
+                </div>
+                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="embedding">
+                    <i class="fa-solid fa-brain"></i>
+                    <span>Embed</span>
+                </div>
+                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="storing">
+                    <i class="fa-solid fa-database"></i>
+                    <span>Store</span>
+                </div>
+                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                <div class="flex flex-col items-center gap-1 step-indicator" data-step="done">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>Done</span>
+                </div>
+            </div>
+            <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
         </div>
 
         <div
@@ -111,8 +144,12 @@
             </button>
         </div>
 
-        <div class="text-center mt-3 text-[11px] text-gray-400 flex items-center justify-center gap-3">
-            <button id="clear-btn" class="hover:text-gray-600 transition-colors font-medium">Clear History</button>
+        <div class="text-center mt-3 text-[11px] text-gray-400 flex items-center justify-center gap-4">
+            <button id="download-report-btn"
+                class="hover:text-gray-700 transition-colors font-medium flex items-center gap-1.5"><i
+                    class="fa-solid fa-file-export"></i> Export Full Report</button>
+            <div class="w-1 h-1 rounded-full bg-gray-300"></div>
+            <button id="clear-btn" class="hover:text-gray-700 transition-colors font-medium">Clear History</button>
         </div>
     </div>
 </div>
@@ -148,5 +185,78 @@
             });
         });
     });
+
+    // ── PDF Viewer Modal ─────────────────────────────────────────────────────
+    // Intercept clicks on links with href starting with "pdf-viewer:"
+    // Format: pdf-viewer:ENCODED_FILE_PATH||PAGE_NUMBER
+    document.addEventListener("click", function (e) {
+        const link = e.target.closest("a[href^='pdf-viewer:']");
+        if (!link) return;
+        e.preventDefault();
+
+        const raw = link.getAttribute("href").replace("pdf-viewer:", "");
+        // Format: pdf-viewer:ENCODED_PATH&page=N
+        const pageMatch = raw.match(/&page=(\d+)$/);
+        const page = pageMatch ? parseInt(pageMatch[1]) : 1;
+        const encodedPath = pageMatch ? raw.slice(0, raw.lastIndexOf("&page=")) : raw;
+        const filePath = decodeURIComponent(encodedPath);
+
+        const API_BASE = "http://localhost:8000";
+        const pdfUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}#page=${page}`;
+
+        // Populate modal header
+        document.getElementById("pdf-modal-title").textContent =
+            filePath.split("\\").pop().split("/").pop() + "  —  Page " + page;
+
+        // Check if the file exists before loading it in the iframe
+        const iframe = document.getElementById("pdf-iframe");
+        const errorDiv = document.getElementById("pdf-error");
+        iframe.classList.add("hidden");
+        errorDiv.classList.add("hidden");
+
+        fetch(`${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}`, { method: "HEAD" })
+            .then(res => {
+                if (res.ok) {
+                    iframe.src = pdfUrl;
+                    iframe.classList.remove("hidden");
+                } else {
+                    throw new Error("File could not be located on the server.");
+                }
+            })
+            .catch(err => {
+                errorDiv.textContent = "⚠️ " + err.message;
+                errorDiv.classList.remove("hidden");
+            });
+
+        document.getElementById("pdf-modal").classList.remove("hidden");
+    });
+
+    function closePdfModal() {
+        document.getElementById("pdf-modal").classList.add("hidden");
+        document.getElementById("pdf-iframe").src = "";
+    }
 </script>
+
+<!-- PDF Viewer Modal -->
+<div id="pdf-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+    onclick="if(event.target===this) closePdfModal()">
+    <div class="bg-white rounded-2xl shadow-2xl flex flex-col" style="width:90vw; max-width:1100px; height:90vh;">
+        <!-- Modal Header -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200">
+            <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
+                <i class="fa-regular fa-file-pdf text-red-500"></i>
+                <span id="pdf-modal-title">Document</span>
+            </div>
+            <button onclick="closePdfModal()"
+                class="rounded-lg p-1.5 hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
+        </div>
+        <!-- PDF Canvas -->
+        <div id="pdf-error"
+            class="hidden flex-1 flex items-center justify-center text-gray-500 text-sm p-8 text-center"></div>
+        <iframe id="pdf-iframe" src="" class="flex-1 w-full rounded-b-2xl border-0" style="min-height:0;"></iframe>
+    </div>
+</div>
+
 {% endblock %}

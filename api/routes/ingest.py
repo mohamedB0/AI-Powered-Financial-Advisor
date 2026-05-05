@@ -48,6 +48,9 @@ class TaskStatusResponse(BaseModel):
     ready: bool
     result: Optional[dict] = None
     info: Optional[str] = None
+    step: Optional[str] = None
+    detail: Optional[str] = None
+    percent: Optional[int] = None
 
 
 def _run_pipeline(tmp_path: str, ext: str) -> tuple[int, int]:
@@ -160,10 +163,10 @@ async def ingest_file_async(
         with open(file_path, "wb") as f:
             f.write(content)
         
-        from tasks.ingestion_tasks import ingest_file_async_task
+        from tasks.document_ingestion_tasks import ingest_document
         
-        task = ingest_file_async_task.apply_async(
-            args=[str(file_path), chunker_type, chunk_size, chunk_overlap],
+        task = ingest_document.apply_async(
+            args=[str(file_path)],
         )
         
         return AsyncIngestResponse(
@@ -194,17 +197,28 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
             detail="Celery is not enabled. Set USE_CELERY=true in .env and restart the API.",
         )
     
-    from tasks.ingestion_tasks import get_task_status
     from celery.result import AsyncResult
     
     result = AsyncResult(task_id)
+    
+    # Extract rich progress info if task is in PROGRESS state
+    step = None
+    detail = None
+    percent = None
+    if result.state == "PROGRESS" and isinstance(result.info, dict):
+        step = result.info.get("step")
+        detail = result.info.get("detail")
+        percent = result.info.get("percent")
     
     return TaskStatusResponse(
         task_id=task_id,
         status=result.state,
         ready=result.ready(),
-        result=result.result if result.ready() else None,
-        info=str(result.info) if result.info else None,
+        result=result.result if result.ready() and isinstance(result.result, dict) else None,
+        info=str(result.info) if result.info and result.state not in ("PROGRESS",) else None,
+        step=step,
+        detail=detail,
+        percent=percent,
     )
 
 
@@ -240,11 +254,16 @@ async def ingest_batch_async(
                 f.write(content)
             file_paths.append(str(file_path))
         
-        from tasks.ingestion_tasks import ingest_batch
+        from tasks.document_ingestion_tasks import ingest_document
         
-        task = ingest_batch.apply_async(
-            args=[file_paths, chunker_type],
-        )
+        # Submit each file as a separate task
+        task_ids = []
+        for fp in file_paths:
+            t = ingest_document.apply_async(args=[fp])
+            task_ids.append(t.id)
+        
+        # Return the last task id for status tracking
+        task = type('obj', (object,), {'id': task_ids[-1]})()
         
         return AsyncIngestResponse(
             task_id=task.id,

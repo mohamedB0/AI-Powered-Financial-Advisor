@@ -25,6 +25,7 @@ from api.routes.query import router as query_router
 from api.routes.ingest import router as ingest_router
 from api.routes.stocks import router as stocks_router
 from api.routes.bvc import router as bvc_router
+from api.routes.pdf_viewer import router as pdf_router
 
 app = FastAPI(
     title="AI Financial Advisor API",
@@ -43,6 +44,7 @@ app.include_router(query_router)
 app.include_router(ingest_router)
 app.include_router(stocks_router)
 app.include_router(bvc_router)
+app.include_router(pdf_router)
 
 
 @app.get("/", tags=["Health"])

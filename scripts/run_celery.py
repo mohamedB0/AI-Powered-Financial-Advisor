@@ -37,7 +37,7 @@ def start_worker(concurrency: int = 4, loglevel: str = "info", queue: str = "cel
     """Start Celery worker for a specific queue."""
     from tasks.celery_app import celery_app
     
-    queues = [queue] if queue != "celery" else ["ingestion", "data_fetch", "default"]
+    queues = [queue] if queue != "celery" else ["ingestion", "data_fetch", "default", "local_ingestion", "scraping"]
     logger.info(f"Starting Celery worker (queue={queues}, concurrency={concurrency})")
     
     celery_app.worker_main([
@@ -104,8 +104,8 @@ def main():
     parser.add_argument(
         "--concurrency",
         type=int,
-        default=4,
-        help="Number of concurrent workers (default: 4)",
+        default=1,
+        help="Number of concurrent workers (default: 1)",
     )
     parser.add_argument(
         "--loglevel",
