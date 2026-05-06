@@ -54,10 +54,12 @@ class TaskStatusResponse(BaseModel):
 
 
 def _run_pipeline(tmp_path: str, ext: str) -> tuple[int, int]:
-    """Blocking ingestion pipeline — runs in a thread-pool."""
+    """Blocking ingestion pipeline — runs in a thread-pool.
+    User-uploaded files go to the 'user_data' collection."""
     from ingestion import IngestionPipeline
+    from storage.chroma_store import CHROMA_COLLECTION_USER_DATA
 
-    pipeline = IngestionPipeline()
+    pipeline = IngestionPipeline(collection_override=CHROMA_COLLECTION_USER_DATA)
     result = pipeline.ingest_file(tmp_path)
 
     # Clean up temp file
@@ -167,6 +169,8 @@ async def ingest_file_async(
         
         task = ingest_document.apply_async(
             args=[str(file_path)],
+            kwargs={"collection_name": "user_data"},
+            queue="user_ingestion",
         )
         
         return AsyncIngestResponse(
@@ -259,7 +263,11 @@ async def ingest_batch_async(
         # Submit each file as a separate task
         task_ids = []
         for fp in file_paths:
-            t = ingest_document.apply_async(args=[fp])
+            t = ingest_document.apply_async(
+                args=[fp],
+                kwargs={"collection_name": "user_data"},
+                queue="user_ingestion",
+            )
             task_ids.append(t.id)
         
         # Return the last task id for status tracking

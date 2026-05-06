@@ -51,5 +51,19 @@
         "use_playwright": false,
         "output_folder": "ammc",
         "enabled": true
+    },
+    {
+        "name": "finances_gov",
+        "display_name": "Ministère de l'Économie et des Finances (MEF)",
+        "base_url": "https://www.finances.gov.ma",
+        "listing_urls": [
+            "https://www.finances.gov.ma/fr/Pages/publications.aspx",
+            "https://depf.finances.gov.ma/rapport-economique-et-financier/",
+            "https://depf.finances.gov.ma/etudes-et-publications/"
+        ],
+        "pdf_link_pattern": ".pdf",
+        "use_playwright": false,
+        "output_folder": "finances_gov",
+        "enabled": true
     }
 ]

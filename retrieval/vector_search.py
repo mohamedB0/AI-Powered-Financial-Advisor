@@ -15,8 +15,8 @@ from typing import List, Dict, Any, Optional
 from ingestion.embeddings import Embedder
 from storage.chroma_store import (
     ChromaStore,
-    CHROMA_COLLECTION_LEGACY,
     CHROMA_COLLECTION_FINANCIAL,
+    CHROMA_COLLECTION_USER_DATA,
     CHROMA_PERSIST_DIR,
 )
 import chromadb
@@ -26,13 +26,17 @@ from chromadb.config import Settings
 class VectorSearch:
     """
     Wraps the BGE Embedder + ChromaDB to perform semantic retrieval
-    over all ingested financial documents (both collections).
+    over all BGE-M3 ingested financial documents.
 
     Searches:
-      - financial_docs_cdc_hcp  (legacy: CDC, HCP scraped docs)
-      - financial_data          (new: future ingestion target)
+      - financial_data          (pipeline: automated scraping workers)
+      - user_data               (user: chat UI uploads)
 
-    Results from both collections are merged and ranked by score.
+    NOTE: The legacy collection 'financial_docs_cdc_hcp' is excluded because
+    it was embedded with bge-large-en-v1.5 (English-only), which is incompatible
+    with BGE-M3 query vectors. All its data was re-ingested into financial_data.
+
+    Results from all collections are merged and ranked by score.
     """
 
     def __init__(self, embedder: Embedder = None):
@@ -42,13 +46,13 @@ class VectorSearch:
             path=CHROMA_PERSIST_DIR,
             settings=Settings(anonymized_telemetry=False),
         )
-        # Get handles to both collections (create if missing)
+        # Get handles to active BGE-M3 collections only
         self._collections = {
             name: self._client.get_or_create_collection(
                 name=name,
                 metadata={"hnsw:space": "cosine"},
             )
-            for name in [CHROMA_COLLECTION_LEGACY, CHROMA_COLLECTION_FINANCIAL]
+            for name in [CHROMA_COLLECTION_FINANCIAL, CHROMA_COLLECTION_USER_DATA]
         }
 
     def search(

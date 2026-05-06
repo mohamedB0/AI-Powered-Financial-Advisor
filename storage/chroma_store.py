@@ -32,8 +32,11 @@ if not Path(CHROMA_PERSIST_DIR).is_absolute():
 # Legacy collection: scraped docs from CDC, HCP, and config-driven sites
 CHROMA_COLLECTION_LEGACY      = "financial_docs_cdc_hcp"
 
-# New collection: target for all future ingestion tasks
+# Pipeline collection: target for all automated ingestion tasks (scrapers, workers)
 CHROMA_COLLECTION_FINANCIAL   = "financial_data"
+
+# User collection: stores user-uploaded documents from the chat UI
+CHROMA_COLLECTION_USER_DATA   = "user_data"
 
 # Active collection — controlled via CHROMA_COLLECTION env var
 CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", CHROMA_COLLECTION_FINANCIAL)

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
     name="tasks.document_ingestion_tasks.ingest_document",
     bind=True,  # gives access to self for progress updates
 )
-def ingest_document(self, file_path: str, use_ocr: bool = False):
+def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name: str = None):
     """
     Worker B Task: Receives a document path from any scraping worker or UI upload.
     Runs the full ingestion pipeline:
@@ -158,7 +158,8 @@ def ingest_document(self, file_path: str, use_ocr: bool = False):
     })
 
     try:
-        store = ChromaStore()
+        target_collection = collection_name or None  # None = default from env
+        store = ChromaStore(collection_name=target_collection) if target_collection else ChromaStore()
         stored = store.upsert(texts=texts, embeddings=embeddings, metadatas=metadatas)
     except Exception as e:
         logger.error("INGESTION WORKER: ChromaDB upsert failed for %s: %s", path.name, e)

@@ -30,8 +30,9 @@ class IngestionPipeline:
         pipeline.ingest_file("data/report.pdf")
     """
 
-    def __init__(self, config: IngestionConfig | None = None):
+    def __init__(self, config: IngestionConfig | None = None, collection_override: str | None = None):
         self.config = config or IngestionConfig()
+        self._collection_override = collection_override
         self.embedder = Embedder(model_name=self.config.embed_model)
         self._chunker = RecursiveChunker(
             chunk_size=self.config.chunk_size,
@@ -45,7 +46,8 @@ class IngestionPipeline:
     def store(self):
         if self._store is None:
             from storage.chroma_store import ChromaStore
-            self._store = ChromaStore(collection_name=self.config.chroma_collection)
+            collection_name = self._collection_override or self.config.chroma_collection
+            self._store = ChromaStore(collection_name=collection_name)
         return self._store
 
     # ── High-level ingest methods ─────────────────────────────────────────────
