@@ -27,10 +27,28 @@ from api.routes.stocks import router as stocks_router
 from api.routes.bvc import router as bvc_router
 from api.routes.pdf_viewer import router as pdf_router
 
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.info("Pre-loading the heavy BGE-M3 model into memory...")
+    try:
+        from ingestion.embeddings import Embedder
+        _ = Embedder() # Trigger the lazy-load of the 2.2GB model
+        logger.info("Model loaded successfully! Fast API is fully ready.")
+    except Exception as e:
+        logger.error(f"Failed to pre-load model: {e}")
+        
+    yield
+    # Cleanup phase can be added here if needed
+
 app = FastAPI(
     title="AI Financial Advisor API",
     description="Hybrid RAG backend for financial analysis — PFE 2026",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
 app.add_middleware(
