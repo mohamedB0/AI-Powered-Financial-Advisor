@@ -13,7 +13,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.dialects.postgresql import insert
 
-from storage.models import Base, StockPrice, FinancialMetric, MacroIndicator, Document, ExcelData, JSONData, WordDocument
+from storage.models import Base, StockPrice, FinancialMetric, Document, ExcelData, JSONData, WordDocument
 
 logger = logging.getLogger(__name__)
 
@@ -83,23 +83,6 @@ class RelationalDB:
             session.commit()
             count = result.rowcount
             logger.info("Upserted %d metric records", count)
-            return count
-
-    def insert_macro(self, records: List[Dict[str, Any]]) -> int:
-        """
-        Upsert macro-indicator rows (skip on indicator+date+country conflict).
-        """
-        if not records:
-            return 0
-        with self.SessionLocal() as session:
-            stmt = insert(MacroIndicator).values(records)
-            stmt = stmt.on_conflict_do_nothing(
-                index_elements=["indicator_name", "date", "country"]
-            )
-            result = session.execute(stmt)
-            session.commit()
-            count = result.rowcount
-            logger.info("Upserted %d macro records", count)
             return count
 
     def insert_document(self, filename: str, file_type: str, file_size: int = 0, metadata: Optional[Dict] = None) -> int:

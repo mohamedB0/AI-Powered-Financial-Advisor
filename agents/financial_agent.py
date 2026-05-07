@@ -116,12 +116,12 @@ def _get_reranker():
     return _reranker
 
 
-UNSUPPORTED_REGIONS = ["morocco", "maroc", "casa", "casablanca", "bvc", "moroccan", "البورصة", "الدار البيضاء"]
+UNSUPPORTED_REGIONS: list = []  # All regions supported; BVC tickers are in the DB
 US_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "NVDA"]
 
 
 def _results_match_query(results: list, question: str) -> bool:
-    """Check if SQL results actually match the query (ticker AND data type AND region detection)."""
+    """Check if SQL results actually match the query (ticker AND data type)."""
     if not results:
         return False
     q = question.lower()
@@ -129,17 +129,11 @@ def _results_match_query(results: list, question: str) -> bool:
 
     is_revenue_query = any(k in q for k in ["revenue", "earning", "income", "ebitda", "eps"])
     is_price_query = any(k in q for k in ["price", "close", "open", "high", "low", "volume", "stock"])
-    is_macro_query = any(k in q for k in ["gdp", "inflation", "unemployment", "macro"])
 
     if is_revenue_query:
-        has_financial_data = any(word in result_str for word in ["REVENUE", "NET_INCOME", "EBITDA", "EPS", "FINANCIAL"])
+        has_financial_data = any(word in result_str for word in ["METRIC_NAME", "VALUE", "PERIOD", "REVENUE", "EBITDA", "EPS"])
         if not has_financial_data:
             print(f"[Router] Query asks for financial metrics but got stock prices")
-            return False
-    elif is_macro_query:
-        has_macro_data = any(word in result_str for word in ["COUNTRY", "INDICATOR", "MACRO", "GDP", "INFLATION"])
-        if not has_macro_data:
-            print(f"[Router] Query asks for macro data but got other data")
             return False
     elif is_price_query:
         has_price_data = any(word in result_str for word in ["OPEN", "HIGH", "LOW", "CLOSE", "VOLUME", "DATE"])
@@ -147,16 +141,11 @@ def _results_match_query(results: list, question: str) -> bool:
             print(f"[Router] Query asks for price data but got other data")
             return False
 
-    for region in UNSUPPORTED_REGIONS:
-        if region in q:
-            print(f"[Router] Query mentions '{region}' but SQL only has US stocks - falling back to web")
-            return False
-
     if "atw" in q or "attijari" in q:
         return any("ATW" in str(r) or "BVC.ATW" in str(r) for r in results)
-    if "bcm" in q or "banque populaire" in q:
-        return any("BCM" in str(r) or "BVC.BCM" in str(r) for r in results)
-    if "iam" in q or "maroc telecom" in q or "ita" in q:
+    if "bcm" in q or "bcp" in q or "banque populaire" in q:
+        return any("BCP" in str(r) or "BVC.BCP" in str(r) for r in results)
+    if "iam" in q or "maroc telecom" in q:
         return any("IAM" in str(r) or "BVC.IAM" in str(r) for r in results)
     for ticker in US_TICKERS:
         if ticker.lower() in q:
@@ -211,15 +200,11 @@ def retrieve_context(state: AgentState) -> AgentState:
         need_web = False
         print("[Router] FOCUS MODE: Market Macro. Forcing Vector Search.")
 
-    # ── 1. SQL Search (DISABLED) ─────────────────────────────────────────────
+    # ── 1. SQL Search ────────────────────────────────────────────────────────
     if need_sql:
         try:
             if routing["detail"]:
                 sql_results = _get_sql_search().get_price_history(routing["detail"], days=10)
-            elif "inflation" in q_lower:
-                sql_results = _get_sql_search().get_macro_indicator("United States", "inflation")
-            elif "gdp" in q_lower:
-                sql_results = _get_sql_search().get_macro_indicator("United States", "gdp")
             elif "revenue" in q_lower or "earnings" in q_lower:
                 sql_results = _get_sql_search().get_top_by_revenue()
             elif "volume" in q_lower:

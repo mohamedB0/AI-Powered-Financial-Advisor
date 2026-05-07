@@ -73,30 +73,6 @@ class FinancialMetric(Base):
         return f"<FinancialMetric {name} {self.metric_name}={self.value}>"
 
 
-class MacroIndicator(Base):
-    """Macro-economic indicators (GDP, CPI, interest rates, etc.)."""
-
-    __tablename__ = "macro_indicators"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-    country = Column(String(100), index=True)
-    indicator_name = Column(String(80), nullable=False, index=True)
-    value = Column(Float)
-    unit = Column(String(50))
-    date = Column(Date, nullable=False, index=True)
-    source = Column(String(120))
-    created_at = Column(DateTime, default=datetime.utcnow)
-
-    __table_args__ = (
-        UniqueConstraint(
-            "indicator_name", "date", "country", name="uq_macro_name_date_country"
-        ),
-    )
-
-    def __repr__(self) -> str:
-        return f"<MacroIndicator {self.country or 'Global'} {self.indicator_name} {self.date}={self.value}>"
-
-
 class Document(Base):
     """Uploaded documents metadata."""
 

@@ -65,18 +65,6 @@ def get_top_companies_by_revenue(
 
 
 @tool
-def get_macro_data(
-    country:   Annotated[str, "Country name (e.g. United States)"],
-    indicator: Annotated[str, "Indicator name (e.g. GDP, Inflation, Unemployment)"],
-) -> str:
-    """Get macroeconomic indicator data for a country."""
-    rows = _get_sql().get_macro_indicator(country, indicator)
-    if not rows:
-        return f"No macro data found for {country} / {indicator}."
-    return f"**{indicator} — {country}**\n" + _get_sql().format_results(rows)
-
-
-@tool
 def get_market_movers() -> str:
     """Get the top performing stocks by percentage change over the last 30 days."""
     rows = _get_sql().get_top_movers()
@@ -134,7 +122,6 @@ TOOLS = [
     get_stock_price,
     get_company_financials,
     get_top_companies_by_revenue,
-    get_macro_data,
     get_market_movers,
     get_uploaded_documents,
     query_document_data,

@@ -23,7 +23,6 @@ SYSTEM_PROMPT = """You are an expert AI Financial Advisor specializing in:
 - get_stock_price: Stock price and 5-day history
 - get_company_financials: Revenue, EBITDA, net income
 - get_top_companies_by_revenue: Companies ranked by revenue
-- get_macro_data: GDP, inflation, unemployment for a country
 - get_market_movers: Top performing stocks (last 30 days)
 - get_uploaded_documents: List uploaded documents
 - query_document_data: Query Excel/CSV data

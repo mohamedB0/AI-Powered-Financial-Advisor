@@ -83,15 +83,15 @@ class SQLSearch:
 
     def get_financial_metrics(self, company: str) -> List[Dict[str, Any]]:
         sql = """
-            SELECT ticker, company, year, period_type, revenue, net_income, ebitda, eps_diluted
+            SELECT ticker, company, metric_name, value, period, report_date
             FROM financial_metrics
             WHERE LOWER(company) LIKE :company OR LOWER(ticker) LIKE :company
-            ORDER BY year DESC, period_type
+            ORDER BY report_date DESC, metric_name
             LIMIT 20
         """
         return self.db.execute_sql(sql, {"company": f"%{company.lower()}%"})
 
-    def get_top_by_revenue(self, year: int | None = None) -> List[Dict[str, Any]]:
+    def get_top_by_revenue(self, year: Optional[int] = None) -> List[Dict[str, Any]]:
         """
         Get companies ranked by revenue.
         """
@@ -117,19 +117,6 @@ class SQLSearch:
         return self.db.execute_sql(sql, params)
 
     # ── Macro Queries ─────────────────────────────────────────────────────────
-
-    def get_macro_indicator(self, country: str, indicator: str) -> List[Dict[str, Any]]:
-        sql = """
-            SELECT country_name, indicator_name, year, value
-            FROM macro_indicators
-            WHERE LOWER(country_name) LIKE :country AND LOWER(indicator_name) LIKE :indicator
-            ORDER BY year DESC
-            LIMIT 10
-        """
-        return self.db.execute_sql(sql, {
-            "country":   f"%{country.lower()}%",
-            "indicator": f"%{indicator.lower()}%"
-        })
 
     def format_results(self, rows: List[Dict[str, Any]]) -> str:
         """Format SQL result rows as a readable table string."""
