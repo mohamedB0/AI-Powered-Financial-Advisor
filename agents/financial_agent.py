@@ -179,7 +179,7 @@ def retrieve_context(state: AgentState) -> AgentState:
 
     # Dynamically respect the Semantic Router's decisions
     required_tools = routing.get("required_tools", [])
-    need_sql    = "sql" in required_tools
+    need_sql    = False  # 🔇 SQL DISABLED FOR TESTING — re-enable: "sql" in required_tools
     need_vector = "vector" in required_tools
     need_web    = "web_search" in required_tools
     
