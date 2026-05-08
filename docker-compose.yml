@@ -90,50 +90,7 @@ services:
     depends_on:
       - api
 
-  # Celery Worker (Background document ingestion)
-  celery-worker:
-    build: .
-    container_name: fin_celery_worker
-    restart: unless-stopped
-    command: >
-      celery -A tasks.celery_app:celery_app worker
-      --loglevel=info
-      --concurrency=4
-      --pool=threads
-      -Q default,ingestion,local_ingestion,scraping,data_fetch
-    env_file: .env
-    environment:
-      - REDIS_HOST=redis
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
-      - CHROMA_PERSIST_DIR=/app/chroma_db
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    volumes:
-      - ./data:/app/data
-      - ./chroma_db:/app/chroma_db
-      - ./logs:/app/logs
-      - hf_cache:/root/.cache/huggingface
-    depends_on:
-      redis:
-        condition: service_healthy
-      postgres:
-        condition: service_healthy
-
-  # Celery Beat (Scheduled tasks: daily scraping, stock fetching)
-  celery-beat:
-    build: .
-    container_name: fin_celery_beat
-    restart: unless-stopped
-    command: >
-      celery -A tasks.celery_app:celery_app beat
-      --loglevel=info
-    env_file: .env
-    environment:
-      - REDIS_HOST=redis
-    depends_on:
-      redis:
-        condition: service_healthy
+    # (Removed Celery Worker and Beat per request so they can be run on the host terminal)
 
   # Flower (Celery monitoring dashboard on port 5555)
   flower:
