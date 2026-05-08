@@ -201,7 +201,7 @@
         const encodedPath = pageMatch ? raw.slice(0, raw.lastIndexOf("&page=")) : raw;
         const filePath = decodeURIComponent(encodedPath);
 
-        const API_BASE = "http://localhost:8000";
+        const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
         const pdfUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}#page=${page}`;
 
         // Populate modal header

@@ -109,10 +109,10 @@ class HybridMerger:
                 text = r.get("text", "").strip()
                 quoted_text = text.replace('\n', '\n> ')
 
-                # Build a clickable link if we have a file path — JS will intercept pdf-viewer: links
-                file_path = meta.get("file_path") or meta.get("path") or ""
+                # Build a clickable link if we have a file path OR at least a source filename
+                file_path = meta.get("file_path") or meta.get("path") or source or ""
                 page_num  = meta.get("page", 1) or 1
-                if file_path:
+                if file_path and file_path != "unknown":
                     import urllib.parse
                     encoded_path = urllib.parse.quote(str(file_path), safe="")
                     pdf_link = f"[📄 {source}{meta_label}](pdf-viewer:{encoded_path}&page={page_num})"

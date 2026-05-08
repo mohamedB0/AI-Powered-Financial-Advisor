@@ -6,7 +6,7 @@ A distributed, multilingual Hybrid RAG (Retrieval-Augmented Generation) platform
 
 ---
 
-## ✨ Key Features
+## Key Features
 
 | Feature | Description |
 |---------|-------------|
@@ -53,7 +53,8 @@ A distributed, multilingual Hybrid RAG (Retrieval-Augmented Generation) platform
 ### Important Note on Data & PDFs
 > **Note:** The `data/` directory (containing raw downloaded PDFs) is ignored by git to keep the repository lightweight. When you run the Celery workers, they will automatically scrape, download, and ingest the PDFs into ChromaDB.
 
-### Option A: Local Development
+### Option A: Hybrid Deployment (Recommended)
+Docker handles the servers and databases, while you run Celery natively in your Windows terminal to easily watch the live ingestion logs.
 
 #### 1. Setup environment
 ```bash
@@ -61,58 +62,62 @@ cd "Pfe 2026/financial-advisor"
 python -m venv venv
 venv\Scripts\activate        # Windows
 pip install -r requirements.txt
-# Edit .env with your API keys (see Configuration section)
+# Edit .env and ensure REDIS_HOST=localhost and POSTGRES_HOST=localhost
 ```
 
 #### 2. Start Infrastructure (Docker)
+This boots up PostgreSQL, Redis, the FastAPI backend, the UI, and the Flower monitoring dashboard in the background.
 ```bash
-docker-compose up -d postgres redis
-```
-
-#### 3. Start the API
-```bash
-uvicorn api.main:app --reload
+docker-compose up -d
 # Swagger UI: http://localhost:8000/docs
+# Chat UI: http://localhost:5000/chat
+# Flower UI: http://localhost:5555
 ```
 
-#### 4. Start the UI
+#### 3. Start Diversified Celery Workers (Local Terminals)
+Instead of running one monolithic worker that gets bogged down by background scraping, run separate workers in dedicated Windows terminals based on their queue responsibilities:
+
+**Terminal 1: Chat Uploads Worker (High Priority)**
+Listens strictly to the `user_ingestion` queue so your UI chat uploads process instantly without waiting for long scraping jobs.
 ```bash
-python ui/app.py
-# Open: http://localhost:5000/chat
+celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q user_ingestion -n chat_worker@%h
 ```
 
-#### 5. Start Celery Worker
+**Terminal 2: Background Scraping & Data Fetch**
+Handles internet scraping (HCP, AMMC) and automated tasks.
 ```bash
-python scripts/run_celery.py --worker
+celery -A tasks.celery_app worker --loglevel=info --concurrency=2 --pool=threads -Q scraping,data_fetch,default -n background_worker@%h
 ```
 
-### Option B: Full Docker Production
-
+**Terminal 3: Local Bulk Ingestion**
+Dedicated to processing large quantities of historical PDFs placed inside `data/docs/`.
 ```bash
-# Build and launch all 7 services
-docker-compose up -d --build
-
-# Check status
-docker-compose ps
-
-# View logs
-docker-compose logs -f api
-
-# Stop everything
-docker-compose down
+celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q local_ingestion -n local_docs_worker@%h
 ```
 
-#### Production Services
+#### How to Trigger Manual Bulk Ingestion
+If you dump bulk PDFs into your `data/docs/` folder, trigger them using the Python shell rather than the UI:
+```bash
+python -c "from tasks.document_ingestion_tasks import process_directory; process_directory.apply_async(kwargs={'directory_path': 'data/docs', 'source': 'historical_upload'}, queue='local_ingestion')"
+```
 
-| Service | Server | Port | Role |
-|---------|--------|------|------|
-| **postgres** | PostgreSQL 16 | 5432 | Relational data storage |
-| **redis** | Redis 7 | 6379 | Celery message broker |
-| **api** | Uvicorn (4 workers) | 8000 | FastAPI backend |
-| **ui** | Waitress (4 threads) | 5000 | Flask frontend |
-| **celery-worker** | Celery (4 threads) | — | Background ingestion |
-| **celery-beat** | Celery Beat | — | Scheduled tasks |
-| **flower** | Flower | 5555 | Celery monitoring dashboard |
+#### 4. Start Celery Beat (Terminal 4 - Optional)
+Run this to schedule automated daily stock and macro data scraping:
+```bash
+celery -A tasks.celery_app beat --loglevel=info
+```
+
+#### Production Services Status
+
+| Service | Server | Port | Hosted In |
+|---------|--------|------|-----------|
+| **postgres** | PostgreSQL 16 | 5432 | Docker |
+| **redis** | Redis 7 | 6379 | Docker |
+| **api** | Uvicorn (4 workers) | 8000 | Docker |
+| **ui** | Waitress (4 threads) | 5000 | Docker |
+| **flower** | Flower | 5555 | Docker |
+| **celery-worker** | Celery (2 threads) | — | Local Windows Terminal |
+| **celery-beat** | Celery Beat | — | Local Windows Terminal |
 
 ---
 
@@ -225,39 +230,6 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 USE_CELERY=true
 ```
-
----
-
-## Project Structure
-
-```
-financial-advisor/
-├── agents/                  # LangGraph agent, prompts, tools
-│   ├── financial_agent.py   # Main RAG agent with CRAG reflection
-│   ├── prompts.py           # System prompts & templates
-│   └── tools.py             # Agent tools
-├── api/                     # FastAPI backend
-│   ├── main.py              # App entry point
-│   └── routes/              # Query, Ingest, PDF Viewer, Dashboard
-├── config/                  # Scraper configs (sites.json)
-├── data/                    # Raw PDFs & uploaded documents
-├── ingestion/               # Embedding & chunking logic
-├── retrieval/               # Vector, SQL, Web search + Reranker
-├── scripts/                 # CLI utilities (trigger, check, run)
-├── storage/                 # ChromaDB store wrapper
-├── tasks/                   # Celery task definitions
-├── ui/                      # Flask frontend
-│   ├── app.py               # Flask app
-│   ├── templates/           # HTML (chat, pipeline, base)
-│   └── static/              # CSS, JS, images
-├── Dockerfile               # Production container image
-├── docker-compose.yml       # 7-service orchestration
-├── celery_config.py         # Celery configuration
-├── requirements.txt         # Python dependencies
-└── .env                     # Environment variables (not in git)
-```
-
----
 
 ## Diagnostic Tools
 

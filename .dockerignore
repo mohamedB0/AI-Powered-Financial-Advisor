@@ -25,6 +25,8 @@ tests/
 htmlcov/
 
 # Local databases (Docker uses its own volumes)
+chroma_db/
+data/
 celery_broker.sqlite
 celery_results.sqlite
 celerybeat-schedule.db

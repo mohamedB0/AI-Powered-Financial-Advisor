@@ -118,6 +118,7 @@ def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name
         for text, meta in records:
             meta["source_file"] = path.name
             meta["source"] = "financial_scraping_pipeline"
+            meta["file_path"] = str(path.absolute())
             if ocr_used:
                 meta["extraction_method"] = "ocr_vision"
             chunks = chunker.chunk(text, meta)
