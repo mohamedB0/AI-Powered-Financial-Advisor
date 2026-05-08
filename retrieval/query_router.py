@@ -17,20 +17,32 @@ from enum import Enum
 from typing import List, Optional, Tuple
 
 # ── Lazy LLM for fallback classification ──────────────────────────────────────
+# ⚡ Speed: Groq is used when available (same key as the main agent).
 _router_llm = None
 
 def _get_router_llm():
     global _router_llm
     if _router_llm is None:
         from langchain_openai import ChatOpenAI
-        _router_llm = ChatOpenAI(
-            model=os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct"),
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-            temperature=0.0,
-            max_retries=0,
-            request_timeout=15,
-        )
+        groq_key = os.getenv("GROQ_API_KEY")
+        if groq_key:
+            _router_llm = ChatOpenAI(
+                model="llama-3.1-8b-instant",
+                base_url="https://api.groq.com/openai/v1",
+                api_key=groq_key,
+                temperature=0.0,
+                max_retries=0,
+                request_timeout=10,
+            )
+        else:
+            _router_llm = ChatOpenAI(
+                model=os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct"),
+                base_url="https://openrouter.ai/api/v1",
+                api_key=os.getenv("OPENROUTER_API_KEY"),
+                temperature=0.0,
+                max_retries=0,
+                request_timeout=15,
+            )
     return _router_llm
 
 

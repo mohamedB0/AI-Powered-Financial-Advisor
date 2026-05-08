@@ -549,7 +549,7 @@ function initDashboard() {
     setInterval(loadPrices, 60000);
 }
 
-// PIPELINE LOGIC
+// PIPELINE LOGIC (Chat Document Uploads Only)
 async function initPipeline() {
     const tableBody = document.getElementById('pipeline-tasks');
     if (!tableBody) return;
@@ -561,18 +561,39 @@ async function initPipeline() {
 
             tableBody.innerHTML = '';
 
+            if (!data.tasks || data.tasks.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-gray-400"><i class="fa-solid fa-folder-open mr-2"></i>No documents uploaded yet. Use the chat to ingest files.</td></tr>';
+                document.getElementById('metric-total').innerText = '0';
+                document.getElementById('metric-success').innerText = '0';
+                document.getElementById('metric-fail').innerText = '0';
+                return;
+            }
+
             let success = 0, fail = 0;
 
             data.tasks.forEach(t => {
                 if (t.status === 'SUCCESS') success++;
                 else if (t.status === 'FAILURE') fail++;
 
+                // Try to extract filename from the result JSON
+                let docName = 'Document';
+                try {
+                    const result = typeof t.result === 'string' ? JSON.parse(t.result) : t.result;
+                    if (result && result.filename) docName = result.filename;
+                } catch (e) {}
+
+                const statusClass = t.status === 'SUCCESS'
+                    ? 'bg-green-50 text-green-700 border border-green-200'
+                    : t.status === 'FAILURE'
+                    ? 'bg-red-50 text-red-600 border border-red-200'
+                    : 'bg-yellow-50 text-yellow-700 border border-yellow-200';
+
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td><code>${(t.task_id || '').substring(0, 12)}...</code></td>
-                    <td>${t.name || 'unknown'}</td>
-                    <td class="${t.status === 'SUCCESS' ? 'status-success' : t.status === 'FAILURE' ? 'status-failure' : ''}">${t.status}</td>
-                    <td>${t.date_done || ''}</td>
+                    <td class="p-3"><code class="text-gray-500 text-[12px]">${(t.task_id || '').substring(0, 12)}…</code></td>
+                    <td class="p-3 font-medium text-gray-800"><i class="fa-solid fa-file-lines text-gray-400 mr-1.5"></i>${docName}</td>
+                    <td class="p-3"><span class="px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${statusClass}">${t.status}</span></td>
+                    <td class="p-3 text-gray-500">${t.date_done || '—'}</td>
                 `;
                 tableBody.appendChild(tr);
             });
@@ -582,7 +603,7 @@ async function initPipeline() {
             document.getElementById('metric-fail').innerText = fail;
 
         } catch (e) {
-            tableBody.innerHTML = '<tr><td colspan="4">Error loading tasks</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-gray-400">Error loading tasks</td></tr>';
         }
     }
 

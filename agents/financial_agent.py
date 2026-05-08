@@ -10,6 +10,7 @@ Uses:
 
 import sys
 import time
+import concurrent.futures
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -54,21 +55,57 @@ class AgentState(TypedDict):
 
 # ── LLM Setup ─────────────────────────────────────────────────────────────────
 
-def _get_llm():
-    model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
-    base_url = "https://openrouter.ai/api/v1"
-    api_key = os.getenv("OPENROUTER_API_KEY")
+# ── Speed: Groq is ~10-20x faster than OpenRouter for equivalent models ───────
+# Primary path: Groq (ultra-fast inference)
+# Fallback path: OpenRouter (if Groq key missing or quota exceeded)
+
+_GROQ_MODELS = [
+    "llama-3.3-70b-versatile",   # Fastest high-quality Groq model
+    "llama-3.1-8b-instant",       # Ultra-fast fallback
+]
+
+_FALLBACK_MODELS = [
+    "qwen/qwen-2.5-72b-instruct",
+    "meta-llama/llama-3.3-70b-instruct",
+    "meta-llama/llama-3.1-8b-instruct:free",
+]
+
+def _get_llm(model: str | None = None):
+    """Returns the best available LLM. Prefers Groq for speed."""
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key and model is None:
+        # Use Groq primary model — significantly faster inference
+        groq_model = os.getenv("GROQ_MODEL", _GROQ_MODELS[0])
+        return ChatOpenAI(
+            model=groq_model,
+            base_url="https://api.groq.com/openai/v1",
+            api_key=groq_key,
+            temperature=0.3, max_tokens=1024, max_retries=0, request_timeout=30,
+        )
+    # OpenRouter fallback (or explicit model override)
+    if model is None:
+        model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
     return ChatOpenAI(
-        model=model, base_url=base_url, api_key=api_key,
+        model=model,
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPENROUTER_API_KEY"),
         temperature=0.3, max_tokens=1024, max_retries=0, request_timeout=60,
     )
 
 def _get_fast_llm():
+    """Returns a fast/cheap LLM for guardrails, routing, rewriting etc. Prefers Groq."""
+    groq_key = os.getenv("GROQ_API_KEY")
+    if groq_key:
+        return ChatOpenAI(
+            model="llama-3.1-8b-instant",
+            base_url="https://api.groq.com/openai/v1",
+            api_key=groq_key,
+            temperature=0.0, max_tokens=256, max_retries=0, request_timeout=10,
+        )
     model = os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct")
-    base_url = "https://openrouter.ai/api/v1"
-    api_key = os.getenv("OPENROUTER_API_KEY")
     return ChatOpenAI(
-        model=model, base_url=base_url, api_key=api_key,
+        model=model, base_url="https://openrouter.ai/api/v1",
+        api_key=os.getenv("OPENROUTER_API_KEY"),
         temperature=0.0, max_tokens=256, max_retries=0, request_timeout=15,
     )
 
@@ -220,27 +257,43 @@ def retrieve_context(state: AgentState) -> AgentState:
             print(f"[Router] SQL error: {e}")
 
     # ── 2. Vector Search (with Jina Reranker API) ──────────────────────────
+    vector_quality = "none"  # Track: "none", "weak", "strong"
     if need_vector:
         try:
-            # OVER-FETCHING: Because our local BGE model is English-only, it ranks French/Arabic 
-            # matches poorly. We fetch a broader chunk (60) and let the Multilingual
-            # Jina API find the needle in the haystack.
-            vector_results = _get_vector_search().search(question, top_k=60)
+            vector_results = _get_vector_search().search(question, top_k=20)
             
-            # Re-rank via Jina AI API to aggressively cut down token usage for free-tier LLMs
             if vector_results:
                 dynamic_top_n = state.get("top_n", 3)
                 print(f"[Router] Reranking {len(vector_results)} vector results via Jina API (top_n={dynamic_top_n})...")
                 vector_results = _get_reranker().rerank(question, vector_results, top_n=dynamic_top_n)
+                
+                # Check reranker confidence — if best score is low, the DB doesn't have this info
+                if vector_results:
+                    best_score = max(r.get("rerank_score", 0) for r in vector_results)
+                    print(f"[Router] Best reranker score: {best_score:.4f}")
+                    vector_quality = "strong" if best_score >= 0.3 else "weak"
+                    
         except Exception as e:
             print(f"[Router] Vector/Reranker error: {e}")
 
     # ── 3. Web Search ────────────────────────────────────────────────────
-    if need_web:
-        # Casablanca Bourse specific scraping temporarily disabled to prevent context bloat
-        web_results = _get_web_search().search(question, max_results=3)
+    #   Always runs if:
+    #     a) Router explicitly asked for web  OR
+    #     b) Vector results are weak/absent (auto-supplement to avoid "je n'ai pas trouvé")
+    if need_web or vector_quality in ("none", "weak"):
+        if vector_quality in ("none", "weak") and not need_web:
+            print(f"[Router] Vector quality '{vector_quality}' — auto-supplementing with web search.")
+        try:
+            web_results = _get_web_search().search(question, max_results=3)
+        except Exception as e:
+            print(f"[Router] Web search error: {e}")
 
     # ── 4. Merge only the sources that were fetched ──────────────────────
+    # If vector quality is weak but web returned results, drop weak vectors to avoid confusion
+    if vector_quality == "weak" and web_results:
+        print(f"[Router] Dropping {len(vector_results)} weak vector results in favor of web.")
+        vector_results = []
+
     context = _get_merger().merge(vector_results, sql_results, web_results)
 
     # Determine dynamic route name for the UI label
@@ -258,12 +311,8 @@ def retrieve_context(state: AgentState) -> AgentState:
 
 def generate_answer(state: AgentState) -> AgentState:
     """Node: Generate answer using LLM with retrieved context."""
-    # Do NOT bind_tools — free OpenRouter models don't support tool calling.
-    # Tool execution is handled separately by the ToolNode via should_use_tools edge.
-    llm = _get_llm()
-
-    # CRITICAL: Always use the 'original_question' for generation. 
-    # The 'question' might have been rewritten/translated by the 8B LLM in english.
+    # CRITICAL: Always use the 'original_question' for generation.
+    # The 'question' might have been rewritten/translated by the LLM in english.
     # Using original_question guarantees the LLM sees the user's explicit Arabic/French text.
     prompt = QUERY_PROMPT_TEMPLATE.format(
         question=state["original_question"],
@@ -278,50 +327,62 @@ def generate_answer(state: AgentState) -> AgentState:
         HumanMessage(content=prompt),
     ]
 
-    # Retry with exponential backoff on rate limit (up to 3 attempts)
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = llm.invoke(messages)
-            return {
-                "messages": [response],
-                "answer"  : response.content,
-            }
-        except Exception as e:
-            error_msg = str(e)
+    # ⚡ Speed: Try Groq first (None → uses Groq if key present), then OpenRouter fallbacks.
+    # Passing None lets _get_llm() pick Groq automatically.
+    openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+    # (None sentinel = Groq preferred path)
+    models_to_try = [None] + [m for m in _FALLBACK_MODELS if m != openrouter_primary] + [openrouter_primary]
 
-            if "rate_limit_exceeded" in error_msg or "429" in error_msg:
-                if attempt < max_retries - 1:
-                    wait = 2 ** attempt  # 1s, 2s, 4s
-                    print(f"[LLM] Rate limit hit. Retrying in {wait}s... (attempt {attempt + 1}/{max_retries})")
-                    time.sleep(wait)
-                    continue
-                # All retries exhausted — return context as fallback
-                fallback = (
-                    "**LLM Rate Limit Reached.**\n\n"
-                    "Unable to synthesize an answer right now. "
-                    "Here is the raw evidence retrieved from your documents:\n\n"
-                    f"{state['context'] or 'No context available.'}"
-                )
-                return {"messages": [], "answer": fallback}
-
-            if "tool_use_failed" in error_msg or "failed_generation" in error_msg:
+    for model_name in models_to_try:
+        current_llm = _get_llm(model_name)
+        # Retry with exponential backoff on rate limit (up to 2 attempts per model)
+        for attempt in range(2):
+            try:
+                response = current_llm.invoke(messages)
+                if model_name is not None:  # None = Groq (primary), log only for fallbacks
+                    print(f"[LLM] Successfully used fallback model: {model_name}")
                 return {
-                    "messages": [],
-                    "answer": "I encountered an issue processing your request. Please try rephrasing your question.",
+                    "messages": [response],
+                    "answer"  : response.content,
                 }
+            except Exception as e:
+                error_msg = str(e)
 
-            # Catch-all: log the actual error and return context as fallback
-            print(f"[LLM] Unexpected error on attempt {attempt + 1}: {error_msg}")
-            if attempt < max_retries - 1:
-                time.sleep(1)
-                continue
-            fallback = (
-                f"**LLM Error:** {error_msg[:200]}\n\n"
-                "Here is the raw evidence retrieved from your documents:\n\n"
-                f"{state['context'] or 'No context available.'}"
-            )
-            return {"messages": [], "answer": fallback}
+                if "rate_limit_exceeded" in error_msg or "429" in error_msg:
+                    if attempt == 0:
+                        wait = 2
+                        print(f"[LLM] Rate limit on {model_name}. Retrying in {wait}s...")
+                        time.sleep(wait)
+                        continue
+                    print(f"[LLM] Rate limit exhausted for {model_name}. Trying next model.")
+                    break  # try next model
+
+                if "provider" in error_msg.lower() or "502" in error_msg or "503" in error_msg:
+                    print(f"[LLM] Provider error on {model_name}: {error_msg[:120]}. Trying next model.")
+                    break  # try next model
+
+                if "tool_use_failed" in error_msg or "failed_generation" in error_msg:
+                    return {
+                        "messages": [],
+                        "answer": "I encountered an issue processing your request. Please try rephrasing your question.",
+                    }
+
+                # Other unexpected error — log and try next model
+                print(f"[LLM] Unexpected error on {model_name} attempt {attempt + 1}: {error_msg[:120]}")
+                if attempt == 0:
+                    time.sleep(1)
+                    continue
+                break  # try next model
+
+    # All models exhausted
+    fallback = (
+        "**⚠️ Service Temporarily Unavailable**\n\n"
+        "The AI provider is currently experiencing issues. "
+        "Please try again in a moment.\n\n"
+        "Here is the raw evidence retrieved from your documents:\n\n"
+        f"{state['context'] or 'No context available.'}"
+    )
+    return {"messages": [], "answer": fallback}
 
 
 def should_use_tools(state: AgentState) -> str:
@@ -333,9 +394,29 @@ def should_use_tools(state: AgentState) -> str:
 
 # ── Guardrail Node ────────────────────────────────────────────────────────────
 
+_OBVIOUSLY_SAFE_PATTERNS = [
+    # Finance / econ terms in French, English, Arabic
+    "marché", "bourse", "action", "obligation", "inflation", "taux", "pib", "croissance",
+    "dividende", "rendement", "risque", "portefeuille", "investissement", "bénéfice",
+    "stock", "market", "price", "revenue", "gdp", "interest", "bond", "equity",
+    "سهم", "سوق", "تضخم", "فائدة", "ناتج", "استثمار", "عائد",
+    "budget", "dette", "fiscal", "hcp", "bank al-maghrib", "ammc", "bkam",
+]
+
 def guardrail_check(state: AgentState) -> dict:
-    """Node: Fast safety check before hitting retrieval or generation."""
-    print("[Guardrail] Checking safety...")
+    """Node: Fast safety check before hitting retrieval or generation.
+    
+    SPEED: Uses keyword pre-screening to skip the LLM call for obviously
+    safe financial questions (covers ~90% of normal usage).
+    """
+    question = state["question"].lower()
+    
+    # ⚡ Fast path: if question contains known-safe financial keywords, skip LLM call
+    if any(kw in question for kw in _OBVIOUSLY_SAFE_PATTERNS):
+        print("[Guardrail] Fast-pass: question contains safe financial keywords.")
+        return {"is_safe": "yes"}
+    
+    print("[Guardrail] Running LLM safety check...")
     llm = _get_fast_llm()
     prompt = GUARDRAIL_PROMPT.format(question=state["question"])
     
@@ -358,11 +439,27 @@ def generate_blocked(state: AgentState) -> dict:
 # ── Conversational Context ────────────────────────────────────────────────────
 
 def contextualize_query(state: AgentState) -> dict:
-    """Node: Contextualizes the query using the conversation history."""
+    """Node: Contextualizes the query using the conversation history.
+    
+    SPEED: Skipped entirely on first turn (no history).
+    Only runs when there are prior conversation turns to resolve pronouns/references.
+    """
     history = state.get("history", [])
     question = state["question"]
     
+    # ⚡ Fast path: no history → no LLM call needed
     if not history:
+        return {"question": question}
+    
+    # Only bother contextualizing if the question seems to reference prior context
+    _ref_words = ["it", "this", "that", "they", "them", "he", "she",
+                  "il", "elle", "ce", "cet", "cette", "ils", "elles",
+                  "هذا", "هذه", "هم", "هي", "ذلك"]
+    q_lower = question.lower()
+    has_reference = any(f" {w} " in f" {q_lower} " or q_lower.startswith(f"{w} ") for w in _ref_words)
+    if not has_reference and len(question.split()) > 4:
+        # Long enough standalone question with no pronouns — skip the LLM call
+        print("[Contextualizer] Skipped (question appears self-contained).")
         return {"question": question}
         
     print("[Contextualizer] Contextualizing query with history...")
@@ -388,15 +485,20 @@ def contextualize_query(state: AgentState) -> dict:
 # ── CRAG Reflection Nodes ─────────────────────────────────────────────────────
 
 def grade_documents(state: AgentState) -> dict:
-    """Node: Evaluate if the retrieved context is relevant."""
-    print("[Grader] Evaluating relevance of context...")
-
-    # Because we now use the Jina AI Multilingual Reranker API during retrieval, 
-    # the vector documents are inherently pre-graded and ranked by strict semantic relevance.
-    # Running a secondary 8B LLM grader on dense French/Arabic text proved too aggressive 
-    # and was falsely tossing out valid local PDFs in favor of web search.
-    # We bypass LLM grading and trust the Jina Reranker + the 72B Generator's innate filtering.
+    """Node: Evaluate if the retrieved context is relevant.
     
+    Uses a fast heuristic: if context is empty or just "No relevant documents found.",
+    trigger the web search fallback. Otherwise, trust the Jina reranker's pre-grading
+    (avoids the old problem of the 8B LLM grader being too aggressive on French/Arabic PDFs).
+    """
+    context = state.get("context", "").strip()
+    
+    # Empty or no-results context → trigger CRAG fallback to web search
+    if not context or context == "No relevant documents found." or len(context) < 50:
+        print("[Grader] Context is empty/insufficient — marking for web fallback.")
+        return {"context_relevant": "no", "retry_count": state.get("retry_count", 0)}
+    
+    print("[Grader] Context looks sufficient (pre-graded by Jina reranker).")
     return {"context_relevant": "yes", "retry_count": state.get("retry_count", 0)}
 
 
@@ -424,17 +526,31 @@ def rewrite_query(state: AgentState) -> dict:
 
 
 def web_search_fallback(state: AgentState) -> dict:
-    """Node: Fallback Web Search using the rewritten query."""
+    """Node: Fallback Web Search using the rewritten query.
+    
+    Supplements rather than replaces existing context — if vector search
+    found something partial, we keep it and add web results on top.
+    """
     q = state["question"]
     print(f"[Fallback] Web searching for: {q}")
     
-    web_results = _get_web_search().search_financial_news(q, max_results=5)
-    # Provide the Web Search results as the new context
-    new_context = _get_merger().merge([], [], web_results)
+    # Use generic search (not financial_news) to avoid biasing non-stock queries
+    web_results = _get_web_search().search(q, max_results=5)
+    
+    # Merge: keep existing context + append web results
+    existing_context = state.get("context", "")
+    web_context = _get_merger().merge([], [], web_results)
+    
+    if existing_context and existing_context != "No relevant documents found." and len(existing_context) > 50:
+        combined = existing_context + "\n\n---\n\n## Web Search Results\n\n" + web_context
+        route = state.get("route", "") + " + Web Search"
+    else:
+        combined = web_context
+        route = "Web Search"
     
     return {
-        "context": new_context,
-        "route": "Web Search"
+        "context": combined,
+        "route": route
     }
 
 

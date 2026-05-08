@@ -120,26 +120,15 @@ def query_stream(request: QueryRequest):
 
     def event_generator():
         import os
-        import time
-        from langchain_openai import ChatOpenAI
+        import concurrent.futures
         from langchain_core.messages import SystemMessage, HumanMessage
         from agents.financial_agent import (
             retrieve_context, grade_documents, rewrite_query,
-            web_search_fallback, AgentState, _get_llm,
+            web_search_fallback, guardrail_check, generate_blocked,
+            contextualize_query, AgentState,
         )
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
-        from retrieval.query_router import QueryRoute
 
-        # ── 0. Check Semantic Cache (DISABLED) ──────────────────────────
-        # cache = _get_cache()
-        # cached = cache.get(request.question)
-        # if cached:
-        #     yield f"data: {{ \"token\": \"🟢 **[Semantic Cache Hit]**\\n\\n\" }}\n\n"
-        #     yield f"data: {{ \"token\": {json.dumps(cached['answer'])} }}\n\n"
-        #     yield f"data: {{ \"done\": true, \"context\": {json.dumps(cached['context'])}, \"route\": \"cache\" }}\n\n"
-        #     return
-            
-        # ── 1. Retrieval phase (synchronous) ────────────────────────────
         lc_history = _build_history(request.history)
 
         # Dynamic overwrite of API key for this process if provided
@@ -147,24 +136,48 @@ def query_stream(request: QueryRequest):
             os.environ["OPENROUTER_API_KEY"] = request.api_key.strip()
 
         state: AgentState = {
-            "messages"       : [],
-            "history"        : lc_history,
-            "question"       : request.question,
+            "messages"         : [],
+            "history"          : lc_history,
+            "question"         : request.question,
             "original_question": request.question,
-            "context"        : "",
-            "answer"         : "",
-            "route"          : "",
-            "context_relevant": "",
-            "retry_count"    : 0,
-            "persona"        : request.persona or "Balanced",
-            "top_n"          : request.top_k or 3,
-            "focus_mode"     : request.focus_mode or "New Chat",
+            "context"          : "",
+            "answer"           : "",
+            "route"            : "",
+            "context_relevant" : "",
+            "is_safe"          : "yes",
+            "retry_count"      : 0,
+            "persona"          : request.persona or "Balanced",
+            "top_n"            : request.top_k or 3,
+            "focus_mode"       : request.focus_mode or "New Chat",
         }
-        state.update(retrieve_context(state))
+
+        # ⚡ PARALLEL: Run guardrail check + retrieval at the same time.
+        # For ~90% of financial queries the guardrail is a free keyword fast-pass,
+        # so retrieval finishes first and we never wait for guardrail at all.
+        # For the remaining 10% (LLM call needed), retrieval and guardrail overlap.
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            # Contextualize before retrieval (fast: skips LLM when no history/pronouns)
+            state.update(contextualize_query(state))
+
+            future_guardrail = executor.submit(guardrail_check, state)
+            future_retrieval  = executor.submit(retrieve_context, state)
+
+            retrieval_result  = future_retrieval.result()   # wait for retrieval
+            guardrail_result  = future_guardrail.result()   # wait for guardrail
+
+        # Check safety gate
+        if guardrail_result.get("is_safe", "yes") != "yes":
+            blocked = generate_blocked(state)
+            yield f"data: {json.dumps({'token': blocked['answer']})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'context': '', 'route': 'blocked'})}\n\n"
+            return
+
+        state.update(retrieval_result)
+        state.update(guardrail_result)
+
+        # Grade & optional CRAG rewrite
         grade = grade_documents(state)
         state.update(grade)
-
-        # CRAG: one rewrite attempt if context is not relevant
         if state.get("context_relevant") == "no":
             state.update(rewrite_query(state))
             state.update(web_search_fallback(state))
@@ -173,7 +186,6 @@ def query_stream(request: QueryRequest):
         route   = state.get("route", "")
 
         # ── 2. Streaming generation ─────────────────────────────────────
-        llm = _get_llm()
         prior = lc_history[-4:]
         prompt = QUERY_PROMPT_TEMPLATE.format(
             question=request.question,
@@ -188,25 +200,44 @@ def query_stream(request: QueryRequest):
             HumanMessage(content=prompt),
         ]
 
-        try:
-            full_answer = ""
-            for chunk in llm.stream(messages):
-                token = chunk.content if hasattr(chunk, "content") else str(chunk)
-                if token:
-                    full_answer += token
-                    yield f"data: {json.dumps({'token': token})}\n\n"
-            
-            # Cache the newly generated answer (DISABLED)
-            # if full_answer:
-            #     cache.set(
-            #         query=request.question,
-            #         answer=full_answer,
-            #         context=context,
-            #         route=route
-            #     )
+        from agents.financial_agent import _FALLBACK_MODELS, _get_llm as _agent_get_llm
 
-        except Exception as e:
-            yield f"data: {json.dumps({'token': f'[Error: {str(e)}]'})}\n\n"
+        openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+        # ⚡ None sentinel = Groq preferred path (fastest), then OpenRouter fallbacks
+        models_to_try = [None] + [m for m in _FALLBACK_MODELS if m != openrouter_primary] + [openrouter_primary]
+
+        streamed = False
+        for model_name in models_to_try:
+            try:
+                llm_stream = _agent_get_llm(model_name)
+                full_answer = ""
+                for chunk in llm_stream.stream(messages):
+                    token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                    if token:
+                        full_answer += token
+                        yield f"data: {json.dumps({'token': token})}\n\n"
+                streamed = True
+                break  # success — exit model loop
+            except Exception as e:
+                error_msg = str(e)
+                is_provider_error = (
+                    "provider" in error_msg.lower()
+                    or "502" in error_msg
+                    or "503" in error_msg
+                    or "rate_limit" in error_msg
+                    or "429" in error_msg
+                )
+                if is_provider_error and model_name != models_to_try[-1]:
+                    print(f"[Stream] Provider error on {model_name}: {error_msg[:100]}. Trying next model.")
+                    continue  # try next model
+                # Final failure — emit a clean user-facing error
+                err_token = (
+                    "\n\n⚠️ **Le service IA est temporairement indisponible.** "
+                    "Veuillez réessayer dans quelques instants. "
+                    f"*(Détail technique: {error_msg[:120]})*"
+                )
+                yield f"data: {json.dumps({'token': err_token})}\n\n"
+                break
 
         # ── 3. Done signal with metadata ────────────────────────────────
         yield f"data: {json.dumps({'done': True, 'context': context, 'route': route})}\n\n"

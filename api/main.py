@@ -82,7 +82,7 @@ def health() -> dict:
     try:
         from storage.relational_db import RelationalDB
         db = RelationalDB()
-        db.execute("SELECT 1")
+        db.execute_sql("SELECT 1")
         checks["postgres"] = "ok"
     except Exception as e:
         checks["postgres"] = f"error: {str(e)[:80]}"

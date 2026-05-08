@@ -26,16 +26,25 @@ def pipeline():
 
 @app.route("/api/pipeline/tasks")
 def api_pipeline_tasks():
+    """Return only user-uploaded document ingestion tasks (chat uploads).
+    Filters by task name AND kwargs containing 'user_data' to exclude
+    local/scraping/background ingestion tasks."""
     if not Path(RESULTS_DB).exists():
         return jsonify({"tasks": []})
     try:
         conn = sqlite3.connect(RESULTS_DB)
         conn.row_factory = sqlite3.Row
         cur = conn.execute(
-            "SELECT task_id, status, result, date_done, traceback, name "
-            "FROM celery_taskmeta ORDER BY date_done DESC LIMIT 200"
+            "SELECT task_id, status, result, date_done, traceback, name, kwargs "
+            "FROM celery_taskmeta "
+            "WHERE name = 'tasks.document_ingestion_tasks.ingest_document' "
+            "  AND kwargs LIKE '%user_data%' "
+            "ORDER BY date_done DESC LIMIT 200"
         )
         rows = [dict(r) for r in cur.fetchall()]
+        # Remove raw kwargs from response (not needed by frontend)
+        for row in rows:
+            row.pop("kwargs", None)
         conn.close()
         return jsonify({"tasks": rows})
     except Exception as e:

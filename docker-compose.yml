@@ -59,10 +59,12 @@ services:
       - POSTGRES_HOST=postgres
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
       - CHROMA_PERSIST_DIR=/app/chroma_db
+      - API_BASE_URL=http://api:8000
     volumes:
       - ./data:/app/data
       - ./chroma_db:/app/chroma_db
       - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
     depends_on:
       redis:
         condition: service_healthy
@@ -105,10 +107,13 @@ services:
       - POSTGRES_HOST=postgres
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
       - CHROMA_PERSIST_DIR=/app/chroma_db
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     volumes:
       - ./data:/app/data
       - ./chroma_db:/app/chroma_db
       - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
     depends_on:
       redis:
         condition: service_healthy
@@ -152,3 +157,4 @@ services:
 
 volumes:
   postgres_data:
+  hf_cache:      # HuggingFace model cache — BGE-M3 downloaded once, reused across restarts
