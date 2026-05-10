@@ -24,7 +24,9 @@ elif REDIS_HOST in ("localhost", "127.0.0.1", "redis"):
         BROKER_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
     else:
         BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
-    RESULT_BACKEND = BROKER_URL
+    
+    # We MUST use SQLite for results so the Flask UI can run SELECT queries for the Pipeline Monitor
+    RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
 else:
     # Fallback: SQLite file-based broker (no Redis available)
     BROKER_URL = "sqla+sqlite:///celery_broker.sqlite"

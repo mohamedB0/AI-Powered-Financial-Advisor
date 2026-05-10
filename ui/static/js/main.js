@@ -338,6 +338,12 @@ function initChat() {
                 if (!res.ok) throw new Error(data.detail || "Upload failed");
 
                 const taskId = data.task_id;
+                // ── Persist task so the progress bar survives page navigation ──
+                localStorage.setItem('active_ingest_task', JSON.stringify({
+                    taskId,
+                    filename: files[0]?.name || 'Document',
+                    startedAt: Date.now()
+                }));
                 statusText.innerText = `Queued (Task: ${taskId.substring(0, 8)}...)`;
                 progressBar.style.width = '15%';
 
@@ -377,6 +383,7 @@ function initChat() {
                             if (statusData.step) highlightStep(statusData.step);
                         } else if (statusData.status === 'SUCCESS') {
                             clearInterval(pollInterval);
+                            localStorage.removeItem('active_ingest_task');
                             progressBar.style.width = '100%';
                             highlightStep('done');
                             const r = statusData.result || {};
@@ -388,6 +395,7 @@ function initChat() {
                             fileUpload.value = "";
                         } else if (statusData.status === 'FAILURE') {
                             clearInterval(pollInterval);
+                            localStorage.removeItem('active_ingest_task');
                             progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
                             statusText.innerText = 'Failed: ' + (statusData.info || 'Unknown error');
                             if (detailText) detailText.innerText = '';
@@ -409,6 +417,67 @@ function initChat() {
                 fileUpload.value = "";
             }
         });
+    }
+
+    // ── On page load: resume polling if there's an active task from a previous session ──
+    const savedTask = localStorage.getItem('active_ingest_task');
+    if (savedTask && progressContainer) {
+        try {
+            const { taskId, filename } = JSON.parse(savedTask);
+            progressContainer.classList.remove('hidden');
+            progressBar.style.width = '30%';
+            statusText.innerText = `Resuming: ${filename || 'Document'}...`;
+            const detailText = document.getElementById('upload-detail-text');
+            const stepOrder = ['loading', 'ocr', 'chunking', 'embedding', 'storing', 'done'];
+            function highlightStepResume(currentStep) {
+                document.querySelectorAll('.step-indicator').forEach(el => {
+                    const s  = el.dataset.step;
+                    const idx    = stepOrder.indexOf(s);
+                    const curIdx = stepOrder.indexOf(currentStep);
+                    if (idx < curIdx) { el.className = el.className.replace(/text-\S+/g, ''); el.classList.add('text-green-500'); }
+                    else if (idx === curIdx) { el.className = el.className.replace(/text-\S+/g, ''); el.classList.add('text-brand-text'); }
+                    else { el.className = el.className.replace(/text-\S+/g, ''); el.classList.add('text-gray-400'); }
+                });
+            }
+            let resumePollCount = 0;
+            const resumeInterval = setInterval(async () => {
+                resumePollCount++;
+                try {
+                    const statusRes  = await fetch(`${API_BASE}/ingest/status/${taskId}`);
+                    const statusData = await statusRes.json();
+                    if (statusData.status === 'PROGRESS') {
+                        const pct = statusData.percent || Math.min(90, 30 + (resumePollCount * 3));
+                        progressBar.style.width = `${pct}%`;
+                        statusText.innerText = statusData.step ? statusData.step.charAt(0).toUpperCase() + statusData.step.slice(1) : 'Processing...';
+                        if (detailText) detailText.innerText = statusData.detail || '';
+                        if (statusData.step) highlightStepResume(statusData.step);
+                    } else if (statusData.status === 'SUCCESS') {
+                        clearInterval(resumeInterval);
+                        localStorage.removeItem('active_ingest_task');
+                        progressBar.style.width = '100%';
+                        highlightStepResume('done');
+                        const r = statusData.result || {};
+                        const storedStr = r.stored || r.total_stored || r.total_success || 'All';
+                        statusText.innerText = `Done! ${storedStr} vectors stored`;
+                        if (detailText) detailText.innerText = r.filename ? `${r.filename} ingested successfully` : '';
+                        setTimeout(() => progressContainer.classList.add('hidden'), 6000);
+                    } else if (statusData.status === 'FAILURE') {
+                        clearInterval(resumeInterval);
+                        localStorage.removeItem('active_ingest_task');
+                        progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
+                        statusText.innerText = 'Failed: ' + (statusData.info || 'Unknown error');
+                        setTimeout(() => progressContainer.classList.add('hidden'), 6000);
+                    } else if (statusData.status === 'PENDING' && resumePollCount > 20) {
+                        // Task vanished (worker was killed) — stop polling and clean up
+                        clearInterval(resumeInterval);
+                        localStorage.removeItem('active_ingest_task');
+                        progressContainer.classList.add('hidden');
+                    }
+                } catch (err) { console.error('Resume poll error', err); }
+            }, 2000);
+        } catch (e) {
+            localStorage.removeItem('active_ingest_task');
+        }
     }
 }
 

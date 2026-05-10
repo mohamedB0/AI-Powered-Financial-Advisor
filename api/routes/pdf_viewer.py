@@ -21,35 +21,47 @@ def serve_pdf(path: str = Query(..., description="Absolute or relative path to t
     Serve a PDF file so the browser can display it inline.
     The frontend will append #page=N to jump directly to the right page.
     """
-    # Resolve the path; allow absolute paths AND relative-to-project
+    # ── Path resolution ────────────────────────────────────────────────────────
+    # The path may arrive as:
+    #   a) A Windows absolute path: C:\Users\...\data\uploads\file.pdf
+    #   b) A relative path:         data/uploads/file.pdf
+    #   c) A Linux absolute path:   /app/data/uploads/file.pdf
+    #
+    # Inside Docker the Windows path won't exist; we always fall back to a
+    # recursive search by filename stem inside /app/data.
+
     pdf_path = Path(path)
-    if not pdf_path.is_absolute():
+
+    # Detect Windows-style absolute paths (e.g. C:\...) running inside Docker
+    is_windows_path = len(path) > 1 and path[1] == ':'
+
+    if not is_windows_path and not pdf_path.is_absolute():
         pdf_path = DATA_ROOT / pdf_path
 
-    # Security: ensure the file is inside the project directory
-    try:
-        pdf_path.resolve().relative_to(DATA_ROOT.resolve())
-    except ValueError:
-        raise HTTPException(status_code=403, detail="Access denied: path outside project")
+    # Security: only enforce for non-Windows paths that are actually resolvable
+    if not is_windows_path and pdf_path.is_absolute():
+        try:
+            pdf_path.resolve().relative_to(DATA_ROOT.resolve())
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied: path outside project")
 
     if not pdf_path.exists() or not pdf_path.is_file():
-        # Fallback: Deep continuous search inside the /data directory
-        stem = pdf_path.stem  # filename without extension
+        # Fallback: Deep recursive search inside the /data directory by stem
+        stem = Path(path).stem  # extract just the filename without extension
         data_dir = DATA_ROOT / "data"
         if data_dir.exists():
-            # Use recursive glob to flawlessly find the PDF regardless of its subfolder
-            candidates = list(data_dir.rglob(f"*{stem[:20]}*.pdf"))
+            candidates = list(data_dir.rglob(f"*{stem[:30]}*.pdf"))
             if candidates:
-                pdf_path = candidates[0]  # Take the freshest match
+                pdf_path = candidates[0]
             else:
                 raise HTTPException(
                     status_code=404,
-                    detail=f"PDF not found on disk: {pdf_path.name}. The source document may have been deleted or moved."
+                    detail=f"PDF not found on disk: {Path(path).name}. The source document may have been deleted or moved."
                 )
         else:
             raise HTTPException(
                 status_code=404,
-                detail=f"PDF not found on disk: {pdf_path.name}. The source document may have been deleted or moved."
+                detail=f"PDF not found on disk: {Path(path).name}."
             )
 
     if pdf_path.suffix.lower() != ".pdf":

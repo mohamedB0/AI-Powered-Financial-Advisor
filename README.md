@@ -107,6 +107,30 @@ Run this to schedule automated daily stock and macro data scraping:
 celery -A tasks.celery_app beat --loglevel=info
 ```
 
+#### ⚠️ Queue Management & Purging Stale Tasks
+Redis persists tasks even when the worker is offline. When you restart the worker, it will pick up **all tasks that accumulated while it was stopped** — including old uploads from past sessions. To avoid this, **purge the queue before starting the worker**:
+
+**Recommended startup habit (run before starting Terminal 1):**
+```bash
+# Purge only the chat uploads queue (safe — won't affect scraping)
+celery -A tasks.celery_app purge -Q user_ingestion -f
+
+# Then start the worker fresh
+celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q user_ingestion -n chat_worker@%h
+```
+
+**Other purge commands:**
+```bash
+# Purge ALL queues at once (clears everything pending)
+celery -A tasks.celery_app purge -f
+
+# Inspect what's currently queued before deciding
+celery -A tasks.celery_app inspect reserved
+
+# Nuclear: flush all of Redis (wipes queues, results, and cache)
+python -c "import redis; r = redis.Redis(host='localhost', port=6379); r.flushdb(); print('Redis cleared!')"
+```
+
 #### Production Services Status
 
 | Service | Server | Port | Hosted In |
