@@ -1,8 +1,7 @@
 # AI Financial Advisor
 
 A distributed, multilingual Hybrid RAG (Retrieval-Augmented Generation) platform for financial analysis of Moroccan public finance institutions. Combines vector search over scraped documents with SQL queries over structured financial data and real-time web search to deliver structured insights via natural language — in **French, Arabic, and English**.
-
-**PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada **
+PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada 
 
 ---
 
