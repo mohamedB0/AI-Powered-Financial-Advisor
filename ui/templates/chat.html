@@ -22,8 +22,20 @@
         </div>
     </div>
 
-    <!-- Explicit Visible Ingestion Button -->
-    <div class="pb-2">
+    <div class="flex items-center gap-3 pb-2">
+        <!-- Market Panel Toggle -->
+        <button id="market-toggle-btn"
+            onclick="toggleMarketPanel()"
+            class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all flex items-center gap-1.5"
+            title="Toggle live market panel">
+            <span class="relative flex h-2 w-2">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            Live Market
+        </button>
+
+        <!-- Ingest Button -->
         <button onclick="document.getElementById('file-upload').click()"
             class="bg-white hover:bg-gray-50 shadow-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
             <i class="fa-solid fa-upload mr-2 text-gray-400"></i> Ingest Data
@@ -32,216 +44,426 @@
     </div>
 </div>
 
-<!-- Center canvas -->
-<div
-    class="flex-grow flex flex-col items-center justify-center p-8 max-w-4xl mx-auto w-full h-[calc(100vh-140px)] relative">
+<!-- Main two-column layout -->
+<div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 57px);">
 
-    <!-- Empty State Content (Visible when no chat history) -->
-    <div class="flex flex-col items-center text-center w-full" id="empty-state">
-        <!-- Flowery Logo Icon -->
-        <div
-            class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-brand-bg shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-            <i class="fa-solid fa-chart-line text-brand-text text-xl"></i>
-        </div>
+    <!-- ── LEFT: Chat Column ────────────────────────────────────────────────── -->
+    <div id="chat-column" class="flex flex-col flex-1 min-w-0 relative transition-all duration-300">
 
-        <h1 class="text-2xl font-bold text-gray-900 mb-3">Let's chat! What's on your mind?</h1>
-        <p class="text-[14px] text-gray-500 mb-10 max-w-lg leading-relaxed">
-            Choose from the prompts below or start asking queries. I'm here to help with whatever financial analysis you
-            need.
-        </p>
+        <!-- Center canvas -->
+        <div class="flex-grow flex flex-col items-center justify-center p-8 w-full h-full relative overflow-hidden">
 
-        <div class="text-[12px] text-gray-400 mb-4">Try these prompts:</div>
+            <!-- Empty State -->
+            <div class="flex flex-col items-center text-center w-full max-w-2xl" id="empty-state">
+                <div class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-brand-bg shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
+                    <i class="fa-solid fa-chart-line text-brand-text text-xl"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-3">Let's chat! What's on your mind?</h1>
+                <p class="text-[14px] text-gray-500 mb-10 max-w-lg leading-relaxed">
+                    Choose from the prompts below or start asking queries. I'm here to help with whatever financial analysis you need.
+                </p>
+                <div class="text-[12px] text-gray-400 mb-4">Try these prompts:</div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-[13px]">
+                    <button class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                        Who is the governor of Bank Al-Maghrib?
+                    </button>
+                    <button class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                        What's the inflation macro indicator?
+                    </button>
+                    <button class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                        Show me the top market movers.
+                    </button>
+                    <button class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
+                        What is the current inflation rate in Morocco?
+                    </button>
+                </div>
+            </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-[13px]">
-            <button
-                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
-                Who is the governor of Bank Al-Maghrib?
-            </button>
-            <button
-                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
-                What's the inflation macro indicator?
-            </button>
-            <button
-                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
-                Show me the top market movers.
-            </button>
-            <button
-                class="bg-white border border-gray-200 hover:border-gray-300 rounded-xl px-5 py-3.5 text-gray-700 hover:shadow-sm transition-all text-center prompt-btn">
-                Retrieve from my ingested document.
-            </button>
+            <!-- Chat History -->
+            <div id="chat-history" class="hidden w-full max-w-3xl flex-grow overflow-y-auto pb-24 flex-col gap-6">
+                <!-- Messages rendered via JS -->
+            </div>
+
+            <!-- Bottom Input Area (Sticky) -->
+            <div class="absolute bottom-8 w-full max-w-2xl px-4 z-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
+
+                <!-- Upload Progress UI -->
+                <div id="upload-progress-container"
+                    class="hidden w-full mb-3 bg-white border border-gray-200 shadow-[0_4px_15px_rgba(0,0,0,0.05)] rounded-2xl p-4 text-[13px] text-gray-700 flex flex-col gap-2 transition-all">
+                    <div class="flex justify-between font-semibold"><span class="flex items-center gap-2"><i
+                                class="fa-solid fa-folder-open text-brand-text"></i> Ingesting Document...</span><span
+                            id="upload-status-text" class="text-gray-500 font-normal">Uploading</span></div>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
+                        <div id="upload-progress-bar" class="bg-brand-text h-1.5 rounded-full transition-all duration-300"
+                            style="width: 10%"></div>
+                    </div>
+                    <div id="pipeline-steps" class="flex items-center justify-between mt-2 text-[11px] text-gray-400 px-1">
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="loading">
+                            <i class="fa-solid fa-file-arrow-up"></i><span>Upload</span>
+                        </div>
+                        <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="ocr">
+                            <i class="fa-solid fa-eye"></i><span>OCR</span>
+                        </div>
+                        <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="chunking">
+                            <i class="fa-solid fa-scissors"></i><span>Chunk</span>
+                        </div>
+                        <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="embedding">
+                            <i class="fa-solid fa-brain"></i><span>Embed</span>
+                        </div>
+                        <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="storing">
+                            <i class="fa-solid fa-database"></i><span>Store</span>
+                        </div>
+                        <div class="h-px bg-gray-200 flex-grow mx-1"></div>
+                        <div class="flex flex-col items-center gap-1 step-indicator" data-step="done">
+                            <i class="fa-solid fa-circle-check"></i><span>Done</span>
+                        </div>
+                    </div>
+                    <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
+                </div>
+
+                <div class="relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
+                    <button onclick="document.getElementById('file-upload').click()"
+                        class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
+                        title="Attach Document">
+                        <i class="fa-solid fa-paperclip text-lg"></i>
+                    </button>
+                    <textarea id="chat-input"
+                        class="w-full bg-transparent border-none text-gray-900 text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-gray-400"
+                        placeholder="Ask Something" rows="1"></textarea>
+                    <button id="send-btn"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-800 transition-colors bg-transparent border-none">
+                        <i class="fa-solid fa-paper-plane text-lg"></i>
+                    </button>
+                </div>
+
+                <div class="text-center mt-3 text-[11px] text-gray-400 flex items-center justify-center gap-4">
+                    <button id="download-report-btn"
+                        class="hover:text-gray-700 transition-colors font-medium flex items-center gap-1.5"><i
+                            class="fa-solid fa-file-export"></i> Export Full Report</button>
+                    <div class="w-1 h-1 rounded-full bg-gray-300"></div>
+                    <button id="clear-btn" class="hover:text-gray-700 transition-colors font-medium">Clear History</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- Real Chat History View (Hidden until user types) -->
-    <div id="chat-history" class="hidden w-full max-w-3xl flex-grow overflow-y-auto pb-24 flex-col gap-6">
-        <!-- Messages rendered via JS -->
-    </div>
+    <!-- ── RIGHT: Live Market Panel ─────────────────────────────────────────── -->
+    <div id="market-panel"
+        class="flex flex-col border-l border-gray-200 bg-white transition-all duration-300 overflow-hidden"
+        style="width: 380px; min-width: 380px;">
 
-    <!-- Bottom Input Area (Sticky) -->
-    <div class="absolute bottom-8 w-full max-w-2xl px-4 z-10 left-1/2 -translate-x-1/2 flex flex-col items-center">
-
-        <!-- Upload Progress UI -->
-        <div id="upload-progress-container"
-            class="hidden w-full mb-3 bg-white border border-gray-200 shadow-[0_4px_15px_rgba(0,0,0,0.05)] rounded-2xl p-4 text-[13px] text-gray-700 flex flex-col gap-2 transition-all">
-            <div class="flex justify-between font-semibold"><span class="flex items-center gap-2"><i
-                        class="fa-solid fa-folder-open text-brand-text"></i> Ingesting Document...</span><span
-                    id="upload-status-text" class="text-gray-500 font-normal">Uploading</span></div>
-            <div class="w-full bg-gray-100 rounded-full h-1.5 mt-1">
-                <div id="upload-progress-bar" class="bg-brand-text h-1.5 rounded-full transition-all duration-300"
-                    style="width: 10%"></div>
+        <!-- Panel Header -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50 flex-shrink-0">
+            <div class="flex items-center gap-2">
+                <span class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="text-[13px] font-semibold text-gray-800">BVC Live Market</span>
             </div>
-            <!-- Pipeline step indicators -->
-            <div id="pipeline-steps" class="flex items-center justify-between mt-2 text-[11px] text-gray-400 px-1">
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="loading">
-                    <i class="fa-solid fa-file-arrow-up"></i>
-                    <span>Upload</span>
-                </div>
-                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="ocr">
-                    <i class="fa-solid fa-eye"></i>
-                    <span>OCR</span>
-                </div>
-                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="chunking">
-                    <i class="fa-solid fa-scissors"></i>
-                    <span>Chunk</span>
-                </div>
-                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="embedding">
-                    <i class="fa-solid fa-brain"></i>
-                    <span>Embed</span>
-                </div>
-                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="storing">
-                    <i class="fa-solid fa-database"></i>
-                    <span>Store</span>
-                </div>
-                <div class="h-px bg-gray-200 flex-grow mx-1"></div>
-                <div class="flex flex-col items-center gap-1 step-indicator" data-step="done">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <span>Done</span>
-                </div>
+            <div class="flex items-center gap-2">
+                <span id="market-last-update" class="text-[11px] text-gray-400">Chargement...</span>
+                <button onclick="loadMarketData()" title="Refresh now"
+                    class="text-gray-400 hover:text-gray-700 transition-colors">
+                    <i class="fa-solid fa-rotate-right text-[12px]"></i>
+                </button>
             </div>
-            <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
         </div>
 
-        <div
-            class="relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
+        <!-- Index Ticker Strip -->
+        <div id="indices-strip" class="flex gap-3 px-4 py-2.5 border-b border-gray-100 overflow-x-auto flex-shrink-0 bg-white scrollbar-hide">
+            <div class="text-[11px] text-gray-400 italic whitespace-nowrap flex items-center">Indices...</div>
+        </div>
 
-            <button onclick="document.getElementById('file-upload').click()"
-                class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
-                title="Attach Document">
-                <i class="fa-solid fa-paperclip text-lg"></i>
+        <!-- Tabs: Stocks / Gainers / Losers -->
+        <div class="flex border-b border-gray-100 flex-shrink-0 bg-white">
+            <button class="market-tab active flex-1 py-2 text-[12px] font-semibold text-gray-700 border-b-2 border-gray-900 transition-colors" data-tab="all" onclick="switchMarketTab('all', this)">Tous</button>
+            <button class="market-tab flex-1 py-2 text-[12px] font-medium text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-600" data-tab="gainers" onclick="switchMarketTab('gainers', this)">
+                <i class="fa-solid fa-arrow-trend-up text-emerald-500 mr-1"></i>Hausse
             </button>
-
-            <textarea id="chat-input"
-                class="w-full bg-transparent border-none text-gray-900 text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-gray-400"
-                placeholder="Ask Something" rows="1"></textarea>
-
-            <button id="send-btn"
-                class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-800 transition-colors bg-transparent border-none">
-                <i class="fa-solid fa-paper-plane text-lg"></i>
+            <button class="market-tab flex-1 py-2 text-[12px] font-medium text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-600" data-tab="losers" onclick="switchMarketTab('losers', this)">
+                <i class="fa-solid fa-arrow-trend-down text-red-400 mr-1"></i>Baisse
+            </button>
+            <button class="market-tab flex-1 py-2 text-[12px] font-medium text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-600" data-tab="active" onclick="switchMarketTab('active', this)">
+                <i class="fa-solid fa-fire text-orange-400 mr-1"></i>Actif
             </button>
         </div>
 
-        <div class="text-center mt-3 text-[11px] text-gray-400 flex items-center justify-center gap-4">
-            <button id="download-report-btn"
-                class="hover:text-gray-700 transition-colors font-medium flex items-center gap-1.5"><i
-                    class="fa-solid fa-file-export"></i> Export Full Report</button>
-            <div class="w-1 h-1 rounded-full bg-gray-300"></div>
-            <button id="clear-btn" class="hover:text-gray-700 transition-colors font-medium">Clear History</button>
+        <!-- Summary Bar -->
+        <div id="market-summary-bar" class="flex items-center gap-3 px-4 py-2 bg-gray-50 border-b border-gray-100 text-[11px] text-gray-500 flex-shrink-0">
+            <span id="summary-total">— valeurs</span>
+            <span class="text-gray-300">|</span>
+            <span id="summary-gainers" class="text-emerald-600 font-semibold">— ↑</span>
+            <span id="summary-losers" class="text-red-500 font-semibold">— ↓</span>
+            <span id="summary-stable" class="text-gray-400">— =</span>
+        </div>
+
+        <!-- Stock Table — scrollable -->
+        <div class="flex-1 overflow-y-auto" id="stocks-table-container">
+            <!-- Column headers -->
+            <div class="sticky top-0 bg-gray-50 border-b border-gray-100 z-10">
+                <div class="grid text-[10px] font-semibold text-gray-400 uppercase tracking-wide px-3 py-2"
+                    style="grid-template-columns: 1fr 70px 60px 55px;">
+                    <span>Instrument</span>
+                    <span class="text-right">Cours</span>
+                    <span class="text-right">Var%</span>
+                    <span class="text-right">Vol.</span>
+                </div>
+            </div>
+
+            <!-- Loading state -->
+            <div id="stocks-loading" class="flex flex-col items-center justify-center py-12 gap-3">
+                <div class="w-6 h-6 border-2 border-gray-200 border-t-emerald-500 rounded-full animate-spin"></div>
+                <span class="text-[12px] text-gray-400">Connexion à la bourse...</span>
+            </div>
+
+            <!-- Error state -->
+            <div id="stocks-error" class="hidden flex flex-col items-center justify-center py-12 gap-2 px-4 text-center">
+                <i class="fa-solid fa-wifi text-gray-300 text-2xl"></i>
+                <span class="text-[12px] text-gray-400">Impossible de charger les données BVC.</span>
+                <button onclick="loadMarketData()" class="mt-1 text-[11px] text-emerald-600 hover:underline">Réessayer</button>
+            </div>
+
+            <!-- Stock rows rendered by JS -->
+            <div id="stocks-list" class="hidden"></div>
+        </div>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between px-4 py-2 border-t border-gray-100 bg-gray-50 flex-shrink-0">
+            <span class="text-[10px] text-gray-400">Source: Bourse de Casablanca</span>
+            <span class="text-[10px] text-gray-400">↻ 30s</span>
         </div>
     </div>
 </div>
 
-<script>
-    // Slight tweak to chat UI specific logic to toggle empty state
-    document.addEventListener("DOMContentLoaded", () => {
-        const input = document.getElementById("chat-input");
-        const sendBtn = document.getElementById("send-btn");
-        const emptyState = document.getElementById("empty-state");
-        const chatHistory = document.getElementById("chat-history");
-        const promptBtns = document.querySelectorAll(".prompt-btn");
+<!-- ── Scripts ──────────────────────────────────────────────────────────────── -->
+<style>
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    #stocks-table-container::-webkit-scrollbar { width: 4px; }
+    #stocks-table-container::-webkit-scrollbar-track { background: #f9fafb; }
+    #stocks-table-container::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
+    .stock-row:hover { background-color: #f9fafb; }
+    .stock-row { cursor: default; transition: background 0.15s; }
+    .var-up   { color: #059669; font-weight: 600; }
+    .var-down { color: #ef4444; font-weight: 600; }
+    .var-flat { color: #9ca3af; }
+    .market-tab.active { color: #111827; border-color: #111827; }
+</style>
 
-        function submitMsg() {
-            if (input.value.trim().length > 0) {
-                emptyState.style.display = "none";
-                chatHistory.classList.remove("hidden");
-                chatHistory.classList.add("flex");
-                // The actual logic is handled in main.js, this just handles UI toggles
-            }
+<script>
+// ── Chat UI ───────────────────────────────────────────────────────────────────
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("chat-input");
+    const sendBtn = document.getElementById("send-btn");
+    const emptyState = document.getElementById("empty-state");
+    const chatHistory = document.getElementById("chat-history");
+    const promptBtns = document.querySelectorAll(".prompt-btn");
+
+    function submitMsg() {
+        if (input.value.trim().length > 0) {
+            emptyState.style.display = "none";
+            chatHistory.classList.remove("hidden");
+            chatHistory.classList.add("flex");
+        }
+    }
+    sendBtn.addEventListener("click", submitMsg);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) submitMsg(); });
+    promptBtns.forEach(btn => btn.addEventListener("click", () => { input.value = btn.innerText; input.focus(); }));
+});
+
+// ── PDF Viewer Modal ──────────────────────────────────────────────────────────
+document.addEventListener("click", function (e) {
+    const link = e.target.closest("a[href^='pdf-viewer:']");
+    if (!link) return;
+    e.preventDefault();
+    const raw = link.getAttribute("href").replace("pdf-viewer:", "");
+    const pageMatch = raw.match(/&page=(\d+)$/);
+    const page = pageMatch ? parseInt(pageMatch[1]) : 1;
+    const encodedPath = pageMatch ? raw.slice(0, raw.lastIndexOf("&page=")) : raw;
+    const filePath = decodeURIComponent(encodedPath);
+    const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
+    const pdfUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}#page=${page}`;
+    document.getElementById("pdf-modal-title").textContent = filePath.split("\\").pop().split("/").pop() + "  —  Page " + page;
+    const iframe = document.getElementById("pdf-iframe");
+    const errorDiv = document.getElementById("pdf-error");
+    iframe.classList.add("hidden"); errorDiv.classList.add("hidden");
+    fetch(`${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}`, { method: "HEAD" })
+        .then(res => { if (res.ok) { iframe.src = pdfUrl; iframe.classList.remove("hidden"); } else { throw new Error("File could not be located on the server."); } })
+        .catch(err => { errorDiv.textContent = "⚠️ " + err.message; errorDiv.classList.remove("hidden"); });
+    document.getElementById("pdf-modal").classList.remove("hidden");
+});
+function closePdfModal() {
+    document.getElementById("pdf-modal").classList.add("hidden");
+    document.getElementById("pdf-iframe").src = "";
+}
+
+// ── Live Market Panel ─────────────────────────────────────────────────────────
+const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
+let _allStocks = [];
+let _currentTab = "all";
+let _marketOpen = true;
+let _refreshTimer = null;
+
+function toggleMarketPanel() {
+    const panel = document.getElementById("market-panel");
+    _marketOpen = !_marketOpen;
+    panel.style.width = _marketOpen ? "380px" : "0";
+    panel.style.minWidth = _marketOpen ? "380px" : "0";
+    panel.style.overflow = _marketOpen ? "hidden" : "hidden";
+    const btn = document.getElementById("market-toggle-btn");
+    btn.classList.toggle("bg-emerald-50", _marketOpen);
+    btn.classList.toggle("text-emerald-700", _marketOpen);
+    btn.classList.toggle("border-emerald-200", _marketOpen);
+    btn.classList.toggle("bg-gray-100", !_marketOpen);
+    btn.classList.toggle("text-gray-500", !_marketOpen);
+    btn.classList.toggle("border-gray-200", !_marketOpen);
+}
+
+function switchMarketTab(tab, el) {
+    _currentTab = tab;
+    document.querySelectorAll(".market-tab").forEach(t => {
+        t.classList.remove("active", "text-gray-700", "border-gray-900");
+        t.classList.add("text-gray-400", "border-transparent");
+    });
+    el.classList.add("active", "text-gray-700", "border-gray-900");
+    el.classList.remove("text-gray-400", "border-transparent");
+    renderStocks(_allStocks);
+}
+
+function fmtNum(v, dec=2) {
+    if (v == null || v === "") return "—";
+    const n = parseFloat(v);
+    if (isNaN(n)) return "—";
+    return n.toLocaleString("fr-MA", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+}
+
+function fmtVol(v) {
+    if (v == null || v === "") return "—";
+    const n = parseFloat(v);
+    if (isNaN(n)) return "—";
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + "M";
+    if (n >= 1_000) return (n / 1_000).toFixed(0) + "K";
+    return n.toFixed(0);
+}
+
+function renderStocks(stocks) {
+    const list = document.getElementById("stocks-list");
+    list.innerHTML = "";
+
+    let filtered = [...stocks];
+    if (_currentTab === "gainers") filtered = filtered.filter(s => parseFloat(s.variation_pct || 0) > 0).sort((a,b) => parseFloat(b.variation_pct) - parseFloat(a.variation_pct));
+    else if (_currentTab === "losers") filtered = filtered.filter(s => parseFloat(s.variation_pct || 0) < 0).sort((a,b) => parseFloat(a.variation_pct) - parseFloat(b.variation_pct));
+    else if (_currentTab === "active") filtered = filtered.filter(s => s.volume).sort((a,b) => parseFloat(b.volume||0) - parseFloat(a.volume||0)).slice(0, 30);
+
+    if (!filtered.length) {
+        list.innerHTML = `<div class="py-10 text-center text-[12px] text-gray-400">Aucune donnée disponible.</div>`;
+        list.classList.remove("hidden");
+        return;
+    }
+
+    filtered.forEach(s => {
+        const v = parseFloat(s.variation_pct || 0);
+        const varClass = v > 0 ? "var-up" : v < 0 ? "var-down" : "var-flat";
+        const varIcon  = v > 0 ? "▲" : v < 0 ? "▼" : "—";
+        const varStr   = v !== 0 ? `${varIcon} ${Math.abs(v).toFixed(2)}%` : "—";
+
+        const row = document.createElement("div");
+        row.className = "stock-row grid items-center px-3 py-2.5 border-b border-gray-50";
+        row.style.cssText = "grid-template-columns: 1fr 70px 60px 55px;";
+        row.innerHTML = `
+            <div class="min-w-0">
+                <div class="text-[12px] font-semibold text-gray-800 truncate">${s.ticker || "—"}</div>
+                <div class="text-[10px] text-gray-400 truncate leading-tight">${(s.name || "").substring(0,26)}</div>
+            </div>
+            <div class="text-right">
+                <div class="text-[12px] font-semibold text-gray-800">${fmtNum(s.last_price)}</div>
+                <div class="text-[10px] text-gray-400">MAD</div>
+            </div>
+            <div class="text-right">
+                <span class="text-[12px] ${varClass}">${varStr}</span>
+            </div>
+            <div class="text-right">
+                <span class="text-[11px] text-gray-500">${fmtVol(s.volume)}</span>
+            </div>`;
+        list.appendChild(row);
+    });
+
+    list.classList.remove("hidden");
+}
+
+function renderIndices(indices) {
+    const strip = document.getElementById("indices-strip");
+    if (!indices || !indices.length) return;
+    strip.innerHTML = indices.slice(0, 8).map(idx => {
+        const v = parseFloat(idx.variation_pct || 0);
+        const cls = v > 0 ? "text-emerald-600" : v < 0 ? "text-red-500" : "text-gray-400";
+        const arrow = v > 0 ? "▲" : v < 0 ? "▼" : "";
+        return `<div class="flex-shrink-0 text-center px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-100">
+            <div class="text-[10px] font-bold text-gray-600 whitespace-nowrap">${idx.name || idx.code}</div>
+            <div class="text-[11px] font-semibold text-gray-800">${fmtNum(idx.value, 2)}</div>
+            <div class="text-[10px] ${cls} font-semibold">${arrow} ${Math.abs(v).toFixed(2)}%</div>
+        </div>`;
+    }).join("");
+}
+
+async function loadMarketData() {
+    document.getElementById("stocks-loading").classList.remove("hidden");
+    document.getElementById("stocks-error").classList.add("hidden");
+    document.getElementById("stocks-list").classList.add("hidden");
+
+    try {
+        const [liveRes, idxRes] = await Promise.all([
+            fetch(`${API_BASE}/bvc/live`),
+            fetch(`${API_BASE}/bvc/indices`)
+        ]);
+
+        if (!liveRes.ok) throw new Error("BVC live endpoint failed");
+        const liveData = await liveRes.json();
+        _allStocks = liveData.stocks || [];
+
+        // Summary bar
+        const s = liveData.summary || {};
+        document.getElementById("summary-total").textContent = `${s.total_instruments || _allStocks.length} valeurs`;
+        document.getElementById("summary-gainers").textContent = `${s.gainers || 0} ↑`;
+        document.getElementById("summary-losers").textContent  = `${s.losers  || 0} ↓`;
+        document.getElementById("summary-stable").textContent  = `${s.stable  || 0} =`;
+
+        // Indices strip
+        if (idxRes.ok) {
+            const idxData = await idxRes.json();
+            renderIndices(idxData.indices || []);
         }
 
-        sendBtn.addEventListener("click", submitMsg);
-        input.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" && !e.shiftKey) submitMsg();
-        });
+        renderStocks(_allStocks);
+        document.getElementById("market-last-update").textContent = new Date().toLocaleTimeString("fr-MA", {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+        document.getElementById("stocks-loading").classList.add("hidden");
 
-        // Wire up example prompts
-        promptBtns.forEach(btn => {
-            btn.addEventListener("click", () => {
-                input.value = btn.innerText;
-                input.focus();
-            });
-        });
-    });
-
-    // ── PDF Viewer Modal ─────────────────────────────────────────────────────
-    // Intercept clicks on links with href starting with "pdf-viewer:"
-    // Format: pdf-viewer:ENCODED_FILE_PATH||PAGE_NUMBER
-    document.addEventListener("click", function (e) {
-        const link = e.target.closest("a[href^='pdf-viewer:']");
-        if (!link) return;
-        e.preventDefault();
-
-        const raw = link.getAttribute("href").replace("pdf-viewer:", "");
-        // Format: pdf-viewer:ENCODED_PATH&page=N
-        const pageMatch = raw.match(/&page=(\d+)$/);
-        const page = pageMatch ? parseInt(pageMatch[1]) : 1;
-        const encodedPath = pageMatch ? raw.slice(0, raw.lastIndexOf("&page=")) : raw;
-        const filePath = decodeURIComponent(encodedPath);
-
-        const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
-        const pdfUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}#page=${page}`;
-
-        // Populate modal header
-        document.getElementById("pdf-modal-title").textContent =
-            filePath.split("\\").pop().split("/").pop() + "  —  Page " + page;
-
-        // Check if the file exists before loading it in the iframe
-        const iframe = document.getElementById("pdf-iframe");
-        const errorDiv = document.getElementById("pdf-error");
-        iframe.classList.add("hidden");
-        errorDiv.classList.add("hidden");
-
-        fetch(`${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}`, { method: "HEAD" })
-            .then(res => {
-                if (res.ok) {
-                    iframe.src = pdfUrl;
-                    iframe.classList.remove("hidden");
-                } else {
-                    throw new Error("File could not be located on the server.");
-                }
-            })
-            .catch(err => {
-                errorDiv.textContent = "⚠️ " + err.message;
-                errorDiv.classList.remove("hidden");
-            });
-
-        document.getElementById("pdf-modal").classList.remove("hidden");
-    });
-
-    function closePdfModal() {
-        document.getElementById("pdf-modal").classList.add("hidden");
-        document.getElementById("pdf-iframe").src = "";
+    } catch (err) {
+        console.error("Market load error:", err);
+        document.getElementById("stocks-loading").classList.add("hidden");
+        document.getElementById("stocks-error").classList.remove("hidden");
     }
+}
+
+function startMarketRefresh() {
+    loadMarketData();
+    _refreshTimer = setInterval(loadMarketData, 30000);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    startMarketRefresh();
+});
 </script>
 
 <!-- PDF Viewer Modal -->
 <div id="pdf-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     onclick="if(event.target===this) closePdfModal()">
     <div class="bg-white rounded-2xl shadow-2xl flex flex-col" style="width:90vw; max-width:1100px; height:90vh;">
-        <!-- Modal Header -->
         <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200">
             <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
                 <i class="fa-regular fa-file-pdf text-red-500"></i>
@@ -252,9 +474,7 @@
                 <i class="fa-solid fa-xmark text-base"></i>
             </button>
         </div>
-        <!-- PDF Canvas -->
-        <div id="pdf-error"
-            class="hidden flex-1 flex items-center justify-center text-gray-500 text-sm p-8 text-center"></div>
+        <div id="pdf-error" class="hidden flex-1 flex items-center justify-center text-gray-500 text-sm p-8 text-center"></div>
         <iframe id="pdf-iframe" src="" class="flex-1 w-full rounded-b-2xl border-0" style="min-height:0;"></iframe>
     </div>
 </div>

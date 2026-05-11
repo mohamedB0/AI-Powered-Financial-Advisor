@@ -135,7 +135,7 @@ python -c "import redis; r = redis.Redis(host='localhost', port=6379); r.flushdb
 
 | Service | Server | Port | Hosted In |
 |---------|--------|------|-----------|
-| **postgres** | PostgreSQL 16 | 5432 | Docker |
+| **postgres** | PostgreSQL 18 | 5432 | Docker |
 | **redis** | Redis 7 | 6379 | Docker |
 | **api** | Uvicorn (4 workers) | 8000 | Docker |
 | **ui** | Waitress (4 threads) | 5000 | Docker |
@@ -210,7 +210,7 @@ POST /query/stream
 | Embeddings | BAAI/bge-m3 (1024 dims, multilingual) |
 | Reranker | Jina AI Multilingual Reranker API |
 | Vector DB | ChromaDB (local persistent) |
-| Relational DB | PostgreSQL 16 |
+| Relational DB | PostgreSQL 18 |
 | Task Queue | Celery + Redis |
 | Orchestration | LangGraph StateGraph (CRAG pattern) |
 | Web Search | Tavily API |

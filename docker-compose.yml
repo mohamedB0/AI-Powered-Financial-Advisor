@@ -65,6 +65,11 @@ services:
       - ./chroma_db:/app/chroma_db
       - ./logs:/app/logs
       - hf_cache:/root/.cache/huggingface
+      - ./api:/app/api
+      - ./agents:/app/agents
+      - ./retrieval:/app/retrieval
+      - ./storage:/app/storage
+      - ./ingestion:/app/ingestion
     depends_on:
       redis:
         condition: service_healthy
@@ -87,6 +92,8 @@ services:
     env_file: .env
     environment:
       - API_BASE_URL=http://api:8000
+    volumes:
+      - ./ui:/app/ui
     depends_on:
       - api
 

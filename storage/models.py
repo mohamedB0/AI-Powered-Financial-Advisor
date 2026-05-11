@@ -73,6 +73,24 @@ class FinancialMetric(Base):
         return f"<FinancialMetric {name} {self.metric_name}={self.value}>"
 
 
+class MacroIndicator(Base):
+    """Macroeconomic indicators: GDP, inflation, BVC indices, BKAM rates, HCP data."""
+
+    __tablename__ = "macro_indicators"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    country = Column(String(50), index=True)
+    indicator_name = Column(String(150), nullable=False, index=True)
+    value = Column(Float)
+    unit = Column(String(30))
+    date = Column(Date, index=True)
+    source = Column(String(100))
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<MacroIndicator {self.country} {self.indicator_name}={self.value} ({self.date})>"
+
+
 class Document(Base):
     """Uploaded documents metadata."""
 
