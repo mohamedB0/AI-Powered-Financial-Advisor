@@ -16,7 +16,7 @@ PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada
 | **In-UI PDF Viewer** | Clickable source citations open the original PDF page directly inside the chat interface |
 | **Export Tools** | Copy, Download .md, and Export Full Report buttons on every AI response |
 | **Live Settings Panel** | Adjust research depth, swap API keys, and change personas without restarting the server |
-| **Jina AI Reranker** | Multilingual semantic reranking of retrieved chunks for precision and token efficiency |
+| **Jina AI Reranker** | Cross-encoder reranking (`jina-reranker-v2-base-multilingual`) of retrieved chunks — 570M params, 100 languages, 8192-token context — for precision and token efficiency |
 | **CRAG Reflection Loop** | Automatic query rewriting and web search fallback when local context is insufficient |
 | **Guardrail System** | Fast safety check blocks illegal investment advice and off-topic queries |
 | **Background Ingestion** | Upload PDFs via the UI — Celery workers handle OCR, chunking, embedding, and storage asynchronously |
@@ -202,22 +202,23 @@ POST /query/stream
 
 ## Technology Stack
 
-| Component | Technology |
-|-----------|-----------|
-| Heavy LLM | Qwen-2.5-72B-Instruct via OpenRouter |
-| Fast LLM | Llama-3.1-8B-Instruct via OpenRouter |
-| Embeddings | BAAI/bge-m3 (1024 dims, multilingual) |
-| Reranker | Jina AI Multilingual Reranker API |
-| Vector DB | ChromaDB (local persistent) |
-| Relational DB | PostgreSQL 18 |
-| Task Queue | Celery + Redis |
-| Orchestration | LangGraph StateGraph (CRAG pattern) |
-| Web Search | Tavily API |
-| Web Scraping | Playwright + BeautifulSoup |
-| Backend API | FastAPI + Uvicorn |
-| Frontend UI | Flask + Tailwind CSS |
-| Monitoring | Celery Flower |
-| Containerization | Docker + Docker Compose |
+| Component | Technology | Notes |
+|-----------|-----------|-------|
+| **Primary LLM** | `llama-3.3-70b-versatile` via **Groq** | Ultra-fast inference (~10-20× faster than OpenRouter) |
+| **Fallback LLMs** | `qwen-2.5-72b`, `llama-3.3-70b`, `llama-3.1-8b` via **OpenRouter** | Used when Groq quota exceeded |
+| **Fast LLM** | `llama-3.1-8b-instant` via **Groq** | Guardrails, routing, rewriting, contextualisation |
+| **Embeddings** | `BAAI/bge-m3` — 1024 dims, multilingual | French + Arabic + English, local HuggingFace model |
+| **Reranker** | `jina-reranker-v2-base-multilingual` via **Jina AI API** | Cross-encoder, 570M params, 100 languages, 8192-token context window |
+| **Vector DB** | ChromaDB (local persistent) | Collection: `financial_data` |
+| **Relational DB** | PostgreSQL 18 | Stock prices, financial metrics, macro indicators |
+| **Task Queue** | Celery + Redis | Queues: `user_ingestion`, `scraping`, `data_fetch`, `local_ingestion` |
+| **Orchestration** | LangGraph `StateGraph` (CRAG pattern) | Nodes: guardrail → contextualize → retrieve → grade → (rewrite + web) → generate |
+| **Web Search** | Tavily API | Auto-triggered when vector quality score < 0.3 |
+| **Web Scraping** | Playwright + BeautifulSoup | Sources: AMMC, HCP, Bank Al-Maghrib |
+| **Backend API** | FastAPI + Uvicorn | Port 8000, SSE streaming |
+| **Frontend UI** | Flask + Tailwind CSS | Port 5000 |
+| **Observability** | **Arize Phoenix** (local) + Celery Flower | Phoenix UI: http://localhost:6006 — Flower: http://localhost:5555 |
+| **Containerisation** | Docker + Docker Compose | 7 production services |
 
 ---
 
@@ -226,12 +227,15 @@ POST /query/stream
 Key environment variables in `.env`:
 
 ```bash
-# LLM (OpenRouter) — Two-Brain Architecture
-OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=qwen/qwen-2.5-72b-instruct       # Heavy brain (generation)
-FAST_LLM_MODEL=meta-llama/llama-3.1-8b-instruct    # Fast brain (routing/grading)
+# LLM — Primary (Groq, ultra-fast)
+GROQ_API_KEY=gsk_...
+GROQ_MODEL=llama-3.3-70b-versatile        # Primary generation model
 
-# Embeddings (Multilingual)
+# LLM — Fallback (OpenRouter)
+OPENROUTER_API_KEY=sk-or-v1-...
+OPENROUTER_MODEL=qwen/qwen-2.5-72b-instruct
+
+# Embeddings (Multilingual, local)
 EMBEDDING_MODEL=BAAI/bge-m3
 EMBEDDING_DIMENSION=1024
 
@@ -239,7 +243,10 @@ EMBEDDING_DIMENSION=1024
 CHROMA_PERSIST_DIR=./chroma_db
 CHROMA_COLLECTION=financial_data
 
-# Reranker
+# Reranker — Jina AI
+# Model: jina-reranker-v2-base-multilingual
+# API:   https://api.jina.ai/v1/rerank
+# Specs: 570M params | 100 languages | 8192-token context | cross-encoder architecture
 JINA_API_KEY=jina_...
 
 # Web Search
@@ -252,6 +259,11 @@ DATABASE_URL=postgresql+psycopg2://postgres:root@localhost:5432/financial_adviso
 REDIS_HOST=localhost
 REDIS_PORT=6379
 USE_CELERY=true
+
+# Observability — Arize Phoenix (local, no API key needed)
+# Start Phoenix: python -m phoenix.server.main serve
+# Phoenix UI:   http://localhost:6006
+PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006/v1/traces
 ```
 
 ## Diagnostic Tools

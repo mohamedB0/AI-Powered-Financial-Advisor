@@ -17,6 +17,36 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from dotenv import load_dotenv
 load_dotenv()
 
+# ── Arize Phoenix Observability ───────────────────────────────────────────────
+import os
+
+def _setup_phoenix_tracing():
+    """Wire up Arize Phoenix as the OpenTelemetry trace backend.
+    Instruments all LangChain / LangGraph calls automatically.
+    Phoenix UI: http://localhost:6006
+    """
+    try:
+        from opentelemetry.sdk import trace as trace_sdk
+        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+        from openinference.instrumentation.langchain import LangChainInstrumentor
+        from opentelemetry import trace
+
+        endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
+        exporter = OTLPSpanExporter(endpoint=endpoint)
+        provider = trace_sdk.TracerProvider()
+        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        trace.set_tracer_provider(provider)
+
+        # Auto-instruments LangChain chains, LLM calls, retrievers, and LangGraph nodes
+        LangChainInstrumentor().instrument()
+        print(f"[Phoenix] ✅ Tracing active → {endpoint}  |  UI: http://localhost:6006")
+    except Exception as e:
+        print(f"[Phoenix] ⚠️  Tracing setup failed (non-fatal): {e}")
+
+_setup_phoenix_tracing()
+# ──────────────────────────────────────────────────────────────────────────────
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 

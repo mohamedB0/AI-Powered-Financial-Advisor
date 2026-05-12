@@ -91,23 +91,34 @@ function initChat() {
     let historyLog = [];
 
     function addMessage(role, content, isHtml = false) {
+        // On first message: hide empty state, reveal chat history
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) emptyState.style.display = 'none';
+        chatHistory.classList.remove('hidden');
+        chatHistory.classList.add('flex');
+
         const msgDiv = document.createElement('div');
         msgDiv.className = `flex w-full mt-4 mb-2 gap-4 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
         
         const avatarStr = role === 'user' 
-            ? `<div class="shrink-0 w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm border border-blue-200 mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
+            ? `<div class="shrink-0 w-8 h-8 rounded-full bg-[#2d4a36] flex items-center justify-center text-emerald-200 shadow-sm border border-[#3a5c44] mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
             : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-solid fa-chart-line text-[13px]"></i></div>`;
         
         const bubbleColor = role === 'user' 
-            ? 'bg-blue-600 text-white shadow-md border border-blue-700' 
+            ? 'bg-[#1a2e1f] text-white shadow-md border border-[#243b28]' 
             : 'bg-white text-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100';
+
+        // Asymmetric corners: sharp corner points toward the avatar
+        const bubbleRadius = role === 'user'
+            ? 'rounded-[20px] rounded-br-[4px]'
+            : 'rounded-[20px] rounded-bl-[4px]';
             
         // Use Tailwind typography (prose) to flawlessly render tables, bold, and bullet points from markdown
         const proseClass = role === 'user' ? 'prose-invert text-white' : 'prose-slate text-gray-700';
 
         msgDiv.innerHTML = `
             ${role === 'assistant' ? avatarStr : ''}
-            <div class="relative max-w-[85%] rounded-[20px] px-5 py-4 ${bubbleColor}">
+            <div class="relative max-w-[85%] ${bubbleRadius} px-5 py-4 ${bubbleColor}">
                 <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${isHtml ? content : marked.parse(content)}</div>
             </div>
             ${role === 'user' ? avatarStr : ''}
@@ -130,7 +141,15 @@ function initChat() {
         // Add to log (for simple state logic, API handles strict formats)
         historyLog.push({ role: 'user', content: text });
 
-        const assistantMsgDiv = addMessage('assistant', '<div class="flex items-center gap-2 text-gray-500 font-medium text-[13px]"><i class="fa-solid fa-circle-notch fa-spin text-[#2d4a36]"></i> Thinking...</div>', true);
+        const assistantMsgDiv = addMessage('assistant',
+            `<div class="flex items-center gap-2 py-1">
+                <div class="flex gap-1.5">
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                    <span class="typing-dot"></span>
+                </div>
+                <span class="text-[12px] text-gray-400 ml-1">Thinking…</span>
+            </div>`, true);
         const bubble = assistantMsgDiv.querySelector('.msg-bubble');
 
         try {
@@ -172,7 +191,9 @@ function initChat() {
                                     isFirstToken = false;
                                 }
                                 fullText += data.token;
-                                bubble.innerHTML = marked.parse(fullText);
+                                // Strip any [SOURCE: ...] inline citations the LLM may still emit
+                                const cleanText = fullText.replace(/\[SOURCE:[^\]]*\]/gi, '').replace(/\s{2,}/g, ' ').trimStart();
+                                bubble.innerHTML = marked.parse(cleanText);
                                 chatHistory.scrollTop = chatHistory.scrollHeight;
                             }
                             if (data.done) {
@@ -228,7 +249,15 @@ function initChat() {
                         <i class="fa-solid fa-chevron-right ctx-arrow text-[9px]"></i>
                         <i class="fa-solid fa-file-alt"></i>
                         <span class="font-medium">Retrieved Context</span>
-                        ${finalRoute ? `<span class="px-2 py-0.5 bg-gray-100 rounded-full">${finalRoute}</span>` : ''}
+                        ${finalRoute ? (() => {
+                            const r = finalRoute.toLowerCase();
+                            const cls = r.includes('vector') ? 'route-badge-vector'
+                                      : r.includes('web')    ? 'route-badge-web'
+                                      : r.includes('sql')    ? 'route-badge-sql'
+                                      : r.includes('cache')  ? 'route-badge-cache'
+                                      : 'route-badge-hybrid';
+                            return `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${cls}">${finalRoute}</span>`;
+                        })() : ''}
                     </div>
                     <div id="${contextId}" class="hidden text-[12px] text-gray-600 bg-gray-50 rounded-lg p-3 max-h-64 overflow-y-auto mt-1">${marked.parse(finalContext)}</div>
                 `;
@@ -255,7 +284,19 @@ function initChat() {
 
     clearBtn?.addEventListener('click', () => {
         chatHistory.innerHTML = '';
+        chatHistory.classList.add('hidden');
+        chatHistory.classList.remove('flex');
         historyLog = [];
+        const emptyState = document.getElementById('empty-state');
+        if (emptyState) emptyState.style.display = '';
+    });
+
+    // Prompt suggestion buttons — click to fill the input
+    document.querySelectorAll('.prompt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            chatInput.value = btn.innerText.trim();
+            chatInput.focus();
+        });
     });
 
     // Handle Focus Mode Tabs UI
@@ -264,12 +305,12 @@ function initChat() {
         tab.addEventListener('click', () => {
             // Remove active from all
             focusTabs.forEach(t => {
-                t.classList.remove('active', 'border-gray-900', 'text-gray-900', 'font-semibold');
+                t.classList.remove('active', 'border-[#1a2e1f]', 'text-gray-900', 'font-semibold');
                 t.classList.add('border-transparent', 'text-gray-500', 'font-medium');
             });
             // Add active to selected
             tab.classList.remove('border-transparent', 'text-gray-500', 'font-medium');
-            tab.classList.add('active', 'border-gray-900', 'text-gray-900', 'font-semibold');
+            tab.classList.add('active', 'border-[#1a2e1f]', 'text-gray-900', 'font-semibold');
             
             // Set global focus mode
             appSettings.focusMode = tab.dataset.mode;

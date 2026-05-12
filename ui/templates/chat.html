@@ -9,16 +9,16 @@
 <div class="flex items-center justify-between border-b border-ui-border px-6 pt-4">
     <div class="flex items-center gap-2" id="focus-tabs-container">
         <div data-mode="New Chat"
-            class="focus-tab active flex items-center gap-2 border-b-2 border-gray-900 pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer transition-colors">
-            New Chat
+            class="focus-tab active flex items-center gap-2 border-b-2 border-[#1a2e1f] pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer transition-colors">
+            <i class="fa-regular fa-comment-dots text-[11px]"></i> New Chat
         </div>
         <div data-mode="Company Analysis"
             class="focus-tab flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
-            Company Analysis
+            <i class="fa-solid fa-building text-[11px]"></i> Company Analysis
         </div>
         <div data-mode="Market Macro"
             class="focus-tab flex items-center gap-2 border-b-2 border-transparent pb-2 px-1 text-[13px] font-medium text-gray-500 hover:text-gray-700 cursor-pointer transition-colors">
-            Market Macro
+            <i class="fa-solid fa-globe text-[11px]"></i> Market Macro
         </div>
     </div>
 
@@ -55,12 +55,22 @@
 
             <!-- Empty State -->
             <div class="flex flex-col items-center text-center w-full max-w-2xl" id="empty-state">
-                <div class="w-12 h-12 flex items-center justify-center rounded-full border border-gray-200 mb-6 bg-brand-bg shadow-[0_2px_10px_rgba(0,0,0,0.02)]">
-                    <i class="fa-solid fa-chart-line text-brand-text text-xl"></i>
+                <!-- Simple monochrome SVG finance logo -->
+                <div class="w-16 h-16 flex items-center justify-center rounded-2xl mb-6 bg-white border border-gray-200 shadow-sm">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Bar chart bars -->
+                        <rect x="3"  y="18" width="5" height="10" rx="1.5" stroke="#6b7280" stroke-width="1.8"/>
+                        <rect x="11" y="12" width="5" height="16" rx="1.5" stroke="#6b7280" stroke-width="1.8"/>
+                        <rect x="19" y="7"  width="5" height="21" rx="1.5" stroke="#6b7280" stroke-width="1.8"/>
+                        <!-- Trend line over the bars -->
+                        <polyline points="5.5,17 13.5,11 21.5,6 29,3" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                        <!-- Arrow tip on trend line -->
+                        <polyline points="26,2 29,3 28,6" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-3">Let's chat! What's on your mind?</h1>
+                <h1 class="text-2xl font-bold text-gray-900 mb-3">AI Financial Advisor</h1>
                 <p class="text-[14px] text-gray-500 mb-10 max-w-lg leading-relaxed">
-                    Choose from the prompts below or start asking queries. I'm here to help with whatever financial analysis you need.
+                    Ask questions in French, Arabic or English. I'll analyse live BVC data, regulatory reports, and macroeconomic indicators to guide your decisions.
                 </p>
                 <div class="text-[12px] text-gray-400 mb-4">Try these prompts:</div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-2xl text-[13px]">
@@ -125,7 +135,7 @@
                     <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
                 </div>
 
-                <div class="relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
+                <div class="input-ring relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
                     <button onclick="document.getElementById('file-upload').click()"
                         class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
                         title="Attach Document">
@@ -153,7 +163,7 @@
 
     <!-- ── RIGHT: Live Market Panel ─────────────────────────────────────────── -->
     <div id="market-panel"
-        class="flex flex-col border-l border-gray-200 bg-white transition-all duration-300 overflow-hidden"
+        class="flex flex-col border-l-[3px] border-[#1a2e1f] bg-[#f8fafc] transition-all duration-300 overflow-hidden"
         style="width: 380px; min-width: 380px;">
 
         <!-- Panel Header -->
@@ -181,7 +191,7 @@
 
         <!-- Tabs: Stocks / Gainers / Losers -->
         <div class="flex border-b border-gray-100 flex-shrink-0 bg-white">
-            <button class="market-tab active flex-1 py-2 text-[12px] font-semibold text-gray-700 border-b-2 border-gray-900 transition-colors" data-tab="all" onclick="switchMarketTab('all', this)">Tous</button>
+            <button class="market-tab active flex-1 py-2 text-[12px] font-semibold text-gray-700 border-b-2 border-[#1a2e1f] transition-colors" data-tab="all" onclick="switchMarketTab('all', this)">Tous</button>
             <button class="market-tab flex-1 py-2 text-[12px] font-medium text-gray-400 border-b-2 border-transparent transition-colors hover:text-gray-600" data-tab="gainers" onclick="switchMarketTab('gainers', this)">
                 <i class="fa-solid fa-arrow-trend-up text-emerald-500 mr-1"></i>Hausse
             </button>
@@ -256,25 +266,6 @@
 </style>
 
 <script>
-// ── Chat UI ───────────────────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("chat-input");
-    const sendBtn = document.getElementById("send-btn");
-    const emptyState = document.getElementById("empty-state");
-    const chatHistory = document.getElementById("chat-history");
-    const promptBtns = document.querySelectorAll(".prompt-btn");
-
-    function submitMsg() {
-        if (input.value.trim().length > 0) {
-            emptyState.style.display = "none";
-            chatHistory.classList.remove("hidden");
-            chatHistory.classList.add("flex");
-        }
-    }
-    sendBtn.addEventListener("click", submitMsg);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.shiftKey) submitMsg(); });
-    promptBtns.forEach(btn => btn.addEventListener("click", () => { input.value = btn.innerText; input.focus(); }));
-});
 
 // ── PDF Viewer Modal ──────────────────────────────────────────────────────────
 document.addEventListener("click", function (e) {
@@ -303,7 +294,7 @@ function closePdfModal() {
 }
 
 // ── Live Market Panel ─────────────────────────────────────────────────────────
-const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
+// NOTE: API_BASE is already declared globally in main.js — do NOT redeclare it here.
 let _allStocks = [];
 let _currentTab = "all";
 let _marketOpen = true;
@@ -314,7 +305,7 @@ function toggleMarketPanel() {
     _marketOpen = !_marketOpen;
     panel.style.width = _marketOpen ? "380px" : "0";
     panel.style.minWidth = _marketOpen ? "380px" : "0";
-    panel.style.overflow = _marketOpen ? "hidden" : "hidden";
+    panel.style.overflow = "hidden";
     const btn = document.getElementById("market-toggle-btn");
     btn.classList.toggle("bg-emerald-50", _marketOpen);
     btn.classList.toggle("text-emerald-700", _marketOpen);
@@ -327,10 +318,10 @@ function toggleMarketPanel() {
 function switchMarketTab(tab, el) {
     _currentTab = tab;
     document.querySelectorAll(".market-tab").forEach(t => {
-        t.classList.remove("active", "text-gray-700", "border-gray-900");
+        t.classList.remove("active", "text-gray-700", "border-[#1a2e1f]");
         t.classList.add("text-gray-400", "border-transparent");
     });
-    el.classList.add("active", "text-gray-700", "border-gray-900");
+    el.classList.add("active", "text-gray-700", "border-[#1a2e1f]");
     el.classList.remove("text-gray-400", "border-transparent");
     renderStocks(_allStocks);
 }
@@ -368,13 +359,17 @@ function renderStocks(stocks) {
 
     filtered.forEach(s => {
         const v = parseFloat(s.variation_pct || 0);
-        const varClass = v > 0 ? "var-up" : v < 0 ? "var-down" : "var-flat";
-        const varIcon  = v > 0 ? "▲" : v < 0 ? "▼" : "—";
-        const varStr   = v !== 0 ? `${varIcon} ${Math.abs(v).toFixed(2)}%` : "—";
+        const pillCls = v > 0
+            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+            : v < 0
+            ? 'bg-red-50 text-red-600 border border-red-200'
+            : 'bg-gray-100 text-gray-500 border border-gray-200';
+        const varIcon = v > 0 ? "▲" : v < 0 ? "▼" : "";
+        const varStr  = v !== 0 ? `${varIcon} ${Math.abs(v).toFixed(2)}%` : "—";
 
         const row = document.createElement("div");
-        row.className = "stock-row grid items-center px-3 py-2.5 border-b border-gray-50";
-        row.style.cssText = "grid-template-columns: 1fr 70px 60px 55px;";
+        row.className = "stock-row grid items-center px-3 py-2.5 border-b border-gray-100";
+        row.style.cssText = "grid-template-columns: 1fr 70px 64px 50px;";
         row.innerHTML = `
             <div class="min-w-0">
                 <div class="text-[12px] font-semibold text-gray-800 truncate">${s.ticker || "—"}</div>
@@ -384,8 +379,8 @@ function renderStocks(stocks) {
                 <div class="text-[12px] font-semibold text-gray-800">${fmtNum(s.last_price)}</div>
                 <div class="text-[10px] text-gray-400">MAD</div>
             </div>
-            <div class="text-right">
-                <span class="text-[12px] ${varClass}">${varStr}</span>
+            <div class="text-right flex justify-end">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold ${pillCls}">${varStr}</span>
             </div>
             <div class="text-right">
                 <span class="text-[11px] text-gray-500">${fmtVol(s.volume)}</span>
@@ -401,9 +396,10 @@ function renderIndices(indices) {
     if (!indices || !indices.length) return;
     strip.innerHTML = indices.slice(0, 8).map(idx => {
         const v = parseFloat(idx.variation_pct || 0);
-        const cls = v > 0 ? "text-emerald-600" : v < 0 ? "text-red-500" : "text-gray-400";
+        const cls = v > 0 ? "text-emerald-700" : v < 0 ? "text-red-600" : "text-gray-500";
+        const chipBg = v > 0 ? "bg-emerald-50 border-emerald-200" : v < 0 ? "bg-red-50 border-red-200" : "bg-gray-50 border-gray-100";
         const arrow = v > 0 ? "▲" : v < 0 ? "▼" : "";
-        return `<div class="flex-shrink-0 text-center px-2 py-0.5 rounded-lg bg-gray-50 border border-gray-100">
+        return `<div class="flex-shrink-0 text-center px-2.5 py-1 rounded-lg border ${chipBg}">
             <div class="text-[10px] font-bold text-gray-600 whitespace-nowrap">${idx.name || idx.code}</div>
             <div class="text-[11px] font-semibold text-gray-800">${fmtNum(idx.value, 2)}</div>
             <div class="text-[10px] ${cls} font-semibold">${arrow} ${Math.abs(v).toFixed(2)}%</div>

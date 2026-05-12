@@ -125,16 +125,18 @@ def get_most_active(limit: int = 10) -> List[Dict[str, Any]]:
 
 def get_market_summary() -> Dict[str, Any]:
     stocks = get_market_live()
-    gainers = [s for s in stocks if s["variation_pct"] and float(s["variation_pct"]) > 0]
-    losers  = [s for s in stocks if s["variation_pct"] and float(s["variation_pct"]) < 0]
-    stable  = [s for s in stocks if s["variation_pct"] and float(s["variation_pct"]) == 0]
+    gainers = [s for s in stocks if s["variation_pct"] is not None and float(s["variation_pct"]) > 0]
+    losers  = [s for s in stocks if s["variation_pct"] is not None and float(s["variation_pct"]) < 0]
+    # Stable: explicitly 0 variation; no_data: variation_pct is None (not yet traded)
+    stable  = [s for s in stocks if s["variation_pct"] is not None and float(s["variation_pct"]) == 0]
+    no_data = [s for s in stocks if s["variation_pct"] is None]
     total_vol = sum(float(s["volume"] or 0) for s in stocks)
     total_cap = sum(float(s["capitalisation"] or 0) for s in stocks)
     return {
         "total_instruments": len(stocks),
         "gainers": len(gainers),
         "losers":  len(losers),
-        "stable":  len(stable),
+        "stable":  len(stable) + len(no_data),   # UI shows both as "="
         "total_volume_mad": round(total_vol, 2),
         "total_capitalisation_mad": round(total_cap, 2),
     }
