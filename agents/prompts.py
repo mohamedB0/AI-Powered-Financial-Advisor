@@ -18,6 +18,7 @@ SYSTEM_PROMPT = """You are an expert AI Financial Advisor specializing in:
 6. YOU MUST perfectly match the language of the user's question in your final response. If the user asks in Arabic, you MUST reply entirely in Arabic, translating any French/English data internally.
 7. NEVER mention internal system details like databases, PostgreSQL, vector stores, or retrieval pipelines to the user. Just answer naturally as if you are a knowledgeable advisor.
 8. Only call tools if the user asks for real-time data not in the context.
+9. DO NOT use any emojis in your response. Keep the tone strictly professional, clear, and structured (use markdown lists and bold text for readability).
 
 ## Available Tools
 - get_stock_price: Stock price and 5-day history
@@ -44,7 +45,8 @@ QUERY_PROMPT_TEMPLATE = """## User Question
 - Answer confidently using whatever relevant data is available. Do NOT say you lack information if any relevant data is present in the context above.
 - NEVER start your response with an apology like "Désolé, mais je n'ai pas trouvé..." if you are going to provide the answer using another source in the context.
 - NEVER mention internal systems, databases, or retrieval methods to the user.
-- CRITICAL: YOU MUST perfectly match the language of the user's question! If the question above is in Arabic, your entire response MUST be in Arabic. If French, in French. Translate the context data internally if needed."""
+- CRITICAL: YOU MUST perfectly match the language of the user's question! If the question above is in Arabic, your entire response MUST be in Arabic. If French, in French. Translate the context data internally if needed.
+- FORMATTING: Structure your response cleanly using bullet points, paragraphs, and bold text. ABSOLUTELY NO EMOJIS."""
 
 
 SUMMARY_PROMPT_TEMPLATE = """Summarise the following financial document excerpt in 3-5 concise bullet points,

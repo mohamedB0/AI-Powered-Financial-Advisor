@@ -40,9 +40,9 @@ def _setup_phoenix_tracing():
 
         # Auto-instruments LangChain chains, LLM calls, retrievers, and LangGraph nodes
         LangChainInstrumentor().instrument()
-        print(f"[Phoenix] ✅ Tracing active → {endpoint}  |  UI: http://localhost:6006")
+        print(f"[Phoenix] Tracing active -> {endpoint}  |  UI: http://localhost:6006")
     except Exception as e:
-        print(f"[Phoenix] ⚠️  Tracing setup failed (non-fatal): {e}")
+        print(f"[Phoenix] Tracing setup failed (non-fatal): {e}")
 
 _setup_phoenix_tracing()
 # ──────────────────────────────────────────────────────────────────────────────

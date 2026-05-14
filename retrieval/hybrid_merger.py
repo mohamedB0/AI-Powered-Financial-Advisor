@@ -52,8 +52,8 @@ class HybridMerger:
         # ── Vector (Document) Context ─────────────────────────────────────────
         if has_vector:
             parts.append("### 📄 Retrieved Documents Summary\n")
-            parts.append("| # | Source | Metadata | Relevance |")
-            parts.append("|---|--------|----------|-----------|")
+            parts.append("| # | Source | Metadata | Score |")
+            parts.append("|---|--------|----------|-------|")
             
             seen_texts = set()
             filtered_results = []
@@ -83,10 +83,10 @@ class HybridMerger:
                 
                 meta_str = ", ".join(tags) if tags else "N/A"
                 
-                score = r.get("score", 0)
-                relevance_pct = min(int(score * 100), 100)
-                relevance_bar = "█" * (relevance_pct // 10) + "░" * (10 - relevance_pct // 10)
-                parts.append(f"| {count} | {source} | {meta_str} | {relevance_bar} {relevance_pct}% |")
+                # Use rerank_score if available (from Jina), otherwise base vector score
+                raw_score = meta.get("rerank_score") or r.get("score", 0)
+                score_str = f"{float(raw_score):.4f}"
+                parts.append(f"| {count} | {source} | {meta_str} | {score_str} |")
                 
             parts.append("\n### 🔍 Document Excerpts\n")
             for count, r in enumerate(filtered_results, 1):

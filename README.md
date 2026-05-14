@@ -27,11 +27,11 @@ PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada
 ## Architecture Overview
 
 ```
-┌─────────────┐     ┌──────────────┐     ┌─────────────────┐
-│   Flask UI   │────▶│  FastAPI API  │────▶│  LangGraph Agent │
-│  (Waitress)  │     │  (Uvicorn)   │     │   StateGraph     │
-│  Port 5000   │     │  Port 8000   │     └────────┬────────┘
-└─────────────┘     └──────────────┘              │
+┌─────────────┐      ┌──────────────┐     ┌─────────────────┐
+│ Flask UI    │──▶   │  FastAPI API │──▶│  LangGraph Agent │
+│(Waitress)   │      │  (Uvicorn)   │     │   StateGraph    │
+│Port 5000    │      │  Port 8000   │     └────────┬────────┘
+└─────────────┘      └──────────────┘              │
                                           ┌───────┼───────┐
                                           ▼       ▼       ▼
                                      ┌────────┐ ┌─────┐ ┌─────┐
