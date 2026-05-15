@@ -37,8 +37,8 @@
 
         <!-- Ingest Button -->
         <button onclick="document.getElementById('file-upload').click()"
-            class="bg-white hover:bg-gray-50 shadow-sm text-gray-700 border border-gray-200 rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
-            <i class="fa-solid fa-upload mr-2 text-gray-400"></i> Ingest Data
+            class="bg-[#1a2e1f] hover:bg-[#243b28] shadow-sm text-white border border-[#243b28] rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
+            <i class="fa-solid fa-upload mr-2 text-emerald-400"></i> Ingest Data
         </button>
         <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.txt,.csv,.md,.html,.docx">
     </div>
@@ -68,7 +68,7 @@
                         <polyline points="26,2 29,3 28,6" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-gray-900 mb-3">AI Financial Advisor</h1>
+                <h1 class="text-4xl font-bold text-[#1a2e1f] mb-3 tracking-tight" style="font-family: 'Playfair Display', serif;">Alpha <span class="text-emerald-600 italic">Insight</span></h1>
                 <p class="text-[14px] text-gray-500 mb-10 max-w-lg leading-relaxed">
                     Ask questions in French, Arabic or English. I'll analyse live BVC data, regulatory reports, and macroeconomic indicators to guide your decisions.
                 </p>
@@ -135,17 +135,17 @@
                     <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
                 </div>
 
-                <div class="input-ring relative w-full bg-[#f4f4f5] rounded-[24px] flex items-center border border-transparent focus-within:border-gray-300 focus-within:bg-white focus-within:shadow-sm transition-all duration-300 pl-3">
+                <div class="input-ring relative w-full bg-[#1a2e1f] hover:bg-[#243b28] rounded-[24px] flex items-center border border-[#243b28] focus-within:border-emerald-500 focus-within:bg-[#243b28] focus-within:shadow-sm transition-all duration-300 pl-3">
                     <button onclick="document.getElementById('file-upload').click()"
-                        class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-700 transition-colors flex-shrink-0"
+                        class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
                         title="Attach Document">
                         <i class="fa-solid fa-paperclip text-lg"></i>
                     </button>
                     <textarea id="chat-input"
-                        class="w-full bg-transparent border-none text-gray-900 text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-gray-400"
+                        class="w-full bg-transparent border-none text-white text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-white/40"
                         placeholder="Ask Something" rows="1"></textarea>
                     <button id="send-btn"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-800 transition-colors bg-transparent border-none">
+                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/50 hover:text-emerald-400 hover:bg-white/10 rounded-full transition-colors bg-transparent border-none">
                         <i class="fa-solid fa-paper-plane text-lg"></i>
                     </button>
                 </div>

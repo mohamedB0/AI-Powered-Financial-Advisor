@@ -177,7 +177,7 @@ mark.ctx-highlight {
 .input-ring:focus-within {
     box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18), 0 4px 20px rgba(0,0,0,0.06);
     border-color: #10b981 !important;
-    background: #ffffff !important;
+    background: #243b28 !important;
 }
 
 /* ── Typing indicator dots ───────────────────────────────────────────────── */

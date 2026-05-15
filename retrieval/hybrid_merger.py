@@ -51,7 +51,7 @@ class HybridMerger:
 
         # ── Vector (Document) Context ─────────────────────────────────────────
         if has_vector:
-            parts.append("### 📄 Retrieved Documents Summary\n")
+            parts.append("### Retrieved Documents Summary\n")
             parts.append("| # | Source | Metadata | Score |")
             parts.append("|---|--------|----------|-------|")
             
@@ -88,7 +88,7 @@ class HybridMerger:
                 score_str = f"{float(raw_score):.4f}"
                 parts.append(f"| {count} | {source} | {meta_str} | {score_str} |")
                 
-            parts.append("\n### 🔍 Document Excerpts\n")
+            parts.append("\n### Document Excerpts\n")
             for count, r in enumerate(filtered_results, 1):
                 meta = r.get("metadata", {}) if isinstance(r.get("metadata"), dict) else r
                 source = meta.get("source_file") or meta.get("source") or "unknown"
@@ -115,7 +115,7 @@ class HybridMerger:
                 if file_path and file_path != "unknown":
                     import urllib.parse
                     encoded_path = urllib.parse.quote(str(file_path), safe="")
-                    pdf_link = f"[📄 {source}{meta_label}](pdf-viewer:{encoded_path}&page={page_num})"
+                    pdf_link = f"[{source}{meta_label}](pdf-viewer:{encoded_path}&page={page_num})"
                     parts.append(f"**Excerpt {count}** — {pdf_link}")
                 else:
                     parts.append(f"**Excerpt {count}** — `[SOURCE: {source}{meta_label}]`")
