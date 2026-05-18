@@ -66,7 +66,6 @@ function highlightKeywordsInContext(containerEl, question) {
 let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
     persona: 'Balanced',
     depth: 3,
-    apiKey: '',
     focusMode: 'New Chat'
 };
 
@@ -141,6 +140,10 @@ function initChat() {
         // Add to log (for simple state logic, API handles strict formats)
         historyLog.push({ role: 'user', content: text });
 
+        // Persist user message to DB
+        const convId = await ensureConversation();
+        if (convId) saveMessage(convId, 'user', text);
+
         const assistantMsgDiv = addMessage('assistant',
             `<div class="flex items-center gap-2 py-1">
                 <div class="flex gap-1.5">
@@ -153,7 +156,7 @@ function initChat() {
         const bubble = assistantMsgDiv.querySelector('.msg-bubble');
 
         try {
-            const res = await fetch(`${API_BASE}/query/stream`, {
+            const res = await authFetch(`${API_BASE}/query/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
@@ -161,7 +164,6 @@ function initChat() {
                     history: currentHistory,
                     persona: appSettings.persona,
                     top_k: parseInt(appSettings.depth),
-                    api_key: appSettings.apiKey,
                     focus_mode: appSettings.focusMode
                 })
             });
@@ -201,6 +203,12 @@ function initChat() {
                                 finalContext = data.context || "";
                                 finalRoute = data.route || "";
                                 historyLog.push({ role: 'assistant', content: fullText });
+
+                                // Persist assistant message to DB
+                                if (_currentConversationId) {
+                                    saveMessage(_currentConversationId, 'assistant', fullText, finalRoute);
+                                    refreshHistory();
+                                }
 
                                 // Add Export Actions
                                 const actionsDiv = document.createElement('div');
@@ -289,6 +297,8 @@ function initChat() {
         historyLog = [];
         const emptyState = document.getElementById('empty-state');
         if (emptyState) emptyState.style.display = '';
+        // Start a fresh conversation
+        if (typeof startNewConversation === 'function') startNewConversation();
     });
 
     // Prompt suggestion buttons — click to fill the input
@@ -324,22 +334,110 @@ function initChat() {
             return;
         }
 
-        let reportStr = "# AI Financial Advisory Session Report\n\n";
-        reportStr += `*Generated on: ${new Date().toLocaleString()}*\n\n---\n\n`;
+        // Build a styled HTML document for PDF export
+        const user = getUser();
+        const userName = user?.full_name || user?.email || 'User';
+        const dateStr = new Date().toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 
+        let messagesHtml = '';
         for (const msg of historyLog) {
             if (msg.role === 'user') {
-                reportStr += `### 🧑 Question:\n${msg.content}\n\n`;
+                messagesHtml += `
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: #1a2e1f; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: #a7f3d0; font-size: 12px; font-weight: bold;">U</span>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 600; color: #374151;">You</span>
+                        </div>
+                        <div style="background: #f3f4f6; border-radius: 12px; padding: 14px 18px; margin-left: 36px; font-size: 13px; color: #1f2937; line-height: 1.6;">
+                            ${marked.parse(msg.content)}
+                        </div>
+                    </div>`;
             } else if (msg.role === 'assistant') {
-                reportStr += `**🤖 Advisor Analysis:**\n${msg.content}\n\n---\n\n`;
+                messagesHtml += `
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                            <div style="width: 28px; height: 28px; border-radius: 50%; background: #eef2ee; display: flex; align-items: center; justify-content: center;">
+                                <span style="color: #2d4a36; font-size: 13px;">&#x1F4CA;</span>
+                            </div>
+                            <span style="font-size: 12px; font-weight: 600; color: #374151;">Alpha Insight</span>
+                        </div>
+                        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; margin-left: 36px; font-size: 13px; color: #1f2937; line-height: 1.7;">
+                            ${marked.parse(msg.content)}
+                        </div>
+                    </div>`;
             }
         }
 
-        const blob = new Blob([reportStr], { type: 'text/markdown' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `Financial_Session_Report_${Date.now()}.md`;
-        a.click();
+        const reportHtml = `
+            <div id="pdf-report-content" style="font-family: 'Segoe UI', sans-serif; max-width: 700px; margin: 0 auto; padding: 40px 30px;">
+                <!-- Header -->
+                <div style="text-align: center; margin-bottom: 36px; padding-bottom: 24px; border-bottom: 2px solid #e5e7eb;">
+                    <h1 style="font-size: 24px; font-weight: 700; color: #1a2e1f; margin: 0;">
+                        Alpha <span style="color: #059669; font-style: italic;">Insight</span>
+                    </h1>
+                    <p style="font-size: 13px; color: #6b7280; margin-top: 6px;">Financial Advisory Session Report</p>
+                </div>
+
+                <!-- Meta -->
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: #6b7280; margin-bottom: 28px; padding: 12px 16px; background: #f9fafb; border-radius: 8px;">
+                    <span><strong>User:</strong> ${userName}</span>
+                    <span><strong>Date:</strong> ${dateStr}</span>
+                    <span><strong>Messages:</strong> ${historyLog.length}</span>
+                </div>
+
+                <!-- Messages -->
+                ${messagesHtml}
+
+                <!-- Footer -->
+                <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #9ca3af;">
+                    Generated by Alpha Insight — AI Financial Advisor | PFE 2026
+                </div>
+            </div>
+        `;
+
+        // Create hidden container
+        const container = document.createElement('div');
+        container.style.position = 'fixed';
+        container.style.left = '-9999px';
+        container.style.top = '0';
+        container.innerHTML = reportHtml;
+        document.body.appendChild(container);
+
+        const element = container.querySelector('#pdf-report-content');
+
+        // Use html2pdf.js
+        const opt = {
+            margin: [10, 5, 10, 5],
+            filename: `Alpha_Insight_Report_${new Date().toISOString().split('T')[0]}.pdf`,
+            image: { type: 'jpeg', quality: 0.95 },
+            html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+            pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        };
+
+        // Change button text during export
+        const oldHtml = dlReportBtn.innerHTML;
+        dlReportBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Generating PDF...';
+        dlReportBtn.disabled = true;
+
+        html2pdf().set(opt).from(element).save().then(() => {
+            document.body.removeChild(container);
+            dlReportBtn.innerHTML = '<i class="fa-solid fa-check text-green-500"></i> Downloaded!';
+            setTimeout(() => { dlReportBtn.innerHTML = oldHtml; dlReportBtn.disabled = false; }, 2500);
+        }).catch(err => {
+            console.error('PDF export failed:', err);
+            document.body.removeChild(container);
+            dlReportBtn.innerHTML = oldHtml;
+            dlReportBtn.disabled = false;
+            // Fallback: download as markdown
+            const blob = new Blob([historyLog.map(m => `${m.role === 'user' ? '### Question' : '### Answer'}\n${m.content}\n\n---\n`).join('')], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `Alpha_Insight_Report_${Date.now()}.md`;
+            a.click();
+        });
     });
 
     // File Upload / Ingestion Logic
@@ -370,7 +468,7 @@ function initChat() {
 
             try {
                 const endpoint = isBatch ? `${API_BASE}/ingest/batch` : `${API_BASE}/ingest/async`;
-                const res = await fetch(endpoint, {
+                const res = await authFetch(endpoint, {
                     method: 'POST',
                     body: formData
                 });
@@ -753,7 +851,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const selectPersona = document.getElementById('setting-persona');
     const sliderDepth = document.getElementById('setting-depth');
     const depthVal = document.getElementById('depth-val');
-    const inputApiKey = document.getElementById('setting-api-key');
 
     // Update slider value text dynamically
     sliderDepth?.addEventListener('input', (e) => {
@@ -766,7 +863,6 @@ document.addEventListener('DOMContentLoaded', () => {
         selectPersona.value = appSettings.persona;
         sliderDepth.value = appSettings.depth;
         if(depthVal) depthVal.innerText = appSettings.depth;
-        inputApiKey.value = appSettings.apiKey;
 
         settingsModal.classList.remove('hidden');
         setTimeout(() => {
@@ -795,7 +891,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save to global and local storage
         appSettings.persona = selectPersona.value;
         appSettings.depth = sliderDepth.value;
-        appSettings.apiKey = inputApiKey.value.trim();
         
         localStorage.setItem('ai_settings', JSON.stringify(appSettings));
         closeSettings();

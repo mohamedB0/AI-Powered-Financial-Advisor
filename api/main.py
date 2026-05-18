@@ -51,11 +51,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Routers already carry their own prefix + tags
+from api.routes.auth import router as auth_router
 from api.routes.query import router as query_router
 from api.routes.ingest import router as ingest_router
 from api.routes.stocks import router as stocks_router
 from api.routes.bvc import router as bvc_router
 from api.routes.pdf_viewer import router as pdf_router
+from api.routes.conversations import router as conversations_router
 
 from contextlib import asynccontextmanager
 
@@ -81,13 +83,23 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+_cors_origins = os.getenv("CORS_ORIGINS", "").strip()
+if _cors_origins:
+    _allowed_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+else:
+    # Development: allow all origins
+    _allowed_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # Restrict in production
+    allow_origins=_allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
+    allow_credentials=True if _allowed_origins != ["*"] else False,
 )
 
+app.include_router(auth_router)
+app.include_router(conversations_router)
 app.include_router(query_router)
 app.include_router(ingest_router)
 app.include_router(stocks_router)

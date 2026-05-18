@@ -16,10 +16,11 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, UploadFile, File, HTTPException, Query, Depends
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from api.auth import get_current_user
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -72,7 +73,10 @@ def _run_pipeline(tmp_path: str, ext: str) -> tuple[int, int]:
 
 
 @router.post("/", response_model=IngestResponse)
-async def ingest_file_sync(file: UploadFile = File()) -> IngestResponse:
+async def ingest_file_sync(
+    file: UploadFile = File(),
+    user: dict = Depends(get_current_user),
+) -> IngestResponse:
     """
     Upload a document and ingest it into the vector store.
     
@@ -125,6 +129,7 @@ async def ingest_file_async(
     chunker_type: str = Query("recursive", enum=["recursive", "semantic"]),
     chunk_size: int = Query(512, ge=64, le=4096),
     chunk_overlap: int = Query(64, ge=0, le=512),
+    user: dict = Depends(get_current_user),
 ) -> AsyncIngestResponse:
     """
     Upload a file for asynchronous ingestion via Celery.
@@ -230,6 +235,7 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
 async def ingest_batch_async(
     files: list[UploadFile] = File(...),
     chunker_type: str = Query("recursive", enum=["recursive", "semantic"]),
+    user: dict = Depends(get_current_user),
 ) -> AsyncIngestResponse:
     """
     Upload multiple files for batch async ingestion.

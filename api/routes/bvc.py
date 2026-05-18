@@ -9,8 +9,10 @@ GET  /bvc/indices     — Live index values (MASI, MADEX, CFG25…).
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
+
+from api.auth import get_current_user
 
 router = APIRouter(prefix="/bvc", tags=["BVC"])
 
@@ -36,7 +38,7 @@ class BVCDataResponse(BaseModel):
 
 
 @router.post("/refresh", response_model=BVCRefreshResponse)
-async def refresh_bvc_data():
+async def refresh_bvc_data(user: dict = Depends(get_current_user)):
     """Trigger a BVC data refresh (stock prices + indices) via Celery."""
     try:
         from tasks.bvc_fetch_tasks import fetch_bvc_daily

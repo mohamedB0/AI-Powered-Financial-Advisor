@@ -24,6 +24,24 @@ class Base(DeclarativeBase):
     pass
 
 
+class User(Base):
+    """Registered users for API authentication."""
+
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    email = Column(String(255), unique=True, nullable=False, index=True)
+    hashed_password = Column(String(255), nullable=False)
+    full_name = Column(String(150))
+    role = Column(String(20), default="user")  # user, admin
+    is_active = Column(Integer, default=1)  # 1=active, 0=disabled
+    created_at = Column(DateTime, default=datetime.utcnow)
+    last_login = Column(DateTime, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<User {self.email} role={self.role}>"
+
+
 class StockPrice(Base):
     """Daily OHLCV price records."""
 
@@ -159,3 +177,38 @@ class WordDocument(Base):
 
     def __repr__(self) -> str:
         return f"<WordDocument {self.source_file} heading={self.heading}>"
+
+
+class Conversation(Base):
+    """A chat conversation belonging to a user."""
+
+    __tablename__ = "conversations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    title = Column(String(255), default="New Chat")
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        UniqueConstraint("id", "user_id", name="uq_conv_id_user"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Conversation {self.id} user={self.user_id} title={self.title}>"
+
+
+class Message(Base):
+    """A single message within a conversation."""
+
+    __tablename__ = "messages"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    conversation_id = Column(Integer, ForeignKey("conversations.id", ondelete="CASCADE"), nullable=False, index=True)
+    role = Column(String(20), nullable=False)  # 'user' or 'assistant'
+    content = Column(Text, nullable=False)
+    route = Column(String(100))  # retrieval route used (Vector, SQL, Web, etc.)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<Message {self.id} conv={self.conversation_id} role={self.role}>"

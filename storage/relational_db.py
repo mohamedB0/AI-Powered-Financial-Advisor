@@ -181,8 +181,12 @@ class RelationalDB:
     # ── Query helpers ─────────────────────────────────────────────────────────
 
     def execute_sql(self, sql: str, params: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """Run a raw SQL query and return rows as dicts."""
+        """Run a raw SQL query and return rows as dicts. Supports SELECT and DML."""
         with self.engine.connect() as conn:
             result = conn.execute(text(sql), params or {})
-            columns = list(result.keys())
-            return [dict(zip(columns, row)) for row in result.fetchall()]
+            # DML statements (INSERT, UPDATE, DELETE) won't have rows to fetch
+            if result.returns_rows:
+                columns = list(result.keys())
+                return [dict(zip(columns, row)) for row in result.fetchall()]
+            conn.commit()
+            return []

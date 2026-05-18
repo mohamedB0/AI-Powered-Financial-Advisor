@@ -2,9 +2,39 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
 {% endblock %}
 
 {% block content %}
+<!-- Main layout: History sidebar + Chat area -->
+<div class="flex h-full w-full overflow-hidden">
+
+<!-- ── LEFT: Chat History Sidebar ──────────────────────────────────────────── -->
+<div id="history-sidebar" class="w-[260px] min-w-[260px] flex flex-col border-r border-gray-100 bg-[#fafbfc] h-full overflow-hidden transition-all duration-300">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+        <span class="text-[13px] font-semibold text-gray-700 flex items-center gap-2">
+            <i class="fa-regular fa-clock text-gray-400 text-[12px]"></i> History
+        </span>
+        <button onclick="startNewConversation()"
+            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+            title="New Chat">
+            <i class="fa-solid fa-pen-to-square text-[12px]"></i>
+        </button>
+    </div>
+
+    <!-- Conversations list (scrollable) -->
+    <div id="history-list" class="flex-1 overflow-y-auto">
+        <div class="px-4 py-8 text-center text-[12px] text-gray-400">
+            <i class="fa-regular fa-clock text-lg mb-2 block"></i>
+            Loading...
+        </div>
+    </div>
+</div>
+
+<!-- ── RIGHT: Main Chat Content ────────────────────────────────────────────── -->
+<div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
 <!-- Top sub-tabs -->
 <div class="flex items-center justify-between border-b border-ui-border px-6 pt-4">
     <div class="flex items-center gap-2" id="focus-tabs-container">
@@ -474,5 +504,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <iframe id="pdf-iframe" src="" class="flex-1 w-full rounded-b-2xl border-0" style="min-height:0;"></iframe>
     </div>
 </div>
+
+</div><!-- close main chat content -->
+</div><!-- close flex: history sidebar + chat -->
 
 {% endblock %}

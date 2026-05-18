@@ -7,10 +7,12 @@ GET  /query/stream — same, but streams the LLM answer token-by-token (SSE).
 import json
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, AIMessage
+
+from api.auth import get_current_user
 
 router = APIRouter(prefix="/query", tags=["Query"])
 
@@ -25,7 +27,6 @@ class QueryRequest(BaseModel):
     top_k: int = Field(default=3, ge=1, le=30)
     history: Optional[List[HistoryMessage]] = []
     persona: Optional[str] = "Balanced"
-    api_key: Optional[str] = ""
     focus_mode: Optional[str] = "New Chat"
 
 
@@ -58,7 +59,7 @@ def _get_cache():
 
 
 @router.post("/")
-def query(request: QueryRequest) -> QueryResponse:
+def query(request: QueryRequest, user: dict = Depends(get_current_user)) -> QueryResponse:
     """
     Submit a financial question and receive an AI-generated insight
     backed by hybrid retrieval (documents + structured data).
@@ -104,7 +105,7 @@ def query(request: QueryRequest) -> QueryResponse:
 
 
 @router.post("/stream")
-def query_stream(request: QueryRequest):
+def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
     """
     Same as POST /query but streams the final LLM answer token-by-token.
 
@@ -130,10 +131,6 @@ def query_stream(request: QueryRequest):
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
 
         lc_history = _build_history(request.history)
-
-        # Dynamic overwrite of API key for this process if provided
-        if request.api_key and request.api_key.strip():
-            os.environ["OPENROUTER_API_KEY"] = request.api_key.strip()
 
         state: AgentState = {
             "messages"         : [],
