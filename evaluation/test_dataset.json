@@ -1,0 +1,62 @@
+[
+    {
+        "question": "Quel est le taux directeur de Bank Al-Maghrib ?",
+        "ground_truth": "Le taux directeur de Bank Al-Maghrib est de 2,25%. Après l'avoir relevé à 3% pour juguler l'inflation post-Covid, Bank Al-Maghrib a engagé à partir de juin 2024 un cycle d'assouplissement graduel avec trois baisses de 25 points de base en 2024-2025.",
+        "category": "macro"
+    },
+    {
+        "question": "Quels sont les principaux risques identifiés par l'AMMC pour le marché des capitaux marocain ?",
+        "ground_truth": "L'AMMC identifie les risques systémiques liés à la liquidité, l'interconnexion, l'endettement et le contexte macro-économique. Elle évalue aussi les risques de blanchiment des capitaux et de financement du terrorisme (LBC/FT), ainsi que les risques émergents liés au Covid-19.",
+        "category": "regulatory"
+    },
+    {
+        "question": "Quelle est la capitalisation boursière de la Bourse de Casablanca ?",
+        "ground_truth": "La capitalisation boursière de la Bourse de Casablanca a atteint 1040,7 milliards de dirhams à fin décembre 2025, en hausse de plus de 38% sur un an. Le MASI a progressé de 27,57% sur l'année 2025.",
+        "category": "market"
+    },
+    {
+        "question": "Quel est le taux d'inflation au Maroc ?",
+        "ground_truth": "Le taux d'inflation au Maroc est de 0,9% en 2024, après avoir été de 6,6% en 2022 et 6,1% en 2023. Cette baisse est due aux mesures de Bank Al-Maghrib et du Gouvernement pour soutenir le pouvoir d'achat.",
+        "category": "macro"
+    },
+    {
+        "question": "Quelles sont les missions de la Cour des Comptes au Maroc ?",
+        "ground_truth": "La Cour des Comptes est chargée du contrôle supérieur des finances publiques, de la vérification de la régularité des opérations de recettes et dépenses des organismes publics, et de l'évaluation de la gestion des établissements publics.",
+        "category": "institutional"
+    },
+    {
+        "question": "Comment fonctionne le marché obligataire marocain ?",
+        "ground_truth": "Le marché obligataire marocain est organisé autour des bons du Trésor émis par adjudications de Bank Al-Maghrib et des obligations privées. Les taux sur le marché secondaire des bons du Trésor ont connu une baisse, particulièrement sur les maturités longues, sous l'effet de l'assouplissement de la politique monétaire.",
+        "category": "market"
+    },
+    {
+        "question": "Quels sont les secteurs les plus représentés à la Bourse de Casablanca ?",
+        "ground_truth": "Les secteurs les plus représentés à la BVC sont les banques (Attijariwafa Bank, BCP, Bank of Africa), les télécommunications (Maroc Telecom/IAM), l'immobilier, le ciment (LafargeHolcim Maroc) et les mines (Managem).",
+        "category": "market"
+    },
+    {
+        "question": "Qu'est-ce qu'un OPCVM au Maroc ?",
+        "ground_truth": "Un OPCVM (Organisme de Placement Collectif en Valeurs Mobilières) est un véhicule d'investissement collectif agréé par l'AMMC. Il permet aux épargnants d'investir dans un portefeuille diversifié géré par une société de gestion. Les OPCVM sont régulés par la circulaire de l'AMMC.",
+        "category": "regulatory"
+    },
+    {
+        "question": "Quel est le rôle du HCP dans l'économie marocaine ?",
+        "ground_truth": "Le Haut-Commissariat au Plan (HCP) est l'institution statistique officielle du Maroc, chargée de la production des statistiques nationales, des comptes nationaux, du recensement et de la publication des indicateurs conjoncturels comme le PIB, l'inflation et le chômage.",
+        "category": "institutional"
+    },
+    {
+        "question": "Quelles sont les conditions d'introduction en bourse au Maroc ?",
+        "ground_truth": "Les conditions d'introduction en bourse au Maroc incluent un capital minimum, la publication de comptes certifiés sur les 3 derniers exercices, un flottant minimum, et l'obtention d'un visa de l'AMMC sur la note d'information destinée aux investisseurs.",
+        "category": "regulatory"
+    },
+    {
+        "question": "Quelle est la dette du Trésor au Maroc ?",
+        "ground_truth": "La dette du Trésor au Maroc devrait revenir à 67% du PIB en 2025 puis à 65,6% en 2026, grâce à l'accroissement des recettes fiscales et la baisse de la charge de compensation. Le FMI a évalué la soutenabilité de la dette en avril 2025.",
+        "category": "macro"
+    },
+    {
+        "question": "Comment Bank Al-Maghrib gère la liquidité bancaire ?",
+        "ground_truth": "Le besoin de liquidité des banques a atteint 128 milliards de dirhams à fin 2024. Bank Al-Maghrib intervient via des opérations d'injection de liquidité, des opérations de pension, et a élargi le collatéral accepté pour les opérations de politique monétaire.",
+        "category": "macro"
+    }
+]

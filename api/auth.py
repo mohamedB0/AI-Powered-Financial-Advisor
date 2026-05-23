@@ -1,10 +1,10 @@
 """
 api/auth.py
-JWT authentication utilities for the Financial Advisor API.
+Google OAuth + JWT session authentication for the Financial Advisor API.
 
 Provides:
-  - Password hashing (bcrypt via passlib)
-  - JWT token creation & verification
+  - Google ID token verification
+  - JWT session token creation & verification
   - FastAPI dependency for protected routes
 """
 
@@ -15,7 +15,6 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
-import bcrypt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,7 +31,6 @@ if not JWT_SECRET or JWT_SECRET == "CHANGE_ME_IN_PRODUCTION":
         "   Then add JWT_SECRET=<value> to your .env file.\n",
         stacklevel=2,
     )
-    # Allow startup in dev, but with a random ephemeral secret (tokens won't survive restarts)
     if not JWT_SECRET:
         import secrets as _s
         JWT_SECRET = _s.token_urlsafe(32)
@@ -40,26 +38,59 @@ if not JWT_SECRET or JWT_SECRET == "CHANGE_ME_IN_PRODUCTION":
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
 
-# ── Password Hashing ─────────────────────────────────────────────────────────
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+# ── Google OAuth Verification ─────────────────────────────────────────────────
 
 
-def hash_password(password: str) -> str:
-    """Hash a plaintext password using bcrypt."""
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+def verify_google_token(id_token_str: str) -> dict:
+    """
+    Verify a Google ID token and return the user info payload.
+
+    Returns dict with keys: sub, email, name, picture, email_verified
+    Raises HTTPException 401 if token is invalid.
+    """
+    from google.oauth2 import id_token
+    from google.auth.transport import requests as google_requests
+
+    if not GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="GOOGLE_CLIENT_ID not configured on server.",
+        )
+
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            id_token_str,
+            google_requests.Request(),
+            GOOGLE_CLIENT_ID,
+        )
+
+        # Verify the issuer
+        if idinfo["iss"] not in ("accounts.google.com", "https://accounts.google.com"):
+            raise ValueError("Invalid issuer.")
+
+        return {
+            "sub": idinfo["sub"],  # Google unique user ID
+            "email": idinfo.get("email", ""),
+            "name": idinfo.get("name", ""),
+            "picture": idinfo.get("picture", ""),
+            "email_verified": idinfo.get("email_verified", False),
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid Google token: {str(e)}",
+        )
 
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a plaintext password against its bcrypt hash."""
-    return bcrypt.checkpw(
-        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
-    )
+# ── JWT Session Token ─────────────────────────────────────────────────────────
 
-
-# ── JWT Token ─────────────────────────────────────────────────────────────────
 
 def create_access_token(user_id: int, email: str, role: str = "user") -> str:
     """
-    Create a signed JWT token.
+    Create a signed JWT session token.
 
     Payload:
         sub: user_id (as string per JWT spec)
@@ -81,7 +112,7 @@ def create_access_token(user_id: int, email: str, role: str = "user") -> str:
 
 def decode_token(token: str) -> dict:
     """
-    Decode and validate a JWT token.
+    Decode and validate a JWT session token.
 
     Raises:
         HTTPException 401 if token is invalid or expired.

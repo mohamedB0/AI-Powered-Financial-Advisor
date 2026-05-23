@@ -16,11 +16,18 @@
         <span class="text-[13px] font-semibold text-gray-700 flex items-center gap-2">
             <i class="fa-regular fa-clock text-gray-400 text-[12px]"></i> History
         </span>
-        <button onclick="startNewConversation()"
-            class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
-            title="New Chat">
-            <i class="fa-solid fa-pen-to-square text-[12px]"></i>
-        </button>
+        <div class="flex items-center gap-1">
+            <button onclick="startNewConversation()"
+                class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                title="New Chat">
+                <i class="fa-solid fa-pen-to-square text-[12px]"></i>
+            </button>
+            <button onclick="toggleHistorySidebar()"
+                class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors"
+                title="Hide History">
+                <i class="fa-solid fa-chevron-left text-[11px]"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Conversations list (scrollable) -->
@@ -32,12 +39,25 @@
     </div>
 </div>
 
+<!-- Toggle button visible when sidebar is hidden -->
+<button id="show-history-btn" onclick="toggleHistorySidebar()"
+    class="hidden h-full w-8 flex-shrink-0 flex items-center justify-center bg-[#fafbfc] border-r border-gray-100 text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors"
+    title="Show History">
+    <i class="fa-solid fa-chevron-right text-[11px]"></i>
+</button>
+
 <!-- ── RIGHT: Main Chat Content ────────────────────────────────────────────── -->
 <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
 <!-- Top sub-tabs -->
 <div class="flex items-center justify-between border-b border-ui-border px-6 pt-4">
     <div class="flex items-center gap-2" id="focus-tabs-container">
+        <!-- Mobile: history toggle button -->
+        <button onclick="toggleMobileHistory()"
+            class="mobile-history-btn hidden w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors mr-1"
+            title="Chat History">
+            <i class="fa-solid fa-bars text-sm"></i>
+        </button>
         <div data-mode="New Chat"
             class="focus-tab active flex items-center gap-2 border-b-2 border-[#1a2e1f] pb-2 px-1 text-[13px] font-semibold text-gray-900 cursor-pointer transition-colors">
             <i class="fa-regular fa-comment-dots text-[11px]"></i> New Chat
@@ -284,9 +304,6 @@
 <style>
     .scrollbar-hide::-webkit-scrollbar { display: none; }
     .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-    #stocks-table-container::-webkit-scrollbar { width: 4px; }
-    #stocks-table-container::-webkit-scrollbar-track { background: #f9fafb; }
-    #stocks-table-container::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 2px; }
     .stock-row:hover { background-color: #f9fafb; }
     .stock-row { cursor: default; transition: background 0.15s; }
     .var-up   { color: #059669; font-weight: 600; }
@@ -298,6 +315,12 @@
 <script>
 
 // ── PDF Viewer Modal ──────────────────────────────────────────────────────────
+let _pdfCurrentPage = 1;
+let _pdfCurrentZoom = 100;
+let _pdfCurrentUrl = '';
+let _pdfFilePath = '';
+let _pdfIsFullscreen = false;
+
 document.addEventListener("click", function (e) {
     const link = e.target.closest("a[href^='pdf-viewer:']");
     if (!link) return;
@@ -307,20 +330,109 @@ document.addEventListener("click", function (e) {
     const page = pageMatch ? parseInt(pageMatch[1]) : 1;
     const encodedPath = pageMatch ? raw.slice(0, raw.lastIndexOf("&page=")) : raw;
     const filePath = decodeURIComponent(encodedPath);
-    const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
-    const pdfUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}#page=${page}`;
-    document.getElementById("pdf-modal-title").textContent = filePath.split("\\").pop().split("/").pop() + "  —  Page " + page;
+    _pdfFilePath = filePath;
+    _pdfCurrentPage = page;
+    _pdfCurrentZoom = 100;
+
+    const fileName = filePath.split("\\").pop().split("/").pop();
+    document.getElementById("pdf-modal-title").textContent = fileName;
+    document.getElementById("pdf-modal-subtitle").textContent = `Page ${page}`;
+    document.getElementById("pdf-page-input").value = page;
+    document.getElementById("pdf-zoom-level").textContent = '100%';
+
     const iframe = document.getElementById("pdf-iframe");
     const errorDiv = document.getElementById("pdf-error");
-    iframe.classList.add("hidden"); errorDiv.classList.add("hidden");
-    fetch(`${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}`, { method: "HEAD" })
-        .then(res => { if (res.ok) { iframe.src = pdfUrl; iframe.classList.remove("hidden"); } else { throw new Error("File could not be located on the server."); } })
-        .catch(err => { errorDiv.textContent = "⚠️ " + err.message; errorDiv.classList.remove("hidden"); });
+    const loadingDiv = document.getElementById("pdf-loading");
+    
+    iframe.classList.add("hidden");
+    errorDiv.classList.add("hidden");
+    loadingDiv.classList.remove("hidden");
+
+    const pdfBaseUrl = `${API_BASE}/pdf/file?path=${encodeURIComponent(filePath)}`;
+    _pdfCurrentUrl = pdfBaseUrl;
+
+    fetch(pdfBaseUrl, { method: "HEAD" })
+        .then(res => {
+            if (res.ok) {
+                iframe.src = `${pdfBaseUrl}#page=${page}`;
+                iframe.onload = () => {
+                    loadingDiv.classList.add("hidden");
+                    iframe.classList.remove("hidden");
+                };
+            } else {
+                throw new Error("File could not be located on the server.");
+            }
+        })
+        .catch(err => {
+            loadingDiv.classList.add("hidden");
+            document.getElementById("pdf-error-text").textContent = err.message;
+            errorDiv.classList.remove("hidden");
+        });
+
     document.getElementById("pdf-modal").classList.remove("hidden");
 });
+
 function closePdfModal() {
     document.getElementById("pdf-modal").classList.add("hidden");
     document.getElementById("pdf-iframe").src = "";
+    if (_pdfIsFullscreen) pdfToggleFullscreen();
+}
+
+function pdfGoToPage(pageNum) {
+    const page = Math.max(1, parseInt(pageNum) || 1);
+    _pdfCurrentPage = page;
+    document.getElementById("pdf-page-input").value = page;
+    document.getElementById("pdf-modal-subtitle").textContent = `Page ${page}`;
+    document.getElementById("pdf-iframe").src = `${_pdfCurrentUrl}#page=${page}`;
+}
+
+function pdfPrevPage() {
+    if (_pdfCurrentPage > 1) pdfGoToPage(_pdfCurrentPage - 1);
+}
+
+function pdfNextPage() {
+    pdfGoToPage(_pdfCurrentPage + 1);
+}
+
+function pdfZoom(action) {
+    if (action === 'in') _pdfCurrentZoom = Math.min(200, _pdfCurrentZoom + 25);
+    else if (action === 'out') _pdfCurrentZoom = Math.max(50, _pdfCurrentZoom - 25);
+    else if (action === 'fit') _pdfCurrentZoom = 100;
+
+    document.getElementById("pdf-zoom-level").textContent = `${_pdfCurrentZoom}%`;
+    const iframe = document.getElementById("pdf-iframe");
+    iframe.style.transform = `scale(${_pdfCurrentZoom / 100})`;
+    iframe.style.transformOrigin = 'top left';
+    iframe.style.width = `${10000 / _pdfCurrentZoom}%`;
+    iframe.style.height = `${10000 / _pdfCurrentZoom}%`;
+}
+
+function pdfDownload() {
+    if (_pdfCurrentUrl) {
+        const a = document.createElement('a');
+        a.href = _pdfCurrentUrl;
+        a.download = _pdfFilePath.split("\\").pop().split("/").pop();
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+}
+
+function pdfToggleFullscreen() {
+    const container = document.getElementById("pdf-modal-container");
+    _pdfIsFullscreen = !_pdfIsFullscreen;
+    if (_pdfIsFullscreen) {
+        container.style.width = '100vw';
+        container.style.maxWidth = '100vw';
+        container.style.height = '100vh';
+        container.style.borderRadius = '0';
+    } else {
+        container.style.width = '90vw';
+        container.style.maxWidth = '1100px';
+        container.style.height = '90vh';
+        container.style.borderRadius = '';
+    }
 }
 
 // ── Live Market Panel ─────────────────────────────────────────────────────────
@@ -487,21 +599,85 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <!-- PDF Viewer Modal -->
-<div id="pdf-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+<div id="pdf-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
     onclick="if(event.target===this) closePdfModal()">
-    <div class="bg-white rounded-2xl shadow-2xl flex flex-col" style="width:90vw; max-width:1100px; height:90vh;">
-        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200">
-            <div class="flex items-center gap-2 text-sm font-semibold text-gray-800">
-                <i class="fa-regular fa-file-pdf text-red-500"></i>
-                <span id="pdf-modal-title">Document</span>
+    <div id="pdf-modal-container" class="bg-white rounded-2xl shadow-2xl flex flex-col transition-all duration-300" style="width:90vw; max-width:1100px; height:90vh;">
+        
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 bg-gray-50 rounded-t-2xl flex-shrink-0">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-regular fa-file-pdf text-red-500 text-sm"></i>
+                </div>
+                <div class="min-w-0">
+                    <span id="pdf-modal-title" class="text-sm font-semibold text-gray-800 block truncate">Document</span>
+                    <span id="pdf-modal-subtitle" class="text-[10px] text-gray-400">PDF Viewer</span>
+                </div>
             </div>
-            <button onclick="closePdfModal()"
-                class="rounded-lg p-1.5 hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors">
-                <i class="fa-solid fa-xmark text-base"></i>
-            </button>
+
+            <!-- Toolbar -->
+            <div class="flex items-center gap-1">
+                <!-- Page Navigation -->
+                <div class="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1 mr-2">
+                    <button onclick="pdfPrevPage()" class="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Previous page">
+                        <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    </button>
+                    <span class="text-[11px] text-gray-600 font-medium px-1">
+                        Page <input id="pdf-page-input" type="number" min="1" value="1" 
+                            class="w-8 text-center text-[11px] font-semibold border-b border-gray-300 outline-none focus:border-emerald-500 bg-transparent mx-0.5"
+                            onchange="pdfGoToPage(this.value)">
+                    </span>
+                    <button onclick="pdfNextPage()" class="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Next page">
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Zoom Controls -->
+                <div class="flex items-center gap-0.5 bg-white border border-gray-200 rounded-lg px-1.5 py-1 mr-2">
+                    <button onclick="pdfZoom('out')" class="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Zoom out">
+                        <i class="fa-solid fa-minus text-[10px]"></i>
+                    </button>
+                    <span id="pdf-zoom-level" class="text-[11px] text-gray-600 font-medium px-2 min-w-[40px] text-center">100%</span>
+                    <button onclick="pdfZoom('in')" class="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Zoom in">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                    </button>
+                    <button onclick="pdfZoom('fit')" class="w-6 h-6 flex items-center justify-center rounded text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors ml-0.5" title="Fit to width">
+                        <i class="fa-solid fa-expand text-[10px]"></i>
+                    </button>
+                </div>
+
+                <!-- Actions -->
+                <button onclick="pdfDownload()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Download PDF">
+                    <i class="fa-solid fa-download text-sm"></i>
+                </button>
+                <button onclick="pdfToggleFullscreen()" class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:text-gray-800 hover:bg-gray-100 transition-colors" title="Fullscreen">
+                    <i class="fa-solid fa-up-right-and-down-left-from-center text-sm"></i>
+                </button>
+                <div class="w-px h-5 bg-gray-200 mx-1"></div>
+                <button onclick="closePdfModal()"
+                    class="w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors" title="Close">
+                    <i class="fa-solid fa-xmark text-base"></i>
+                </button>
+            </div>
         </div>
-        <div id="pdf-error" class="hidden flex-1 flex items-center justify-center text-gray-500 text-sm p-8 text-center"></div>
-        <iframe id="pdf-iframe" src="" class="flex-1 w-full rounded-b-2xl border-0" style="min-height:0;"></iframe>
+
+        <!-- Error state -->
+        <div id="pdf-error" class="hidden flex-1 flex flex-col items-center justify-center text-center p-8">
+            <div class="w-16 h-16 rounded-full bg-red-50 flex items-center justify-center mb-4">
+                <i class="fa-solid fa-file-circle-exclamation text-red-400 text-2xl"></i>
+            </div>
+            <p class="text-gray-700 font-medium mb-1">Unable to load document</p>
+            <p id="pdf-error-text" class="text-sm text-gray-400">File could not be located on the server.</p>
+        </div>
+
+        <!-- Loading state -->
+        <div id="pdf-loading" class="hidden flex-1 flex flex-col items-center justify-center">
+            <div class="w-8 h-8 border-2 border-gray-200 border-t-red-400 rounded-full animate-spin mb-3"></div>
+            <span class="text-sm text-gray-400">Loading document...</span>
+        </div>
+
+        <!-- PDF iframe -->
+        <iframe id="pdf-iframe" src="" class="flex-1 w-full rounded-b-2xl border-0 hidden" style="min-height:0;"></iframe>
     </div>
 </div>
 

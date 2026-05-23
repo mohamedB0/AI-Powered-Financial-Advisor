@@ -37,16 +37,19 @@ QUERY_PROMPT_TEMPLATE = """## User Question
 {context}
 
 ## Instructions
-- Synthesize the provided context to answer the user's question directly and fluently.
-- STRICTLY IGNORE any context (such as irrelevant stock prices or unrelated web results) that does not directly help answer the user's question.
+- Answer the user's question DIRECTLY and CONCISELY. Start with the key answer immediately — no preamble.
+- Use ONLY information from the retrieved context above. Never invent data or figures.
+- STRICTLY IGNORE any context that does not directly help answer the specific question asked.
+- Be precise and focused: every sentence in your response must be directly relevant to the question.
+- If the context contains numerical data relevant to the question, state the exact figures.
 - If tabular data is present and relevant, present it precisely and clearly.
-- DO NOT include inline source references like [SOURCE: ...], (Page N), or document filenames in your answer. The sources are already displayed to the user separately — your response should read as clean, flowing prose.
-- If web search results are present and relevant, you may briefly mention the web origin (e.g. "According to recent reports...") but never paste raw URLs.
-- Answer confidently using whatever relevant data is available. Do NOT say you lack information if any relevant data is present in the context above.
-- NEVER start your response with an apology like "Désolé, mais je n'ai pas trouvé..." if you are going to provide the answer using another source in the context.
-- NEVER mention internal systems, databases, or retrieval methods to the user.
-- CRITICAL: YOU MUST perfectly match the language of the user's question! If the question above is in Arabic, your entire response MUST be in Arabic. If French, in French. Translate the context data internally if needed.
-- FORMATTING: Structure your response cleanly using bullet points, paragraphs, and bold text. ABSOLUTELY NO EMOJIS."""
+- DO NOT include inline source references like [SOURCE: ...], (Page N), or document filenames.
+- If web search results are relevant, integrate them naturally without pasting raw URLs.
+- Answer confidently using available relevant data. Only say you lack information if there is truly NOTHING relevant.
+- NEVER start with an apology or a disclaimer if you have relevant information to share.
+- NEVER mention internal systems, databases, or retrieval methods.
+- CRITICAL: Match the language of the user's question exactly (French/Arabic/English).
+- FORMATTING: Use bullet points, paragraphs, and bold text for readability. No emojis."""
 
 
 SUMMARY_PROMPT_TEMPLATE = """Summarise the following financial document excerpt in 3-5 concise bullet points,

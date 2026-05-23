@@ -6,6 +6,63 @@
 let _currentConversationId = null;
 let _conversations = [];
 
+// ── Sidebar Toggle ───────────────────────────────────────────────────────────
+
+function toggleHistorySidebar() {
+    const sidebar = document.getElementById('history-sidebar');
+    const showBtn = document.getElementById('show-history-btn');
+
+    if (sidebar.classList.contains('hidden')) {
+        // Show sidebar
+        sidebar.classList.remove('hidden');
+        showBtn.classList.add('hidden');
+        localStorage.setItem('history_sidebar_visible', 'true');
+    } else {
+        // Hide sidebar
+        sidebar.classList.add('hidden');
+        showBtn.classList.remove('hidden');
+        showBtn.classList.add('flex');
+        localStorage.setItem('history_sidebar_visible', 'false');
+    }
+}
+
+function toggleMobileHistory() {
+    const sidebar = document.getElementById('history-sidebar');
+    const isOpen = sidebar.classList.contains('mobile-open');
+
+    if (isOpen) {
+        closeMobileHistory();
+    } else {
+        sidebar.classList.add('mobile-open');
+        // Add backdrop
+        const backdrop = document.createElement('div');
+        backdrop.id = 'mobile-history-backdrop';
+        backdrop.onclick = closeMobileHistory;
+        document.body.appendChild(backdrop);
+    }
+}
+
+function closeMobileHistory() {
+    const sidebar = document.getElementById('history-sidebar');
+    sidebar.classList.remove('mobile-open');
+    const backdrop = document.getElementById('mobile-history-backdrop');
+    if (backdrop) backdrop.remove();
+}
+
+// Restore sidebar state on load
+document.addEventListener('DOMContentLoaded', () => {
+    const visible = localStorage.getItem('history_sidebar_visible');
+    if (visible === 'false') {
+        const sidebar = document.getElementById('history-sidebar');
+        const showBtn = document.getElementById('show-history-btn');
+        if (sidebar && showBtn) {
+            sidebar.classList.add('hidden');
+            showBtn.classList.remove('hidden');
+            showBtn.classList.add('flex');
+        }
+    }
+});
+
 // ── API Calls ────────────────────────────────────────────────────────────────
 
 async function fetchConversations() {
@@ -224,7 +281,7 @@ async function loadConversation(convId) {
         chatHistory.classList.add('flex');
 
         data.messages.forEach(msg => {
-            addMessageToUI(msg.role, msg.content);
+            addMessageToUI(msg.role, msg.content, msg.created_at || msg.timestamp);
         });
 
         chatHistory.scrollTop = chatHistory.scrollHeight;
@@ -261,15 +318,24 @@ function resetChatUI() {
  * Helper to add a message bubble to the chat UI.
  * Used by both loadConversation (history replay) and the live chat flow.
  */
-function addMessageToUI(role, content) {
+function addMessageToUI(role, content, timestamp) {
     const chatHistory = document.getElementById('chat-history');
     if (!chatHistory) return;
 
     const msgDiv = document.createElement('div');
     msgDiv.className = `flex w-full mt-4 mb-2 gap-4 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
 
+    // User avatar: show Google profile picture if available
+    let userAvatarStr;
+    const currentUser = getUser();
+    if (currentUser && currentUser.picture) {
+        userAvatarStr = `<div class="shrink-0 w-8 h-8 rounded-full overflow-hidden shadow-sm border border-[#3a5c44] mt-1"><img src="${currentUser.picture}" alt="You" class="w-full h-full object-cover"></div>`;
+    } else {
+        userAvatarStr = `<div class="shrink-0 w-8 h-8 rounded-full bg-[#2d4a36] flex items-center justify-center text-emerald-200 shadow-sm border border-[#3a5c44] mt-1"><i class="fa-solid fa-user text-xs"></i></div>`;
+    }
+
     const avatarStr = role === 'user'
-        ? `<div class="shrink-0 w-8 h-8 rounded-full bg-[#2d4a36] flex items-center justify-center text-emerald-200 shadow-sm border border-[#3a5c44] mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
+        ? userAvatarStr
         : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-solid fa-chart-line text-[13px]"></i></div>`;
 
     const bubbleColor = role === 'user'
@@ -284,10 +350,16 @@ function addMessageToUI(role, content) {
 
     const rendered = typeof marked !== 'undefined' ? marked.parse(content) : content;
 
+    const timeStr = timestamp ? _formatMsgTime(new Date(timestamp)) : _formatMsgTime(new Date());
+    const timeAlign = role === 'user' ? 'text-right' : 'text-left';
+
     msgDiv.innerHTML = `
         ${role === 'assistant' ? avatarStr : ''}
-        <div class="relative max-w-[85%] ${bubbleRadius} px-5 py-4 ${bubbleColor}">
-            <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${rendered}</div>
+        <div class="relative max-w-[85%] flex flex-col">
+            <div class="${bubbleRadius} px-5 py-4 ${bubbleColor}">
+                <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${rendered}</div>
+            </div>
+            <span class="msg-timestamp ${timeAlign}">${timeStr}</span>
         </div>
         ${role === 'user' ? avatarStr : ''}
     `;

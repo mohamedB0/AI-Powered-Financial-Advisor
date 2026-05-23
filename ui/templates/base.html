@@ -48,6 +48,13 @@
 
     <!-- Fallback/Extra custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <!-- Google Sign-In SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script>
+        // Make the Google Client ID available to auth.js
+        window.GOOGLE_CLIENT_ID = "{{ GOOGLE_CLIENT_ID }}";
+    </script>
     <style>
         .sidebar-icon {
             color: #4b5563;
@@ -85,6 +92,10 @@
             <div class="flex flex-col gap-3 items-center pb-2">
                 <button id="settings-btn" class="w-11 h-11 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-colors">
                     <i class="fa-solid fa-gear text-[1.1rem]"></i>
+                </button>
+
+                <button id="help-btn" onclick="showHelpModal()" class="w-11 h-11 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-colors" title="Help">
+                    <i class="fa-solid fa-circle-question text-[1.1rem]"></i>
                 </button>
 
                 <!-- User avatar + popover -->
@@ -144,6 +155,17 @@
                         <option value="Aggressive">Aggressive (Focus on Growth/Risk)</option>
                     </select>
                 </div>
+
+                <!-- Knowledge Source -->
+                <div>
+                    <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Knowledge Source</label>
+                    <select id="setting-collection" class="w-full text-sm rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-all">
+                        <option value="all">All Sources (Documents + Uploads)</option>
+                        <option value="financial_data">Documents Only (Scraped Reports)</option>
+                        <option value="user_data">My Uploads Only</option>
+                    </select>
+                    <p class="text-[11px] text-gray-400 mt-1">Choose which document collection to search.</p>
+                </div>
                 
                 <!-- RAG Depth -->
                 <div>
@@ -162,6 +184,162 @@
             </div>
         </div>
     </div>
+
+    <!-- HELP MODAL -->
+    <div id="help-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-white m-4 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] overflow-hidden flex flex-col" id="help-modal-content">
+            <!-- Header -->
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 flex-shrink-0">
+                <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-question text-emerald-600"></i> Guide d'utilisation
+                </h3>
+                <button onclick="closeHelpModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 overflow-y-auto px-6 py-5 space-y-6">
+
+                <!-- Section: Getting Started -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-rocket text-emerald-500 text-xs"></i> Commencer
+                    </h4>
+                    <p class="text-[13px] text-gray-600 leading-relaxed">
+                        Alpha Insight est un assistant financier intelligent spécialisé dans le marché marocain. 
+                        Posez vos questions en <strong>français</strong>, <strong>arabe</strong> ou <strong>anglais</strong> 
+                        et recevez des analyses basées sur des données réelles.
+                    </p>
+                </div>
+
+                <!-- Section: Features -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-sparkles text-emerald-500 text-xs"></i> Fonctionnalités
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <i class="fa-solid fa-message text-blue-500 text-xs"></i>
+                                <span class="text-[12px] font-semibold text-gray-700">Chat Intelligent</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 leading-relaxed">Posez des questions sur les entreprises cotées, les indicateurs macro-économiques et la réglementation financière.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <i class="fa-solid fa-chart-line text-emerald-500 text-xs"></i>
+                                <span class="text-[12px] font-semibold text-gray-700">Marché en Direct</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 leading-relaxed">Suivez les cours de la Bourse de Casablanca en temps réel avec les variations et volumes.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <i class="fa-solid fa-file-arrow-up text-purple-500 text-xs"></i>
+                                <span class="text-[12px] font-semibold text-gray-700">Ingestion de Documents</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 leading-relaxed">Importez vos PDF (rapports annuels, notes d'information) pour enrichir la base de connaissances.</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-xl p-3 border border-gray-100">
+                            <div class="flex items-center gap-2 mb-1.5">
+                                <i class="fa-solid fa-clock-rotate-left text-amber-500 text-xs"></i>
+                                <span class="text-[12px] font-semibold text-gray-700">Historique</span>
+                            </div>
+                            <p class="text-[11px] text-gray-500 leading-relaxed">Retrouvez vos conversations passées dans le panneau latéral gauche.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: How to Use -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-emerald-500 text-xs"></i> Comment utiliser
+                    </h4>
+                    <div class="space-y-2.5">
+                        <div class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</span>
+                            <p class="text-[13px] text-gray-600"><strong>Posez une question</strong> — Tapez votre question dans la barre en bas et appuyez Entrée ou cliquez sur l'icône d'envoi.</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</span>
+                            <p class="text-[13px] text-gray-600"><strong>Importez un document</strong> — Cliquez sur le bouton <i class="fa-solid fa-paperclip text-gray-400"></i> ou "Ingest Data" pour ajouter un PDF.</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</span>
+                            <p class="text-[13px] text-gray-600"><strong>Consultez le marché</strong> — Cliquez sur "Live Market" pour voir les cours BVC en direct.</p>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-[11px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">4</span>
+                            <p class="text-[13px] text-gray-600"><strong>Exportez un rapport</strong> — Utilisez le bouton "Export Full Report" sous le chat pour télécharger la conversation en PDF.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Focus Modes -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-sliders text-emerald-500 text-xs"></i> Modes de focus
+                    </h4>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-3 text-[13px]">
+                            <span class="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold text-[11px]">New Chat</span>
+                            <span class="text-gray-500">— Mode général, toutes les sources de données sont interrogées.</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[13px]">
+                            <span class="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold text-[11px]">Company Analysis</span>
+                            <span class="text-gray-500">— Analyse approfondie d'une entreprise cotée spécifique.</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-[13px]">
+                            <span class="px-2.5 py-1 rounded-lg bg-gray-100 text-gray-700 font-semibold text-[11px]">Market Macro</span>
+                            <span class="text-gray-500">— Focus sur les indicateurs macro-économiques du Maroc.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section: Tips -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-amber-500 text-xs"></i> Conseils
+                    </h4>
+                    <ul class="space-y-1.5 text-[13px] text-gray-600">
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px] mt-1.5"></i> Soyez précis dans vos questions pour obtenir de meilleures réponses.</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px] mt-1.5"></i> Utilisez les paramètres <i class="fa-solid fa-gear text-gray-400 text-[10px]"></i> pour ajuster la profondeur de recherche.</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px] mt-1.5"></i> Les documents PDF importés sont automatiquement analysés et indexés.</li>
+                        <li class="flex items-start gap-2"><i class="fa-solid fa-check text-emerald-400 text-[10px] mt-1.5"></i> Cliquez sur les sources citées dans les réponses pour voir le PDF original.</li>
+                    </ul>
+                </div>
+
+                <!-- Section: Keyboard Shortcuts -->
+                <div>
+                    <h4 class="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fa-solid fa-keyboard text-gray-500 text-xs"></i> Raccourcis clavier
+                    </h4>
+                    <div class="grid grid-cols-2 gap-2 text-[12px]">
+                        <div class="flex items-center gap-2">
+                            <kbd class="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-[11px] text-gray-600">Enter</kbd>
+                            <span class="text-gray-500">Envoyer le message</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <kbd class="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-[11px] text-gray-600">Shift+Enter</kbd>
+                            <span class="text-gray-500">Nouvelle ligne</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <kbd class="px-2 py-0.5 rounded bg-gray-100 border border-gray-200 font-mono text-[11px] text-gray-600">Esc</kbd>
+                            <span class="text-gray-500">Fermer les modals</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="px-6 py-3 border-t border-gray-100 bg-gray-50/50 flex-shrink-0">
+                <p class="text-[11px] text-gray-400 text-center">Alpha Insight v1.0 — PFE 2026 | AI Financial Advisor</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col-reverse gap-3 pointer-events-none"></div>
 
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

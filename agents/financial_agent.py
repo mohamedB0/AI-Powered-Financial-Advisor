@@ -31,6 +31,8 @@ from retrieval.sql_search import SQLSearch
 from retrieval.web_search import WebSearch
 from retrieval.hybrid_merger import HybridMerger
 from retrieval.reranker import Reranker
+from retrieval.bm25_search import BM25Search
+from retrieval.rrf_fusion import reciprocal_rank_fusion
 from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT, CONTEXTUALIZE_PROMPT
 from agents.tools import TOOLS
 
@@ -51,6 +53,7 @@ class AgentState(TypedDict):
     top_n            : int
     persona          : str
     focus_mode       : str
+    collection       : str                        # Target collection: "all", "financial_data", "user_data"
 
 
 # ── LLM Setup ─────────────────────────────────────────────────────────────────
@@ -152,9 +155,37 @@ def _get_reranker():
         _reranker = Reranker()
     return _reranker
 
+_bm25_search = None
+def _get_bm25_search():
+    global _bm25_search
+    if _bm25_search is None:
+        _bm25_search = BM25Search()
+    return _bm25_search
+
 
 UNSUPPORTED_REGIONS: list = []  # All regions supported; BVC tickers are in the DB
 US_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "NVDA"]
+
+
+def _expand_query(question: str) -> str:
+    """
+    Generate an alternative search query to improve recall.
+    Uses the Fast LLM to rephrase the question with different keywords.
+    """
+    try:
+        from langchain_core.messages import SystemMessage
+        llm = _get_fast_llm()
+        prompt = (
+            "Generate ONE alternative search query for the following question. "
+            "Use different keywords and synonyms but keep the same intent. "
+            "Output ONLY the alternative query, nothing else.\n\n"
+            f"Original: {question}\nAlternative:"
+        )
+        res = llm.invoke([SystemMessage(content=prompt)])
+        alt = res.content.strip().split("\n")[0].strip().strip('"').strip("'")
+        return alt[:200] if alt else ""
+    except Exception:
+        return ""
 
 
 def _results_match_query(results: list, question: str) -> bool:
@@ -256,25 +287,72 @@ def retrieve_context(state: AgentState) -> AgentState:
         except Exception as e:
             print(f"[Router] SQL error: {e}")
 
-    # ── 2. Vector Search (with Jina Reranker API) ──────────────────────────
+    # ── 2. Hybrid Retrieval: Dense (BGE-M3) + Sparse (BM25) + RRF + Reranker ──
     vector_quality = "none"  # Track: "none", "weak", "strong"
     if need_vector:
+        # Determine target collection(s) based on user selection
+        target_collection = state.get("collection", "all")
+        coll_filter = None if target_collection == "all" else target_collection
+
         try:
-            vector_results = _get_vector_search().search(question, top_k=20)
-            
+            # 2a. Dense retrieval (semantic embeddings via ChromaDB) — wider pool for better recall
+            dense_results = _get_vector_search().search(question, top_k=30, collection=coll_filter)
+            # Tag results for RRF source tracking
+            for r in dense_results:
+                r["retrieval_method"] = "dense"
+
+            # 2b. Sparse retrieval (BM25 keyword matching) — wider pool
+            bm25_results = []
+            try:
+                bm25_results = _get_bm25_search().search(question, top_k=30)
+            except Exception as e:
+                print(f"[Router] BM25 search error (non-fatal): {e}")
+
+            # 2c. Query expansion — generate an alternative query for better recall
+            expanded_results = []
+            try:
+                alt_query = _expand_query(question)
+                if alt_query and alt_query.lower() != question.lower():
+                    print(f"[Router] Query expansion: '{alt_query[:60]}'")
+                    expanded_dense = _get_vector_search().search(alt_query, top_k=15, collection=coll_filter)
+                    for r in expanded_dense:
+                        r["retrieval_method"] = "dense_expanded"
+                    expanded_results = expanded_dense
+            except Exception as e:
+                print(f"[Router] Query expansion error (non-fatal): {e}")
+
+            # 2d. Reciprocal Rank Fusion — merge all retrieval streams
+            all_streams = [s for s in [dense_results, bm25_results, expanded_results] if s]
+            if all_streams:
+                if len(all_streams) > 1:
+                    total_docs = sum(len(s) for s in all_streams)
+                    print(f"[Router] Hybrid retrieval: {total_docs} total docs from {len(all_streams)} streams -> RRF merge")
+                    vector_results = reciprocal_rank_fusion(*all_streams, top_k=25)
+                else:
+                    vector_results = all_streams[0]
+
+            # 2e. Rerank fused results with Jina cross-encoder
             if vector_results:
-                dynamic_top_n = state.get("top_n", 3)
-                print(f"[Router] Reranking {len(vector_results)} vector results via Jina API (top_n={dynamic_top_n})...")
+                dynamic_top_n = state.get("top_n", 5)
+                print(f"[Router] Reranking {len(vector_results)} hybrid results via Jina API (top_n={dynamic_top_n})...")
                 vector_results = _get_reranker().rerank(question, vector_results, top_n=dynamic_top_n)
-                
-                # Check reranker confidence — if best score is low, the DB doesn't have this info
+
+                # 2f. Filter out low-confidence results (improves Context Precision)
+                if vector_results:
+                    min_score = 0.25
+                    before_filter = len(vector_results)
+                    vector_results = [r for r in vector_results if r.get("rerank_score", 0) >= min_score]
+                    if len(vector_results) < before_filter:
+                        print(f"[Router] Filtered {before_filter - len(vector_results)} low-confidence results (< {min_score})")
+
+                # Check reranker confidence
                 if vector_results:
                     best_score = max(r.get("rerank_score", 0) for r in vector_results)
-                    print(f"[Router] Best reranker score: {best_score:.4f}")
+                    print(f"[Router] Best reranker score: {best_score:.4f} ({len(vector_results)} docs)")
                     vector_quality = "strong" if best_score >= 0.3 else "weak"
-                    
+
         except Exception as e:
-            print(f"[Router] Vector/Reranker error: {e}")
+            print(f"[Router] Hybrid retrieval error: {e}")
 
     # ── 3. Web Search ────────────────────────────────────────────────────
     #   Always runs if:

@@ -1,23 +1,22 @@
 """
 api/routes/auth.py
-Authentication routes: register, login, profile.
+Google OAuth authentication routes.
 
-POST /auth/register — Create a new user account
-POST /auth/login    — Authenticate and receive a JWT token
-GET  /auth/me       — Get current user profile (protected)
+POST /auth/google  — Authenticate with a Google ID token and receive a session JWT
+GET  /auth/me      — Get current user profile (protected)
 """
 
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel
 
 from api.auth import (
     create_access_token,
     get_current_user,
-    hash_password,
-    verify_password,
+    verify_google_token,
+    JWT_EXPIRATION_HOURS,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -26,15 +25,9 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
 # ── Request/Response Models ───────────────────────────────────────────────────
 
 
-class RegisterRequest(BaseModel):
-    email: EmailStr
-    password: str = Field(min_length=8, max_length=128)
-    full_name: Optional[str] = None
-
-
-class LoginRequest(BaseModel):
-    email: EmailStr
-    password: str
+class GoogleAuthRequest(BaseModel):
+    """Frontend sends the Google ID token obtained from Google Sign-In."""
+    id_token: str
 
 
 class TokenResponse(BaseModel):
@@ -48,6 +41,7 @@ class ProfileResponse(BaseModel):
     id: int
     email: str
     full_name: Optional[str]
+    picture: Optional[str]
     role: str
     created_at: str
 
@@ -57,7 +51,6 @@ class ProfileResponse(BaseModel):
 
 def _get_db():
     from storage.relational_db import RelationalDB
-
     return RelationalDB()
 
 
@@ -65,98 +58,108 @@ def _get_user_by_email(email: str):
     """Query the users table for a user by email."""
     db = _get_db()
     rows = db.execute_sql(
-        "SELECT id, email, hashed_password, full_name, role, is_active, created_at "
+        "SELECT id, email, full_name, picture, google_sub, role, is_active, created_at "
         "FROM users WHERE email = :email LIMIT 1",
         {"email": email},
     )
     return rows[0] if rows else None
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+def _get_user_by_google_sub(google_sub: str):
+    """Query the users table for a user by Google subject ID."""
+    db = _get_db()
+    rows = db.execute_sql(
+        "SELECT id, email, full_name, picture, google_sub, role, is_active, created_at "
+        "FROM users WHERE google_sub = :google_sub LIMIT 1",
+        {"google_sub": google_sub},
+    )
+    return rows[0] if rows else None
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(req: RegisterRequest):
-    """
-    Create a new user account and return a JWT token.
-
-    - Email must be unique.
-    - Password is hashed with bcrypt before storage.
-    - First registered user automatically gets the 'admin' role.
-    """
-    # Check if email already exists
-    existing = _get_user_by_email(req.email)
-    if existing:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="A user with this email already exists.",
-        )
-
+def _create_google_user(email: str, full_name: str, picture: str, google_sub: str) -> dict:
+    """Create a new user from Google OAuth data."""
     db = _get_db()
 
     # First user becomes admin
     user_count = db.execute_sql("SELECT COUNT(*) as cnt FROM users")
     role = "admin" if user_count[0]["cnt"] == 0 else "user"
 
-    hashed = hash_password(req.password)
-
-    # Insert new user
     db.execute_sql(
-        "INSERT INTO users (email, hashed_password, full_name, role, is_active, created_at) "
-        "VALUES (:email, :hashed_password, :full_name, :role, 1, :created_at)",
+        "INSERT INTO users (email, full_name, picture, google_sub, role, is_active, created_at) "
+        "VALUES (:email, :full_name, :picture, :google_sub, :role, 1, :created_at)",
         {
-            "email": req.email,
-            "hashed_password": hashed,
-            "full_name": req.full_name or "",
+            "email": email,
+            "full_name": full_name,
+            "picture": picture,
+            "google_sub": google_sub,
             "role": role,
             "created_at": datetime.now(timezone.utc).isoformat(),
         },
     )
 
-    # Fetch the created user to get their ID
-    user = _get_user_by_email(req.email)
-    if not user:
-        raise HTTPException(status_code=500, detail="User creation failed.")
-
-    # Generate token
-    from api.auth import JWT_EXPIRATION_HOURS
-
-    token = create_access_token(user["id"], user["email"], user["role"])
-
-    return TokenResponse(
-        access_token=token,
-        expires_in_hours=JWT_EXPIRATION_HOURS,
-        user={
-            "id": user["id"],
-            "email": user["email"],
-            "full_name": user.get("full_name", ""),
-            "role": user["role"],
-        },
-    )
+    return _get_user_by_email(email)
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest):
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
+
+@router.post("/google", response_model=TokenResponse)
+def google_auth(req: GoogleAuthRequest):
     """
-    Authenticate with email + password and receive a JWT token.
+    Authenticate using a Google ID token.
+
+    Flow:
+    1. Frontend obtains an ID token via Google Sign-In
+    2. Frontend sends the ID token to this endpoint
+    3. Backend verifies the token with Google
+    4. Backend creates or finds the user in the database
+    5. Backend returns a session JWT
+
+    The user is automatically registered on first login.
     """
-    user = _get_user_by_email(req.email)
-    if not user:
+    # Verify the Google ID token
+    google_info = verify_google_token(req.id_token)
+
+    if not google_info.get("email_verified"):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password.",
+            detail="Google email is not verified.",
         )
+
+    email = google_info["email"]
+    google_sub = google_info["sub"]
+
+    # Try to find existing user by Google sub ID
+    user = _get_user_by_google_sub(google_sub)
+
+    if not user:
+        # Try by email (link existing account)
+        user = _get_user_by_email(email)
+
+        if user:
+            # Link the Google sub to the existing user
+            db = _get_db()
+            db.execute_sql(
+                "UPDATE users SET google_sub = :google_sub, picture = :picture WHERE id = :id",
+                {"google_sub": google_sub, "picture": google_info.get("picture", ""), "id": user["id"]},
+            )
+            user = _get_user_by_email(email)
+        else:
+            # Create new user
+            user = _create_google_user(
+                email=email,
+                full_name=google_info.get("name", ""),
+                picture=google_info.get("picture", ""),
+                google_sub=google_sub,
+            )
+
+    if not user:
+        raise HTTPException(status_code=500, detail="User creation failed.")
 
     if not user.get("is_active", 1):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is disabled. Contact an administrator.",
-        )
-
-    if not verify_password(req.password, user["hashed_password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password.",
         )
 
     # Update last_login
@@ -169,9 +172,7 @@ def login(req: LoginRequest):
     except Exception:
         pass  # Non-critical
 
-    # Generate token
-    from api.auth import JWT_EXPIRATION_HOURS
-
+    # Generate session JWT
     token = create_access_token(user["id"], user["email"], user["role"])
 
     return TokenResponse(
@@ -181,6 +182,7 @@ def login(req: LoginRequest):
             "id": user["id"],
             "email": user["email"],
             "full_name": user.get("full_name", ""),
+            "picture": user.get("picture", ""),
             "role": user["role"],
         },
     )
@@ -200,6 +202,7 @@ def get_profile(current_user: dict = Depends(get_current_user)):
         id=user["id"],
         email=user["email"],
         full_name=user.get("full_name"),
+        picture=user.get("picture"),
         role=user["role"],
         created_at=str(user.get("created_at", "")),
     )

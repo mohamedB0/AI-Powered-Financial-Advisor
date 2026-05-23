@@ -5,10 +5,8 @@ Endpoint that serves a specific page of an ingested PDF file for in-UI preview.
 
 import os
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import FileResponse, Response
-
-from api.auth import get_current_user
 
 router = APIRouter()
 
@@ -20,7 +18,6 @@ DATA_ROOT = Path(__file__).parent.parent.parent  # project root
 @router.head("/pdf/file")
 def serve_pdf(
     path: str = Query(..., description="Absolute or relative path to the PDF"),
-    user: dict = Depends(get_current_user),
 ):
     """
     Serve a PDF file so the browser can display it inline.

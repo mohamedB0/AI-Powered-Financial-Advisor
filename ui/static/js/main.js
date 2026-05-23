@@ -1,4 +1,4 @@
-const API_BASE = window.location.protocol === "file:" ? "http://localhost:8000" : window.location.protocol + "//" + window.location.hostname + ":8000";
+// API_BASE is defined in auth.js (loaded first)
 
 // ── Keyword Highlighter ───────────────────────────────────────────────────────
 // Highlights query keywords inside retrieved context blockquotes
@@ -66,8 +66,11 @@ function highlightKeywordsInContext(containerEl, question) {
 let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
     persona: 'Balanced',
     depth: 3,
-    focusMode: 'New Chat'
+    focusMode: 'New Chat',
+    collection: 'all'
 };
+// Ensure collection exists for users with old cached settings
+if (!appSettings.collection) appSettings.collection = 'all';
 
 // CHAT LOGIC
 function initChat() {
@@ -99,8 +102,17 @@ function initChat() {
         const msgDiv = document.createElement('div');
         msgDiv.className = `flex w-full mt-4 mb-2 gap-4 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
         
+        // User avatar: show Google profile picture if available
+        let userAvatarStr;
+        const currentUser = getUser();
+        if (currentUser && currentUser.picture) {
+            userAvatarStr = `<div class="shrink-0 w-8 h-8 rounded-full overflow-hidden shadow-sm border border-[#3a5c44] mt-1"><img src="${currentUser.picture}" alt="You" class="w-full h-full object-cover"></div>`;
+        } else {
+            userAvatarStr = `<div class="shrink-0 w-8 h-8 rounded-full bg-[#2d4a36] flex items-center justify-center text-emerald-200 shadow-sm border border-[#3a5c44] mt-1"><i class="fa-solid fa-user text-xs"></i></div>`;
+        }
+
         const avatarStr = role === 'user' 
-            ? `<div class="shrink-0 w-8 h-8 rounded-full bg-[#2d4a36] flex items-center justify-center text-emerald-200 shadow-sm border border-[#3a5c44] mt-1"><i class="fa-solid fa-user text-xs"></i></div>`
+            ? userAvatarStr
             : `<div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1"><i class="fa-solid fa-chart-line text-[13px]"></i></div>`;
         
         const bubbleColor = role === 'user' 
@@ -115,10 +127,16 @@ function initChat() {
         // Use Tailwind typography (prose) to flawlessly render tables, bold, and bullet points from markdown
         const proseClass = role === 'user' ? 'prose-invert text-white' : 'prose-slate text-gray-700';
 
+        const timestamp = _formatMsgTime(new Date());
+        const timeAlign = role === 'user' ? 'text-right' : 'text-left';
+
         msgDiv.innerHTML = `
             ${role === 'assistant' ? avatarStr : ''}
-            <div class="relative max-w-[85%] ${bubbleRadius} px-5 py-4 ${bubbleColor}">
-                <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${isHtml ? content : marked.parse(content)}</div>
+            <div class="relative max-w-[85%] flex flex-col">
+                <div class="${bubbleRadius} px-5 py-4 ${bubbleColor}">
+                    <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${isHtml ? content : marked.parse(content)}</div>
+                </div>
+                <span class="msg-timestamp ${timeAlign}">${timestamp}</span>
             </div>
             ${role === 'user' ? avatarStr : ''}
         `;
@@ -145,13 +163,13 @@ function initChat() {
         if (convId) saveMessage(convId, 'user', text);
 
         const assistantMsgDiv = addMessage('assistant',
-            `<div class="flex items-center gap-2 py-1">
-                <div class="flex gap-1.5">
+            `<div class="typing-indicator">
+                <div class="typing-wave">
                     <span class="typing-dot"></span>
                     <span class="typing-dot"></span>
                     <span class="typing-dot"></span>
                 </div>
-                <span class="text-[12px] text-gray-400 ml-1">Thinking…</span>
+                <span class="typing-label">Analyzing</span>
             </div>`, true);
         const bubble = assistantMsgDiv.querySelector('.msg-bubble');
 
@@ -164,7 +182,8 @@ function initChat() {
                     history: currentHistory,
                     persona: appSettings.persona,
                     top_k: parseInt(appSettings.depth),
-                    focus_mode: appSettings.focusMode
+                    focus_mode: appSettings.focusMode,
+                    collection: appSettings.collection || "all"
                 })
             });
 
@@ -530,6 +549,7 @@ function initChat() {
                             const ocrBadge = r.ocr_used ? ' (OCR+Vision)' : '';
                             statusText.innerText = `Done! ${storedStr} vectors stored${ocrBadge}`;
                             if (detailText) detailText.innerText = r.filename ? `${r.filename} → ${r.chunks || '?'} chunks` : '';
+                            showToast(`Document ingested successfully — ${storedStr} vectors stored${ocrBadge}`, 'success');
                             setTimeout(() => progressContainer.classList.add('hidden'), 6000);
                             fileUpload.value = "";
                         } else if (statusData.status === 'FAILURE') {
@@ -538,6 +558,7 @@ function initChat() {
                             progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
                             statusText.innerText = 'Failed: ' + (statusData.info || 'Unknown error');
                             if (detailText) detailText.innerText = '';
+                            showToast(`Ingestion failed: ${statusData.info || 'Unknown error'}`, 'error', 6000);
                             setTimeout(() => progressContainer.classList.add('hidden'), 6000);
                             fileUpload.value = "";
                         } else {
@@ -863,6 +884,8 @@ document.addEventListener('DOMContentLoaded', () => {
         selectPersona.value = appSettings.persona;
         sliderDepth.value = appSettings.depth;
         if(depthVal) depthVal.innerText = appSettings.depth;
+        const collSelect = document.getElementById('setting-collection');
+        if (collSelect) collSelect.value = appSettings.collection || 'all';
 
         settingsModal.classList.remove('hidden');
         setTimeout(() => {
@@ -891,9 +914,12 @@ document.addEventListener('DOMContentLoaded', () => {
         // Save to global and local storage
         appSettings.persona = selectPersona.value;
         appSettings.depth = sliderDepth.value;
+        const collSelect = document.getElementById('setting-collection');
+        if (collSelect) appSettings.collection = collSelect.value;
         
         localStorage.setItem('ai_settings', JSON.stringify(appSettings));
         closeSettings();
+        showToast('Settings saved', 'success', 2000);
 
         // Optional UX notification
         const oldHtml = saveBtn.innerHTML;

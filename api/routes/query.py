@@ -28,6 +28,7 @@ class QueryRequest(BaseModel):
     history: Optional[List[HistoryMessage]] = []
     persona: Optional[str] = "Balanced"
     focus_mode: Optional[str] = "New Chat"
+    collection: Optional[str] = "all"  # "all", "financial_data", or "user_data"
 
 
 class QueryResponse(BaseModel):
@@ -146,6 +147,7 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             "persona"          : request.persona or "Balanced",
             "top_n"            : request.top_k or 3,
             "focus_mode"       : request.focus_mode or "New Chat",
+            "collection"       : request.collection or "all",
         }
 
         # ⚡ PARALLEL: Run guardrail check + retrieval at the same time.

@@ -32,7 +32,18 @@ def fetch_stock_prices(tickers: Optional[List[str]] = None):
     logger.info(f"[{task_id}] Fetching stock prices")
     
     if tickers is None:
-        tickers = ["AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA"]
+        tickers = [
+            # US Tech Giants
+            "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA",
+            # US Finance
+            "JPM", "V", "MA",
+            # US Healthcare & Consumer
+            "JNJ", "UNH", "WMT", "KO",
+            # European
+            "ASML", "SAP", "MC.PA", "NESN.SW",
+            # Asian
+            "TSM", "BABA",
+        ]
     
     results = []
     loader = APILoader()

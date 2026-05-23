@@ -83,19 +83,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-_cors_origins = os.getenv("CORS_ORIGINS", "").strip()
-if _cors_origins:
-    _allowed_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
-else:
-    # Development: allow all origins
-    _allowed_origins = ["*"]
-
+# CORS: Allow all origins in development. Auth uses JWT in Authorization
+# headers (not cookies), so allow_credentials is not needed.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=_allowed_origins,
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
-    allow_credentials=True if _allowed_origins != ["*"] else False,
 )
 
 app.include_router(auth_router)

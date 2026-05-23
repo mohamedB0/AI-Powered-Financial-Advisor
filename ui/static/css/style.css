@@ -1,6 +1,18 @@
 /* ui/static/css/style.css - Refactored to let Tailwind do the heavy lifting */
 
-/* Scrollbar */
+/* ── Scrollbar (smooth, modern, auto-fade) ──────────────────────────────── */
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+}
+
+*:hover {
+    scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+}
+
+/* Webkit (Chrome, Edge, Safari) */
 ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
@@ -8,15 +20,71 @@
 
 ::-webkit-scrollbar-track {
     background: transparent;
+    border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: rgba(156, 163, 175, 0);
+    border-radius: 10px;
+    transition: background 0.3s ease;
+}
+
+/* Show thumb on hover of the scrollable container */
+*:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.4);
+}
+
+*:hover::-webkit-scrollbar-thumb:hover {
+    background: rgba(107, 114, 128, 0.6);
+}
+
+*:hover::-webkit-scrollbar-thumb:active {
+    background: rgba(75, 85, 99, 0.7);
+}
+
+/* Chat history area — thinner and more subtle */
+#chat-history::-webkit-scrollbar {
+    width: 5px;
+}
+
+#chat-history:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.3);
+}
+
+/* History sidebar list */
+#history-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+#history-list:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.35);
+}
+
+/* Market panel — slightly more visible for data scanning */
+#stocks-table-container::-webkit-scrollbar {
+    width: 4px;
+}
+
+#stocks-table-container::-webkit-scrollbar-track {
+    background: #f9fafb;
+}
+
+#stocks-table-container:hover::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+}
+
+/* Code blocks inside messages — horizontal scrollbar */
+.msg-bubble pre::-webkit-scrollbar {
+    height: 4px;
+}
+
+.msg-bubble pre::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
     border-radius: 4px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+.msg-bubble pre:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.35);
 }
 
 /* Markdown Content Styling for msg-bubble */
@@ -180,27 +248,410 @@ mark.ctx-highlight {
     background: #243b28 !important;
 }
 
-/* ── Typing indicator dots ───────────────────────────────────────────────── */
-@keyframes typing-bounce {
-    0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-    40%           { transform: translateY(-6px); opacity: 1; }
+/* ── Typing indicator (smooth pulse wave) ────────────────────────────────── */
+.typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 0;
+}
+
+.typing-wave {
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }
 
 .typing-dot {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: #9ca3af;
-    animation: typing-bounce 1.2s infinite ease-in-out;
+    background: linear-gradient(135deg, #10b981, #059669);
+    opacity: 0.4;
+    animation: typing-pulse 1.4s ease-in-out infinite;
 }
 
 .typing-dot:nth-child(1) { animation-delay: 0ms; }
-.typing-dot:nth-child(2) { animation-delay: 160ms; }
-.typing-dot:nth-child(3) { animation-delay: 320ms; }
+.typing-dot:nth-child(2) { animation-delay: 200ms; }
+.typing-dot:nth-child(3) { animation-delay: 400ms; }
+
+@keyframes typing-pulse {
+    0%, 100% {
+        opacity: 0.3;
+        transform: scale(0.85);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+.typing-label {
+    font-size: 12px;
+    color: #9ca3af;
+    animation: typing-text-fade 2s ease-in-out infinite;
+}
+
+@keyframes typing-text-fade {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
 
 /* ── Route badge colours ─────────────────────────────────────────────────── */
 .route-badge-vector     { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 .route-badge-web        { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
 .route-badge-sql        { background:#faf5ff; color:#7e22ce; border:1px solid #e9d5ff; }
 .route-badge-cache      { background:#f9fafb; color:#6b7280; border:1px solid #e5e7eb; }
-.route-badge-hybrid     { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+.route-badge-hybrid     { background:#ecfdf5; color:#065f46; border:1px solid #a7f3d0; }
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT
+   - < 768px  (mobile): hide nav sidebar, history sidebar, market panel
+   - 768-1024px (tablet): collapse history, hide market panel
+   - 1024-1280px: collapse market panel by default
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Small screens (< 768px) — Mobile ────────────────────────────────────── */
+@media (max-width: 767px) {
+    /* Hide the 72px nav sidebar */
+    body > div > aside {
+        display: none !important;
+    }
+
+    /* Hide history sidebar */
+    #history-sidebar {
+        display: none !important;
+    }
+
+    #show-history-btn {
+        display: none !important;
+    }
+
+    /* Market panel hidden */
+    #market-panel {
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Market toggle button */
+    #market-toggle-btn {
+        display: none !important;
+    }
+
+    /* Chat input full width, smaller padding */
+    .input-ring {
+        border-radius: 18px;
+    }
+
+    #chat-input {
+        font-size: 15px;
+        padding: 12px 8px;
+        height: 48px;
+    }
+
+    /* Empty state adjustments */
+    #empty-state h1 {
+        font-size: 1.8rem !important;
+    }
+
+    #empty-state .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #empty-state p {
+        font-size: 13px !important;
+    }
+
+    /* Chat bubbles full width */
+    #chat-history .msg-bubble {
+        max-width: 95% !important;
+    }
+
+    /* Focus tabs scrollable */
+    #focus-tabs-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Bottom input area */
+    .absolute.bottom-8 {
+        bottom: 4px;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    /* Top bar simplified */
+    .flex.items-center.justify-between.border-b {
+        padding-left: 12px;
+        padding-right: 12px;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    /* Ingest button: icon only */
+    #file-upload + button span,
+    .items-center > button:last-child span {
+        display: none;
+    }
+}
+
+/* ── Medium screens (768px - 1024px) — Tablet ────────────────────────────── */
+@media (min-width: 768px) and (max-width: 1024px) {
+    /* Collapse history sidebar by default */
+    #history-sidebar {
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    #show-history-btn {
+        display: flex !important;
+    }
+
+    /* Market panel hidden */
+    #market-panel {
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Empty state: 1 column grid */
+    #empty-state .grid {
+        grid-template-columns: 1fr !important;
+        max-width: 400px;
+    }
+}
+
+/* ── Medium-large screens (1024px - 1280px) ──────────────────────────────── */
+@media (min-width: 1025px) and (max-width: 1280px) {
+    /* Market panel collapsed by default */
+    #market-panel {
+        width: 0 !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    /* Narrower history sidebar */
+    #history-sidebar {
+        width: 220px;
+        min-width: 220px;
+    }
+}
+
+/* ── Large screens (> 1280px) — Full layout ──────────────────────────────── */
+@media (min-width: 1281px) {
+    /* Everything visible at default widths — no overrides needed */
+}
+
+/* ── Touch-friendly adjustments for mobile/tablet ────────────────────────── */
+@media (max-width: 1024px) {
+    /* Larger tap targets */
+    .focus-tab {
+        padding: 8px 12px;
+    }
+
+    /* Stock rows need more padding for touch */
+    .stock-row {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+
+    /* Prompt buttons larger tap area */
+    #empty-state .grid button {
+        padding: 14px 16px;
+    }
+}
+
+/* ── Mobile bottom safe area (for iOS notch devices) ─────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    @media (max-width: 767px) {
+        .absolute.bottom-8 {
+            padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        }
+    }
+}
+
+
+/* ── Mobile history overlay ──────────────────────────────────────────────── */
+.mobile-history-btn {
+    display: none;
+}
+
+@media (max-width: 1024px) {
+    .mobile-history-btn {
+        display: flex !important;
+    }
+}
+
+/* When history sidebar is shown as overlay on mobile */
+@media (max-width: 1024px) {
+    #history-sidebar.mobile-open {
+        display: flex !important;
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        z-index: 200;
+        width: 280px !important;
+        min-width: 280px !important;
+        height: 100vh;
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15);
+    }
+
+    #mobile-history-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.3);
+        z-index: 199;
+        backdrop-filter: blur(2px);
+    }
+}
+
+
+/* ── Message Timestamps ──────────────────────────────────────────────────── */
+.msg-timestamp {
+    display: block;
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 4px;
+    padding: 0 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+/* Show on hover of the message row */
+.flex:hover > .flex-col > .msg-timestamp,
+.flex:hover > div > .msg-timestamp {
+    opacity: 1;
+}
+
+/* Always show on mobile (no hover) */
+@media (max-width: 767px) {
+    .msg-timestamp {
+        opacity: 0.7;
+    }
+}
+
+
+/* ── PDF Modal ───────────────────────────────────────────────────────────── */
+#pdf-modal-container {
+    animation: pdf-modal-enter 0.25s ease-out;
+}
+
+@keyframes pdf-modal-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#pdf-iframe {
+    transition: transform 0.2s ease, width 0.2s ease, height 0.2s ease;
+}
+
+#pdf-page-input::-webkit-inner-spin-button,
+#pdf-page-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#pdf-page-input {
+    -moz-appearance: textfield;
+}
+
+/* Responsive PDF modal */
+@media (max-width: 767px) {
+    #pdf-modal-container {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        height: 100vh !important;
+        border-radius: 0 !important;
+    }
+
+    /* Simplify toolbar on mobile */
+    #pdf-modal-container .flex.items-center.gap-1 {
+        flex-wrap: wrap;
+    }
+}
+
+
+/* ── Toast Notifications ─────────────────────────────────────────────────── */
+.toast-item {
+    opacity: 0;
+    transform: translateX(20px) scale(0.95);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toast-item.toast-enter {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+}
+
+.toast-item.toast-exit {
+    animation: toast-slide-out 0.25s ease-in forwards;
+}
+
+@keyframes toast-slide-out {
+    to {
+        opacity: 0;
+        transform: translateX(30px) scale(0.9);
+    }
+}
+
+/* Progress bar for auto-dismiss (optional enhancement) */
+.toast-item::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    border-radius: 2px;
+    background: currentColor;
+    opacity: 0.15;
+    animation: toast-progress 4s linear forwards;
+}
+
+@keyframes toast-progress {
+    from { transform: scaleX(1); transform-origin: left; }
+    to { transform: scaleX(0); transform-origin: left; }
+}
+
+/* Mobile: toasts full width at bottom */
+@media (max-width: 767px) {
+    #toast-container {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+    }
+
+    .toast-item {
+        max-width: 100% !important;
+    }
+}
+
+
+/* ── Help Modal ──────────────────────────────────────────────────────────── */
+#help-modal-content {
+    animation: help-modal-enter 0.25s ease-out;
+}
+
+@keyframes help-modal-enter {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+#help-modal-content kbd {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+}
