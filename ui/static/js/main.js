@@ -72,6 +72,111 @@ let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
 // Ensure collection exists for users with old cached settings
 if (!appSettings.collection) appSettings.collection = 'all';
 
+// ── VOICE INPUT (Speech-to-Text) ─────────────────────────────────────────────
+let _mediaRecorder = null;
+let _audioChunks = [];
+let _isRecording = false;
+
+async function toggleVoiceRecording() {
+    if (_isRecording) {
+        stopVoiceRecording();
+    } else {
+        await startVoiceRecording();
+    }
+}
+
+async function startVoiceRecording() {
+    const micBtn = document.getElementById('mic-btn');
+
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        _audioChunks = [];
+        _mediaRecorder = new MediaRecorder(stream, {
+            mimeType: MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : 'audio/webm'
+        });
+
+        _mediaRecorder.ondataavailable = (e) => {
+            if (e.data.size > 0) _audioChunks.push(e.data);
+        };
+
+        _mediaRecorder.onstop = async () => {
+            // Stop all tracks to release the mic
+            stream.getTracks().forEach(t => t.stop());
+            await sendAudioForTranscription();
+        };
+
+        _mediaRecorder.start();
+        _isRecording = true;
+
+        // Visual feedback
+        micBtn.classList.remove('text-white/50');
+        micBtn.classList.add('text-red-400', 'animate-pulse');
+        micBtn.title = 'Stop recording';
+
+    } catch (err) {
+        console.error('[Voice] Mic access error:', err);
+        showToast('Microphone access denied. Check browser permissions.', 'error');
+    }
+}
+
+function stopVoiceRecording() {
+    const micBtn = document.getElementById('mic-btn');
+
+    if (_mediaRecorder && _mediaRecorder.state !== 'inactive') {
+        _mediaRecorder.stop();
+    }
+    _isRecording = false;
+
+    // Reset visual
+    micBtn.classList.remove('text-red-400', 'animate-pulse');
+    micBtn.classList.add('text-white/50');
+    micBtn.title = 'Voice input';
+}
+
+async function sendAudioForTranscription() {
+    if (_audioChunks.length === 0) return;
+
+    const blob = new Blob(_audioChunks, { type: 'audio/webm' });
+    _audioChunks = [];
+
+    // Show feedback
+    const chatInput = document.getElementById('chat-input');
+    chatInput.placeholder = 'Transcribing...';
+
+    try {
+        const formData = new FormData();
+        formData.append('audio', blob, 'recording.webm');
+
+        const res = await authFetch(`${API_BASE}/speech/transcribe`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+            throw new Error(data.detail || 'Transcription failed');
+        }
+
+        if (data.text) {
+            // Fill the chat input with transcribed text
+            chatInput.value = data.text;
+            chatInput.focus();
+            // Auto-resize
+            chatInput.style.height = 'auto';
+            chatInput.style.height = chatInput.scrollHeight + 'px';
+            showToast('Voice transcribed', 'success', 2000);
+        }
+    } catch (err) {
+        console.error('[Voice] Transcription error:', err);
+        showToast(err.message || 'Voice transcription failed', 'error');
+    } finally {
+        chatInput.placeholder = 'Ask Something';
+    }
+}
+
 // CHAT LOGIC
 function initChat() {
     const chatHistory = document.getElementById('chat-history');

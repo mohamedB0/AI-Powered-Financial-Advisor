@@ -4,9 +4,19 @@
  */
 
 // API base URL (defined here so it's available before main.js loads)
-const API_BASE = window.location.protocol === "file:"
-    ? "http://127.0.0.1:8000"
-    : window.location.protocol + "//" + (window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname) + ":8000";
+// In development: Flask on :5000, FastAPI on :8000 → use explicit port
+// In production behind Nginx: both on same domain → no port needed
+const API_BASE = (() => {
+    if (window.location.protocol === "file:") return "http://127.0.0.1:8000";
+    const port = window.location.port;
+    // If we're on port 5000 (dev Flask), point to :8000 (dev FastAPI)
+    if (port === "5000") {
+        const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
+        return window.location.protocol + "//" + host + ":8000";
+    }
+    // Production: API is proxied on the same origin (Nginx handles routing)
+    return window.location.origin;
+})();
 
 const AUTH_TOKEN_KEY = 'fin_advisor_token';
 const AUTH_USER_KEY = 'fin_advisor_user';

@@ -58,6 +58,7 @@ from api.routes.stocks import router as stocks_router
 from api.routes.bvc import router as bvc_router
 from api.routes.pdf_viewer import router as pdf_router
 from api.routes.conversations import router as conversations_router
+from api.routes.speech import router as speech_router
 
 from contextlib import asynccontextmanager
 
@@ -99,6 +100,7 @@ app.include_router(ingest_router)
 app.include_router(stocks_router)
 app.include_router(bvc_router)
 app.include_router(pdf_router)
+app.include_router(speech_router)
 
 
 @app.get("/", tags=["Health"])

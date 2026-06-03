@@ -185,7 +185,7 @@
                     <div id="upload-detail-text" class="text-[11px] text-gray-400 mt-1 italic text-center"></div>
                 </div>
 
-                <div class="input-ring relative w-full bg-[#1a2e1f] hover:bg-[#243b28] rounded-[24px] flex items-center border border-[#243b28] focus-within:border-emerald-500 focus-within:bg-[#243b28] focus-within:shadow-sm transition-all duration-300 pl-3">
+                <div class="input-ring relative w-full bg-[#1a2e1f] hover:bg-[#243b28] rounded-[24px] flex items-center border border-[#243b28] focus-within:border-emerald-500 focus-within:bg-[#243b28] focus-within:shadow-sm transition-all duration-300 pl-3 pr-2">
                     <button onclick="document.getElementById('file-upload').click()"
                         class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
                         title="Attach Document">
@@ -194,8 +194,13 @@
                     <textarea id="chat-input"
                         class="w-full bg-transparent border-none text-white text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-white/40"
                         placeholder="Ask Something" rows="1"></textarea>
+                    <button id="mic-btn" onclick="toggleVoiceRecording()"
+                        class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-emerald-400 rounded-full transition-colors bg-transparent border-none flex-shrink-0"
+                        title="Voice input">
+                        <i class="fa-solid fa-microphone text-lg"></i>
+                    </button>
                     <button id="send-btn"
-                        class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center text-white/50 hover:text-emerald-400 hover:bg-white/10 rounded-full transition-colors bg-transparent border-none">
+                        class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-emerald-400 hover:bg-white/10 rounded-full transition-colors bg-transparent border-none flex-shrink-0">
                         <i class="fa-solid fa-paper-plane text-lg"></i>
                     </button>
                 </div>

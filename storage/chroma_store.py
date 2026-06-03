@@ -74,6 +74,7 @@ class ChromaStore:
         embeddings: List[List[float]],
         metadatas: List[Dict[str, Any]],
         ids: Optional[List[str]] = None,
+        batch_size: int = 128,
     ) -> int:
         if not texts:
             return 0
@@ -104,16 +105,26 @@ class ChromaStore:
                 for k, v in m.items()
             })
 
-        self.collection.upsert(
-            ids=ids,
-            embeddings=embeddings,
-            documents=texts,
-            metadatas=clean_meta,
-        )
+        # Upsert in batches to avoid ChromaDB limits
+        total_stored = 0
+        for i in range(0, len(texts), batch_size):
+            batch_ids = ids[i:i+batch_size]
+            batch_emb = embeddings[i:i+batch_size]
+            batch_docs = texts[i:i+batch_size]
+            batch_meta = clean_meta[i:i+batch_size]
+
+            self.collection.upsert(
+                ids=batch_ids,
+                embeddings=batch_emb,
+                documents=batch_docs,
+                metadatas=batch_meta,
+            )
+            total_stored += len(batch_ids)
+
         logger.info(
-            "ChromaStore: upserted %d chunks into '%s'", len(texts), self.collection_name
+            "ChromaStore: upserted %d chunks into '%s'", total_stored, self.collection_name
         )
-        return len(texts)
+        return total_stored
 
     def count(self) -> int:
         return self.collection.count()

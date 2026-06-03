@@ -247,7 +247,7 @@ def retrieve_context(state: AgentState) -> AgentState:
 
     # Dynamically respect the Semantic Router's decisions
     required_tools = routing.get("required_tools", [])
-    need_sql    = False  # 🔇 SQL DISABLED FOR TESTING — re-enable: "sql" in required_tools
+    need_sql    = "sql" in required_tools
     need_vector = "vector" in required_tools
     need_web    = "web_search" in required_tools
     
@@ -387,15 +387,35 @@ def retrieve_context(state: AgentState) -> AgentState:
     }
 
 
+def _detect_language(text: str) -> str:
+    """Simple language detection for French/Arabic/English."""
+    # Arabic script detection
+    if any('\u0600' <= c <= '\u06FF' for c in text):
+        return "Arabic"
+    # French indicators
+    french_words = {"le", "la", "les", "des", "est", "que", "qui", "dans", "pour", "sur", "pas", "une", "avec", "sont", "cette", "quel", "quelle", "comment", "pourquoi"}
+    words = set(text.lower().split())
+    if len(words & french_words) >= 2:
+        return "French"
+    return "English"
+
+
 def generate_answer(state: AgentState) -> AgentState:
     """Node: Generate answer using LLM with retrieved context."""
     # CRITICAL: Always use the 'original_question' for generation.
     # The 'question' might have been rewritten/translated by the LLM in english.
     # Using original_question guarantees the LLM sees the user's explicit Arabic/French text.
+    original_q = state["original_question"]
+    detected_lang = _detect_language(original_q)
+
     prompt = QUERY_PROMPT_TEMPLATE.format(
-        question=state["original_question"],
+        question=original_q,
         context=state["context"] or "No context available.",
     )
+
+    # Add explicit language enforcement at the end of the prompt
+    lang_instruction = f"\n\n⚠️ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
+    prompt += lang_instruction
 
     # Prepend prior conversation history (last 4 messages = 2 turns) to save tokens
     prior = state.get("history", [])[-4:]

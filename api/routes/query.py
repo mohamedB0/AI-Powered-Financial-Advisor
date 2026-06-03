@@ -190,6 +190,11 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             question=request.question,
             context=context,
         )
+
+        # Enforce response language matches user's question language
+        from agents.financial_agent import _detect_language
+        detected_lang = _detect_language(request.question)
+        prompt += f"\n\n⚠️ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
         
         persona_guide = f"You must strongly adopt the following Investment Persona: {state.get('persona', 'Balanced')}."
         
