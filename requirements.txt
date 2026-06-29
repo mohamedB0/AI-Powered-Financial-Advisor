@@ -49,8 +49,9 @@ plotly>=5.22.0
 pytest>=8.2.0
 httpx>=0.27.0
 
-# ─── Authentication (Google OAuth) ───────────────────────────────────────────
+# ─── Authentication (Google OAuth + Email/Password) ──────────────────────────
 PyJWT>=2.8.0
+bcrypt>=4.0.0
 google-auth>=2.29.0
 google-auth-httplib2>=0.2.0
 pydantic[email]>=2.0.0

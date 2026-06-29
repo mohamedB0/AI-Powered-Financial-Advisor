@@ -159,7 +159,7 @@ async def ingest_file_async(
         )
 
     try:
-        upload_dir = Path("data/uploads")
+        upload_dir = Path(__file__).resolve().parent.parent.parent / "data" / "uploads"
         upload_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -172,8 +172,15 @@ async def ingest_file_async(
         
         from tasks.document_ingestion_tasks import ingest_document
         
+        # If the Celery worker runs in Docker, it sees the file at /app/data/uploads/...
+        # The API may run locally (Windows path) while the worker is in Docker (Linux path).
+        # CELERY_WORKER_IN_DOCKER=true signals that workers expect /app/... paths.
+        worker_path = str(file_path)
+        if os.getenv("CELERY_WORKER_IN_DOCKER", "false").lower() == "true":
+            worker_path = f"/app/data/uploads/{safe_filename}"
+        
         task = ingest_document.apply_async(
-            args=[str(file_path)],
+            args=[worker_path],
             kwargs={"collection_name": "user_data"},
             queue="user_ingestion",
         )
@@ -206,9 +213,9 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
             detail="Celery is not enabled. Set USE_CELERY=true in .env and restart the API.",
         )
     
-    from celery.result import AsyncResult
+    from tasks.celery_app import celery_app
     
-    result = AsyncResult(task_id)
+    result = celery_app.AsyncResult(task_id)
     
     # Extract rich progress info if task is in PROGRESS state
     step = None
@@ -249,7 +256,7 @@ async def ingest_batch_async(
         )
     
     try:
-        upload_dir = Path("data/uploads/batch")
+        upload_dir = Path(__file__).resolve().parent.parent.parent / "data" / "uploads" / "batch"
         upload_dir.mkdir(parents=True, exist_ok=True)
         
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

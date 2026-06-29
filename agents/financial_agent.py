@@ -189,7 +189,11 @@ def _expand_query(question: str) -> str:
 
 
 def _results_match_query(results: list, question: str) -> bool:
-    """Check if SQL results actually match the query (ticker AND data type)."""
+    """Check if SQL results actually match the query (ticker AND data type).
+
+    Returns False for vague/conceptual questions that have no concrete
+    structured-data intent, so generic market dumps never leak into answers.
+    """
     if not results:
         return False
     q = question.lower()
@@ -209,6 +213,7 @@ def _results_match_query(results: list, question: str) -> bool:
             print(f"[Router] Query asks for price data but got other data")
             return False
 
+    # Ticker-specific questions: only keep results that actually mention the ticker.
     if "atw" in q or "attijari" in q:
         return any("ATW" in str(r) or "BVC.ATW" in str(r) for r in results)
     if "bcm" in q or "bcp" in q or "banque populaire" in q:
@@ -218,6 +223,24 @@ def _results_match_query(results: list, question: str) -> bool:
     for ticker in US_TICKERS:
         if ticker.lower() in q:
             return any(ticker in str(r) for r in results)
+
+    # No ticker mentioned. Only accept generic market data when the question
+    # expresses a concrete market-data intent (movers, prices, revenue, volume).
+    # Conceptual/definitional questions ("how to measure inflation") fall here
+    # and are rejected so irrelevant tables don't pollute the context.
+    # NOTE: deliberately excludes broad words like "market"/"marché", since a
+    # conceptual question can mention "the market" without wanting price data.
+    generic_market_intent = (
+        is_revenue_query
+        or is_price_query
+        or any(k in q for k in [
+            "mover", "gainer", "loser", "perform", "trending",
+            "most active", "rising", "falling",
+        ])
+    )
+    if not generic_market_intent:
+        print("[Router] SQL results have no concrete relevance to the question — discarding.")
+        return False
     return True
 
 
@@ -271,14 +294,55 @@ def retrieve_context(state: AgentState) -> AgentState:
     # ── 1. SQL Search ────────────────────────────────────────────────────────
     if need_sql:
         try:
-            if routing["detail"]:
+            # Explicit intent detection — we only hit the structured DB when the
+            # question actually asks for market/financial figures. A vague or
+            # conceptual question (e.g. "how to measure inflation") must NOT
+            # trigger a generic top-movers dump that then leaks into the answer.
+            movers_intent = any(k in q_lower for k in [
+                "mover", "gainer", "loser", "top perform", "best perform",
+                "worst perform", "biggest gain", "biggest los", "rising", "falling",
+                "trending", "most active", "top stock", "best stock",
+            ])
+
+            # Comparison detection: "compare X vs Y", "X contre Y", "مقارنة"
+            compare_intent = any(k in q_lower for k in [
+                "compare", "compar", "versus", " vs ", " vs.", "contre",
+                "مقارنة", "قارن", "difference between", "différence entre",
+            ])
+
+            if compare_intent and routing.get("detail"):
+                # Try to extract two tickers from the question
+                import re
+                tickers_found = re.findall(r'\b([A-Z]{2,5})\b', question)
+                if len(tickers_found) >= 2:
+                    print(f"[Router] Comparison detected: {tickers_found[0]} vs {tickers_found[1]}")
+                    comparison_text = _get_sql_search().compare_companies(tickers_found[0], tickers_found[1])
+                    sql_results = [{"comparison": comparison_text}]
+                else:
+                    sql_results = _get_sql_search().get_price_history(routing["detail"], days=10)
+            elif routing["detail"]:
                 sql_results = _get_sql_search().get_price_history(routing["detail"], days=10)
             elif "revenue" in q_lower or "earnings" in q_lower:
                 sql_results = _get_sql_search().get_top_by_revenue()
             elif "volume" in q_lower:
                 sql_results = _get_sql_search().get_highest_volume()
-            else:
+            elif movers_intent:
                 sql_results = _get_sql_search().get_top_movers()
+            elif compare_intent:
+                # Comparison without a specific detail — try to find tickers in the question
+                import re
+                tickers_found = re.findall(r'\b([A-Z]{2,5})\b', question)
+                if len(tickers_found) >= 2:
+                    print(f"[Router] Comparison detected: {tickers_found[0]} vs {tickers_found[1]}")
+                    comparison_text = _get_sql_search().compare_companies(tickers_found[0], tickers_found[1])
+                    sql_results = [{"comparison": comparison_text}]
+                else:
+                    sql_results = []
+            else:
+                # No concrete structured-data intent — skip SQL entirely rather
+                # than fabricating an irrelevant table.
+                print("[Router] SQL routed but no concrete data intent — skipping SQL fetch.")
+                sql_results = []
 
             # Validate: do SQL results actually match what the user asked?
             if sql_results and not _results_match_query(sql_results, question):
@@ -358,17 +422,28 @@ def retrieve_context(state: AgentState) -> AgentState:
     #   Always runs if:
     #     a) Router explicitly asked for web  OR
     #     b) Vector results are weak/absent (auto-supplement to avoid "je n'ai pas trouvé")
-    if need_web or vector_quality in ("none", "weak"):
-        if vector_quality in ("none", "weak") and not need_web:
-            print(f"[Router] Vector quality '{vector_quality}' — auto-supplementing with web search.")
+    #   BUT: if the user explicitly selected a specific collection (not "all"),
+    #   respect their choice and do NOT override with web results.
+    user_forced_collection = state.get("collection", "all") != "all"
+
+    if need_web and not user_forced_collection:
         try:
             web_results = _get_web_search().search(question, max_results=3)
         except Exception as e:
             print(f"[Router] Web search error: {e}")
+    elif not user_forced_collection and vector_quality in ("none", "weak"):
+        print(f"[Router] Vector quality '{vector_quality}' — auto-supplementing with web search.")
+        try:
+            web_results = _get_web_search().search(question, max_results=3)
+        except Exception as e:
+            print(f"[Router] Web search error: {e}")
+    elif user_forced_collection:
+        print(f"[Router] User selected specific collection '{state.get('collection')}' — skipping web supplement.")
 
     # ── 4. Merge only the sources that were fetched ──────────────────────
     # If vector quality is weak but web returned results, drop weak vectors to avoid confusion
-    if vector_quality == "weak" and web_results:
+    # BUT: if user explicitly chose a collection, always keep their vector results.
+    if vector_quality == "weak" and web_results and not user_forced_collection:
         print(f"[Router] Dropping {len(vector_results)} weak vector results in favor of web.")
         vector_results = []
 
@@ -497,7 +572,12 @@ _OBVIOUSLY_SAFE_PATTERNS = [
     "marché", "bourse", "action", "obligation", "inflation", "taux", "pib", "croissance",
     "dividende", "rendement", "risque", "portefeuille", "investissement", "bénéfice",
     "stock", "market", "price", "revenue", "gdp", "interest", "bond", "equity",
-    "سهم", "سوق", "تضخم", "فائدة", "ناتج", "استثمار", "عائد",
+    "earnings", "income", "ebitda", "eps", "share", "dividend", "profit", "margin",
+    "debt", "asset", "liability", "balance sheet", "cash flow", "annual report",
+    "quarter", "fiscal", "segment", "operating", "net sales", "gross margin",
+    "company", "financial", "capital", "valuation", "p/e", "ratio",
+    "mosaic", "ocp", "attijariwafa", "bcp", "iam", "managem", "cosumar",
+    "سهم", "سوق", "تضخم", "فائدة", "ناتج", "استثمار", "عائد", "أرباح", "إيرادات", "شركة",
     "budget", "dette", "fiscal", "hcp", "bank al-maghrib", "ammc", "bkam",
 ]
 

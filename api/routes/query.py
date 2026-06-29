@@ -59,6 +59,79 @@ def _get_cache():
     return _semantic_cache
 
 
+@router.get("/collections")
+def list_collections() -> dict:
+    """
+    Return the knowledge-base collections available for querying, with a live
+    document count for each. Used by the chat UI to render the collection
+    selector menu bar.
+
+    Returns:
+        {
+          "active": "all",
+          "collections": [
+            {"id": "all",            "label": "All Sources",    "count": 12345},
+            {"id": "financial_data", "label": "Institutional",  "count": 12000},
+            {"id": "user_data",      "label": "My Uploads",     "count": 345}
+          ]
+        }
+    """
+    import chromadb
+    from chromadb.config import Settings as ChromaSettings
+    from storage.chroma_store import (
+        CHROMA_PERSIST_DIR,
+        CHROMA_COLLECTION_FINANCIAL,
+        CHROMA_COLLECTION_USER_DATA,
+    )
+
+    counts = {CHROMA_COLLECTION_FINANCIAL: 0, CHROMA_COLLECTION_USER_DATA: 0}
+    try:
+        client = chromadb.PersistentClient(
+            path=CHROMA_PERSIST_DIR,
+            settings=ChromaSettings(anonymized_telemetry=False),
+        )
+        for name in counts:
+            try:
+                coll = client.get_or_create_collection(
+                    name=name, metadata={"hnsw:space": "cosine"}
+                )
+                counts[name] = coll.count()
+            except Exception:
+                counts[name] = 0
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read collections: {e}")
+
+    financial_n = counts[CHROMA_COLLECTION_FINANCIAL]
+    user_n = counts[CHROMA_COLLECTION_USER_DATA]
+
+    return {
+        "active": "all",
+        "collections": [
+            {
+                "id": "all",
+                "label": "All Sources",
+                "description": "Institutional reports + your uploads",
+                "icon": "fa-layer-group",
+                "count": financial_n + user_n,
+            },
+            {
+                "id": CHROMA_COLLECTION_FINANCIAL,
+                "label": "Institutional Docs",
+                "description": "Scraped reports (AMMC, BKAM, HCP, CDC)",
+                "icon": "fa-building-columns",
+                "count": financial_n,
+            },
+            {
+                "id": CHROMA_COLLECTION_USER_DATA,
+                "label": "My Uploads",
+                "description": "Documents you ingested",
+                "icon": "fa-folder-open",
+                "count": user_n,
+            },
+        ],
+    }
+
+
 @router.post("/")
 def query(request: QueryRequest, user: dict = Depends(get_current_user)) -> QueryResponse:
     """
@@ -130,6 +203,7 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             contextualize_query, AgentState,
         )
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
+        from api.tracing import trace_query_span, trace_stage, set_output
 
         lc_history = _build_history(request.history)
 
@@ -150,100 +224,191 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             "collection"       : request.collection or "all",
         }
 
-        # ⚡ PARALLEL: Run guardrail check + retrieval at the same time.
-        # For ~90% of financial queries the guardrail is a free keyword fast-pass,
-        # so retrieval finishes first and we never wait for guardrail at all.
-        # For the remaining 10% (LLM call needed), retrieval and guardrail overlap.
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
-            # Contextualize before retrieval (fast: skips LLM when no history/pronouns)
-            state.update(contextualize_query(state))
-
-            future_guardrail = executor.submit(guardrail_check, state)
-            future_retrieval  = executor.submit(retrieve_context, state)
-
-            retrieval_result  = future_retrieval.result()   # wait for retrieval
-            guardrail_result  = future_guardrail.result()   # wait for guardrail
-
-        # Check safety gate
-        if guardrail_result.get("is_safe", "yes") != "yes":
-            blocked = generate_blocked(state)
-            yield f"data: {json.dumps({'token': blocked['answer']})}\n\n"
-            yield f"data: {json.dumps({'done': True, 'context': '', 'route': 'blocked'})}\n\n"
-            return
-
-        state.update(retrieval_result)
-        state.update(guardrail_result)
-
-        # Grade & optional CRAG rewrite
-        grade = grade_documents(state)
-        state.update(grade)
-        if state.get("context_relevant") == "no":
-            state.update(rewrite_query(state))
-            state.update(web_search_fallback(state))
-
-        context = state.get("context", "") or "No context available."
-        route   = state.get("route", "")
-
-        # ── 2. Streaming generation ─────────────────────────────────────
-        prior = lc_history[-4:]
-        prompt = QUERY_PROMPT_TEMPLATE.format(
+        with trace_query_span(
+            user=user,
             question=request.question,
-            context=context,
-        )
+            persona=state["persona"],
+            focus_mode=state["focus_mode"],
+            collection=state["collection"],
+        ) as root_span:
 
-        # Enforce response language matches user's question language
-        from agents.financial_agent import _detect_language
-        detected_lang = _detect_language(request.question)
-        prompt += f"\n\n⚠️ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
-        
-        persona_guide = f"You must strongly adopt the following Investment Persona: {state.get('persona', 'Balanced')}."
-        
-        messages = [
-            SystemMessage(content=SYSTEM_PROMPT + "\n\n" + persona_guide),
-            *prior,
-            HumanMessage(content=prompt),
-        ]
+            # ── 1. Contextualize + Guardrail + Retrieve (parallel) ────────
+            with trace_stage("contextualize") as ctx_span:
+                state.update(contextualize_query(state))
+                ctx_span.set_attribute("contextualize.output_question", state["question"][:300])
 
-        from agents.financial_agent import _FALLBACK_MODELS, _get_llm as _agent_get_llm
+            # Run guardrail and retrieval in parallel threads, then record spans
+            # after the results are back (avoids OTel context detach errors from
+            # cross-thread span management).
+            import time as _time
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+                t0 = _time.time()
+                future_guardrail = executor.submit(guardrail_check, state)
+                future_retrieval = executor.submit(retrieve_context, state)
+                retrieval_result = future_retrieval.result()
+                guardrail_result = future_guardrail.result()
 
-        openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
-        # ⚡ None sentinel = Groq preferred path (fastest), then OpenRouter fallbacks
-        models_to_try = [None] + [m for m in _FALLBACK_MODELS if m != openrouter_primary] + [openrouter_primary]
+            # Record retrieval span (after thread completed — no cross-thread context)
+            with trace_stage("retrieve") as ret_span:
+                ret_span.set_attribute("retrieve.route", retrieval_result.get("route", ""))
+                ret_span.set_attribute("retrieve.context_length", len(retrieval_result.get("context", "")))
 
-        streamed = False
-        for model_name in models_to_try:
-            try:
-                llm_stream = _agent_get_llm(model_name)
-                full_answer = ""
-                for chunk in llm_stream.stream(messages):
-                    token = chunk.content if hasattr(chunk, "content") else str(chunk)
-                    if token:
-                        full_answer += token
-                        yield f"data: {json.dumps({'token': token})}\n\n"
-                streamed = True
-                break  # success — exit model loop
-            except Exception as e:
-                error_msg = str(e)
-                is_provider_error = (
-                    "provider" in error_msg.lower()
-                    or "502" in error_msg
-                    or "503" in error_msg
-                    or "rate_limit" in error_msg
-                    or "429" in error_msg
-                )
-                if is_provider_error and model_name != models_to_try[-1]:
-                    print(f"[Stream] Provider error on {model_name}: {error_msg[:100]}. Trying next model.")
-                    continue  # try next model
-                # Final failure — emit a clean user-facing error
-                err_token = (
-                    "\n\n⚠️ **Le service IA est temporairement indisponible.** "
-                    "Veuillez réessayer dans quelques instants. "
-                    f"*(Détail technique: {error_msg[:120]})*"
-                )
-                yield f"data: {json.dumps({'token': err_token})}\n\n"
-                break
+            # Record guardrail span
+            with trace_stage("guardrail") as guard_span:
+                guard_span.set_attribute("guardrail.is_safe", guardrail_result.get("is_safe", "yes"))
 
-        # ── 3. Done signal with metadata ────────────────────────────────
-        yield f"data: {json.dumps({'done': True, 'context': context, 'route': route})}\n\n"
+            # Check safety gate
+            if guardrail_result.get("is_safe", "yes") != "yes":
+                with trace_stage("generate_blocked") as blk_span:
+                    blocked = generate_blocked(state)
+                    blk_span.set_attribute("blocked", True)
+                root_span.set_attribute("query.blocked", True)
+                set_output(root_span, blocked["answer"])
+                yield f"data: {json.dumps({'token': blocked['answer']})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'context': '', 'route': 'blocked'})}\n\n"
+                return
+
+            state.update(retrieval_result)
+            state.update(guardrail_result)
+
+            # ── 2. Grade & optional CRAG rewrite ──────────────────────────
+            with trace_stage("grade_documents") as grade_span:
+                grade = grade_documents(state)
+                state.update(grade)
+                grade_span.set_attribute("grade.context_relevant", state.get("context_relevant", ""))
+
+            if state.get("context_relevant") == "no":
+                with trace_stage("rewrite_query") as rw_span:
+                    rewrite_result = rewrite_query(state)
+                    state.update(rewrite_result)
+                    rw_span.set_attribute("rewrite.new_question", state["question"][:300])
+
+                with trace_stage("web_search_fallback") as ws_span:
+                    fallback_result = web_search_fallback(state)
+                    state.update(fallback_result)
+                    ws_span.set_attribute("fallback.route", state.get("route", ""))
+                    ws_span.set_attribute("fallback.context_length", len(state.get("context", "")))
+
+            context = state.get("context", "") or "No context available."
+            route = state.get("route", "")
+
+            # Record route on root span
+            root_span.set_attribute("query.route", route)
+            root_span.set_attribute("query.context_length", len(context))
+
+            # ── 3. Streaming generation ───────────────────────────────────
+            prior = lc_history[-4:]
+            prompt = QUERY_PROMPT_TEMPLATE.format(
+                question=request.question,
+                context=context,
+            )
+
+            from agents.financial_agent import _detect_language
+            detected_lang = _detect_language(request.question)
+            prompt += f"\n\n⚠️ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
+
+            root_span.set_attribute("query.detected_language", detected_lang)
+
+            persona_guide = f"You must strongly adopt the following Investment Persona: {state.get('persona', 'Balanced')}."
+
+            messages = [
+                SystemMessage(content=SYSTEM_PROMPT + "\n\n" + persona_guide),
+                *prior,
+                HumanMessage(content=prompt),
+            ]
+
+            from agents.financial_agent import _FALLBACK_MODELS, _get_llm as _agent_get_llm
+
+            openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+            models_to_try = [None] + [m for m in _FALLBACK_MODELS if m != openrouter_primary] + [openrouter_primary]
+
+            streamed = False
+            with trace_stage("generate") as gen_span:
+                for model_name in models_to_try:
+                    try:
+                        llm_stream = _agent_get_llm(model_name)
+                        gen_span.set_attribute("generate.model", model_name or "groq-primary")
+                        full_answer = ""
+                        _gen_start = _time.time()
+                        _STREAM_TIMEOUT = 60  # seconds — hard cutoff for hung LLMs
+                        for chunk in llm_stream.stream(messages):
+                            # Timeout protection: if no complete response after 60s, bail
+                            if _time.time() - _gen_start > _STREAM_TIMEOUT:
+                                gen_span.set_attribute("generate.timeout", True)
+                                yield f"data: {json.dumps({'token': '\n\n⚠️ **Response timeout.** The model took too long. Please try again.'})}\n\n"
+                                break
+                            token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                            if token:
+                                full_answer += token
+                                yield f"data: {json.dumps({'token': token})}\n\n"
+                        else:
+                            # Loop completed normally (no break)
+                            streamed = True
+                            gen_span.set_attribute("generate.output_length", len(full_answer))
+                            set_output(root_span, full_answer[:2000])
+                        break  # success or timeout — exit model loop
+                    except Exception as e:
+                        error_msg = str(e)
+                        is_provider_error = (
+                            "provider" in error_msg.lower()
+                            or "502" in error_msg
+                            or "503" in error_msg
+                            or "rate_limit" in error_msg
+                            or "429" in error_msg
+                        )
+                        if is_provider_error and model_name != models_to_try[-1]:
+                            gen_span.set_attribute(f"generate.fallback.{model_name or 'groq'}", error_msg[:100])
+                            print(f"[Stream] Provider error on {model_name}: {error_msg[:100]}. Trying next model.")
+                            continue
+                        err_token = (
+                            "\n\n⚠️ **Le service IA est temporairement indisponible.** "
+                            "Veuillez réessayer dans quelques instants. "
+                            f"*(Détail technique: {error_msg[:120]})*"
+                        )
+                        gen_span.set_attribute("generate.error", error_msg[:300])
+                        yield f"data: {json.dumps({'token': err_token})}\n\n"
+                        break
+
+            # ── 4. Done signal with metadata ──────────────────────────────
+            yield f"data: {json.dumps({'done': True, 'context': context, 'route': route})}\n\n"
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+# ── Answer Feedback ───────────────────────────────────────────────────────────
+
+class FeedbackRequest(BaseModel):
+    question: str
+    answer: str
+    rating: str  # "positive" or "negative"
+    timestamp: Optional[str] = None
+
+
+@router.post("/feedback")
+def submit_feedback(req: FeedbackRequest, user: dict = Depends(get_current_user)):
+    """
+    Store user feedback (thumbs up/down) on an answer.
+    Used for quality tracking and evaluation.
+    """
+    import logging
+    logger = logging.getLogger("feedback")
+
+    # Log to file for analysis
+    logger.info(
+        f"[FEEDBACK] user={user.get('email')} rating={req.rating} "
+        f"question={req.question[:100]} answer_len={len(req.answer)}"
+    )
+
+    # Also trace in Phoenix
+    try:
+        from api.tracing import trace_stage
+        with trace_stage("user_feedback", {
+            "feedback.rating": req.rating,
+            "feedback.user_email": user.get("email", ""),
+            "feedback.question": req.question[:200],
+        }):
+            pass
+    except Exception:
+        pass
+
+    return {"status": "ok", "rating": req.rating}

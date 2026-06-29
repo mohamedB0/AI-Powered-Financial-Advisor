@@ -86,16 +86,35 @@
         </button>
 
         <!-- Ingest Button -->
-        <button onclick="document.getElementById('file-upload').click()"
+        <button onclick="triggerDocUpload()"
             class="bg-[#1a2e1f] hover:bg-[#243b28] shadow-sm text-white border border-[#243b28] rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
             <i class="fa-solid fa-upload mr-2 text-emerald-400"></i> Ingest Data
         </button>
         <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.txt,.csv,.md,.html,.docx">
+        <input type="file" id="image-upload" class="hidden" accept=".png,.jpg,.jpeg,.gif,.webp">
     </div>
 </div>
 
+<!-- ── Knowledge Base / Collection Selector Bar ───────────────────────────── -->
+<div class="flex items-center gap-3 px-6 py-2.5 border-b border-ui-border bg-[#f8faf8]">
+    <div class="flex items-center gap-1.5 text-[11px] font-semibold text-[#2d4a36] uppercase tracking-wide flex-shrink-0">
+        <i class="fa-solid fa-database text-[10px] text-emerald-600"></i>
+        <span class="hidden sm:inline">Knowledge Base</span>
+    </div>
+
+    <!-- Segmented collection pills -->
+    <div id="collection-bar"
+        class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-xl p-1 shadow-sm overflow-x-auto scrollbar-hide">
+        <!-- Pills injected by JS (renderCollectionBar) -->
+        <div class="px-3 py-1.5 text-[12px] text-gray-400 italic">Loading collections...</div>
+    </div>
+
+    <!-- Active collection hint -->
+    <span id="collection-active-hint" class="hidden md:inline text-[11px] text-gray-400 truncate"></span>
+</div>
+
 <!-- Main two-column layout -->
-<div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 57px);">
+<div class="flex flex-1 overflow-hidden" style="height: calc(100vh - 103px);">
 
     <!-- ── LEFT: Chat Column ────────────────────────────────────────────────── -->
     <div id="chat-column" class="flex flex-col flex-1 min-w-0 relative transition-all duration-300">
@@ -186,11 +205,35 @@
                 </div>
 
                 <div class="input-ring relative w-full bg-[#1a2e1f] hover:bg-[#243b28] rounded-[24px] flex items-center border border-[#243b28] focus-within:border-emerald-500 focus-within:bg-[#243b28] focus-within:shadow-sm transition-all duration-300 pl-3 pr-2">
-                    <button onclick="document.getElementById('file-upload').click()"
-                        class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
-                        title="Attach Document">
-                        <i class="fa-solid fa-paperclip text-lg"></i>
-                    </button>
+                    <!-- Attachment button with popup menu -->
+                    <div class="relative" id="attach-menu-wrapper">
+                        <button onclick="toggleAttachMenu()"
+                            class="w-10 h-10 flex items-center justify-center text-white/50 hover:text-white transition-colors flex-shrink-0"
+                            title="Attach" id="attach-btn">
+                            <i class="fa-solid fa-paperclip text-lg"></i>
+                        </button>
+                        <!-- Popup menu -->
+                        <div id="attach-menu" class="hidden absolute bottom-full left-0 mb-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                            <button onclick="triggerDocUpload()" class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors border-b border-gray-100">
+                                <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                                    <i class="fa-solid fa-file-arrow-up text-emerald-600 text-sm"></i>
+                                </div>
+                                <div class="text-left">
+                                    <div class="font-semibold">Upload Document</div>
+                                    <div class="text-[11px] text-gray-400">Ingest PDF/DOCX into knowledge base</div>
+                                </div>
+                            </button>
+                            <button onclick="triggerImageAnalysis()" class="w-full flex items-center gap-3 px-4 py-3 text-[13px] text-gray-700 hover:bg-gray-50 transition-colors">
+                                <div class="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <i class="fa-solid fa-chart-pie text-blue-600 text-sm"></i>
+                                </div>
+                                <div class="text-left">
+                                    <div class="font-semibold">Analyze Image</div>
+                                    <div class="text-[11px] text-gray-400">Charts, graphs, financial screenshots</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                     <textarea id="chat-input"
                         class="w-full bg-transparent border-none text-white text-[14px] px-3 py-4 resize-none outline-none overflow-hidden h-[54px] rounded-full font-sans placeholder-white/40"
                         placeholder="Ask Something" rows="1"></textarea>

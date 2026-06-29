@@ -219,7 +219,7 @@ def main():
 
     print()
     print("═" * 70)
-    print("  📊 Global Finance Data Population")
+    print("   Global Finance Data Population")
     print(f"  Period: {period} | Tickers: {len(STOCK_TICKERS)} stocks + {len(MACRO_TICKERS)} macro")
     print("═" * 70)
 
@@ -236,13 +236,13 @@ def main():
 
     print()
     print("═" * 70)
-    print(f"  ✅ DONE")
+    print(f"   DONE")
     print(f"     stock_prices:      {prices:,} rows")
     print(f"     financial_metrics: {metrics:,} rows")
     print(f"     macro_indicators:  {macro:,} rows")
     print("═" * 70)
     print()
-    print("  💡 To update daily, run: python scripts/populate_global_finance.py --update")
+    print("   To update daily, run: python scripts/populate_global_finance.py --update")
     print()
 
 

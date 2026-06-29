@@ -21,6 +21,7 @@
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <script>
         tailwind.config = {
+            darkMode: 'class',
             theme: {
                 extend: {
                     fontFamily: {
@@ -60,6 +61,12 @@
             color: #4b5563;
         }
     </style>
+    <!-- Dark mode: apply class before render to prevent flash -->
+    <script>
+        if (localStorage.getItem('dark_mode') === 'true' || (!localStorage.getItem('dark_mode') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+    </script>
 </head>
 
 <body
@@ -90,6 +97,10 @@
 
             <!-- Bottom icons -->
             <div class="flex flex-col gap-3 items-center pb-2">
+                <button id="dark-mode-btn" onclick="toggleDarkMode()" class="w-11 h-11 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-colors" title="Toggle dark mode">
+                    <i class="fa-solid fa-moon text-[1.1rem]" id="dark-mode-icon"></i>
+                </button>
+
                 <button id="settings-btn" class="w-11 h-11 rounded-lg text-white/50 hover:bg-white/10 hover:text-white transition-colors">
                     <i class="fa-solid fa-gear text-[1.1rem]"></i>
                 </button>
@@ -339,7 +350,7 @@
     </div>
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-6 right-6 z-[300] flex flex-col-reverse gap-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-6 left-6 z-[300] flex flex-col-reverse gap-3 pointer-events-none"></div>
 
     <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

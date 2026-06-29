@@ -72,6 +72,12 @@ let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
 // Ensure collection exists for users with old cached settings
 if (!appSettings.collection) appSettings.collection = 'all';
 
+// Staged image for vision analysis (global so cancel button can access it)
+let _stagedImage = null; // {file, dataUrl}
+
+// Last question for retry functionality
+let _lastQuestion = "";
+
 // ── VOICE INPUT (Speech-to-Text) ─────────────────────────────────────────────
 let _mediaRecorder = null;
 let _audioChunks = [];
@@ -239,7 +245,7 @@ function initChat() {
             ${role === 'assistant' ? avatarStr : ''}
             <div class="relative max-w-[85%] flex flex-col">
                 <div class="${bubbleRadius} px-5 py-4 ${bubbleColor}">
-                    <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]">${isHtml ? content : marked.parse(content)}</div>
+                    <div class="msg-bubble prose prose-sm ${proseClass} max-w-none leading-[1.65]" dir="auto">${isHtml ? content : marked.parse(content)}</div>
                 </div>
                 <span class="msg-timestamp ${timeAlign}">${timestamp}</span>
             </div>
@@ -253,8 +259,70 @@ function initChat() {
 
     async function sendQuestion() {
         const text = chatInput.value.trim();
+
+        // If there's a staged image, send it for vision analysis
+        if (_stagedImage) {
+            const file = _stagedImage.file;
+            const imgSrc = _stagedImage.dataUrl;
+            const question = text;
+
+            // Clear staged state
+            _stagedImage = null;
+            _removeImagePreview();
+            chatInput.value = "";
+            chatInput.style.height = '54px';
+            chatInput.placeholder = "Ask Something";
+
+            // Display user message with image thumbnail
+            const userContent = `
+                <div class="flex items-start gap-3">
+                    <img src="${imgSrc}" alt="Uploaded image" class="w-20 h-20 rounded-lg object-cover border border-white/20 shadow-sm">
+                    <div>
+                        <span class="text-[11px] text-emerald-300 font-semibold uppercase tracking-wide">Image Analysis</span>
+                        <p class="text-sm mt-0.5">${question || file.name}</p>
+                    </div>
+                </div>`;
+            addMessage('user', userContent, true);
+
+            // Show typing indicator
+            const typingId = showTypingIndicator();
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                if (question) formData.append('question', question);
+
+                const res = await authFetch(`${API_BASE}/vision/analyze`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                removeTypingIndicator(typingId);
+
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({ detail: 'Vision analysis failed' }));
+                    addMessage('assistant', `**Vision Analysis Error:** ${err.detail || 'Unknown error'}`);
+                    return;
+                }
+
+                const data = await res.json();
+                const modelBadge = `<span class="text-[10px] text-gray-400 font-normal">(${data.model})</span>`;
+                const extractionPreview = data.extraction
+                    ? `<details class="mt-3 text-[12px]"><summary class="cursor-pointer text-gray-500 hover:text-gray-700 font-medium">View extracted content</summary><pre class="mt-2 p-3 bg-gray-50 rounded-lg text-gray-600 overflow-x-auto whitespace-pre-wrap text-[11px] border border-gray-100 max-h-48 overflow-y-auto">${data.extraction.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre></details>`
+                    : '';
+                addMessage('assistant', `**Financial Image Analysis** ${modelBadge}\n\n${data.analysis}${extractionPreview}`, true);
+
+            } catch (err) {
+                removeTypingIndicator(typingId);
+                addMessage('assistant', `**Error:** ${err.message || 'Image analysis failed. Check your connection.'}`);
+            }
+            return;
+        }
+
+        // Normal text message
         if (!text) return;
 
+        _lastQuestion = text;
         chatInput.value = '';
         addMessage('user', text);
 
@@ -264,7 +332,7 @@ function initChat() {
         historyLog.push({ role: 'user', content: text });
 
         // Persist user message to DB
-        const convId = await ensureConversation();
+        const convId = await ensureConversation(text);
         if (convId) saveMessage(convId, 'user', text);
 
         const assistantMsgDiv = addMessage('assistant',
@@ -274,9 +342,18 @@ function initChat() {
                     <span class="typing-dot"></span>
                     <span class="typing-dot"></span>
                 </div>
-                <span class="typing-label">Analyzing</span>
+                <span class="typing-label">Searching documents...</span>
             </div>`, true);
         const bubble = assistantMsgDiv.querySelector('.msg-bubble');
+
+        // Animate stage labels while waiting for first token
+        const _stageLabels = ["Searching documents...", "Analyzing relevance...", "Generating answer..."];
+        let _stageIdx = 0;
+        const _stageTimer = setInterval(() => {
+            _stageIdx = Math.min(_stageIdx + 1, _stageLabels.length - 1);
+            const label = bubble.querySelector('.typing-label');
+            if (label) label.textContent = _stageLabels[_stageIdx];
+        }, 1500);
 
         try {
             const res = await authFetch(`${API_BASE}/query/stream`, {
@@ -313,6 +390,7 @@ function initChat() {
                             const data = JSON.parse(line.substring(6));
                             if (data.token) {
                                 if (isFirstToken) {
+                                    clearInterval(_stageTimer);
                                     bubble.innerHTML = "";
                                     isFirstToken = false;
                                 }
@@ -323,6 +401,7 @@ function initChat() {
                                 chatHistory.scrollTop = chatHistory.scrollHeight;
                             }
                             if (data.done) {
+                                clearInterval(_stageTimer);
                                 if (isFirstToken) bubble.innerHTML = "";
                                 finalContext = data.context || "";
                                 finalRoute = data.route || "";
@@ -364,8 +443,54 @@ function initChat() {
                                 actionsDiv.appendChild(sep);
                                 actionsDiv.appendChild(dlBtn);
 
+                                // Feedback buttons (thumbs up/down)
+                                const sep2 = document.createElement('div');
+                                sep2.className = "w-px h-3 bg-gray-300";
+                                actionsDiv.appendChild(sep2);
+
+                                const thumbUp = document.createElement('button');
+                                thumbUp.className = "hover:text-emerald-600 flex items-center gap-1 transition-colors outline-none";
+                                thumbUp.innerHTML = '<i class="fa-regular fa-thumbs-up"></i>';
+                                thumbUp.title = "Good answer";
+                                thumbUp.onclick = () => {
+                                    thumbUp.innerHTML = '<i class="fa-solid fa-thumbs-up text-emerald-500"></i>';
+                                    thumbDown.innerHTML = '<i class="fa-regular fa-thumbs-down"></i>';
+                                    _sendFeedback(text, fullText, 'positive');
+                                };
+
+                                const thumbDown = document.createElement('button');
+                                thumbDown.className = "hover:text-red-500 flex items-center gap-1 transition-colors outline-none";
+                                thumbDown.innerHTML = '<i class="fa-regular fa-thumbs-down"></i>';
+                                thumbDown.title = "Poor answer";
+                                thumbDown.onclick = () => {
+                                    thumbDown.innerHTML = '<i class="fa-solid fa-thumbs-down text-red-400"></i>';
+                                    thumbUp.innerHTML = '<i class="fa-regular fa-thumbs-up"></i>';
+                                    _sendFeedback(text, fullText, 'negative');
+                                };
+
+                                actionsDiv.appendChild(thumbUp);
+                                actionsDiv.appendChild(thumbDown);
+
                                 const bubbleWrap = assistantMsgDiv.querySelector('.relative');
                                 if (bubbleWrap) bubbleWrap.appendChild(actionsDiv);
+
+                                // ── Follow-up suggestions ────────────────────
+                                const suggestions = _generateFollowUps(text, finalRoute);
+                                if (suggestions.length > 0) {
+                                    const sugDiv = document.createElement('div');
+                                    sugDiv.className = "flex flex-wrap gap-2 mt-3 pt-2";
+                                    suggestions.forEach(s => {
+                                        const btn = document.createElement('button');
+                                        btn.className = "text-[11px] px-3 py-1.5 rounded-full border border-gray-200 text-gray-600 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50 transition-all";
+                                        btn.textContent = s;
+                                        btn.onclick = () => {
+                                            document.getElementById('chat-input').value = s;
+                                            document.getElementById('send-btn')?.click();
+                                        };
+                                        sugDiv.appendChild(btn);
+                                    });
+                                    if (bubbleWrap) bubbleWrap.appendChild(sugDiv);
+                                }
                             }
                         } catch (e) { }
                     }
@@ -373,6 +498,24 @@ function initChat() {
             }
 
             if (finalContext && finalContext !== "No context available.") {
+                // ── Source cards: extract doc references from context ───
+                const sourceCards = _extractSourceCards(finalContext);
+                if (sourceCards.length > 0) {
+                    const cardsDiv = document.createElement('div');
+                    cardsDiv.className = "flex flex-wrap gap-2 mt-3 pt-2 border-t border-gray-100";
+                    sourceCards.forEach(src => {
+                        const card = document.createElement('a');
+                        card.className = "flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 text-[11px] text-gray-600 hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 transition-all cursor-pointer no-underline";
+                        card.title = `${src.file} — Score: ${src.score}`;
+                        if (src.file.endsWith('.pdf')) {
+                            card.href = `pdf-viewer:${encodeURIComponent(src.file)}${src.page ? '&page=' + src.page : ''}`;
+                        }
+                        card.innerHTML = `<i class="fa-regular fa-file-pdf text-red-400"></i><span class="truncate max-w-[140px]">${src.shortName}</span>${src.page ? '<span class="text-gray-400">p.' + src.page + '</span>' : ''}`;
+                        cardsDiv.appendChild(card);
+                    });
+                    bubble.appendChild(cardsDiv);
+                }
+
                 const contextId = 'ctx-' + Date.now();
                 const contextDiv = document.createElement('div');
                 contextDiv.className = 'msg-context mt-2 pt-2 border-t border-gray-200';
@@ -402,7 +545,13 @@ function initChat() {
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
         } catch (e) {
-            bubble.innerHTML = "<span class='status-failure'>Failed to connect to API</span>";
+            clearInterval(_stageTimer);
+            bubble.innerHTML = `<div class="flex flex-col gap-2">
+                <span class="status-failure text-red-500 text-[13px]">Failed to connect to API</span>
+                <button onclick="retryLastQuestion(this)" class="self-start text-[12px] text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1.5 transition-colors">
+                    <i class="fa-solid fa-rotate-right text-[11px]"></i> Retry
+                </button>
+            </div>`;
         }
     }
 
@@ -564,6 +713,50 @@ function initChat() {
         });
     });
 
+    // ── Attachment Menu (Document Upload vs Image Analysis) ───────────────────
+    const imageUpload = document.getElementById('image-upload');
+
+    if (imageUpload) {
+        imageUpload.addEventListener('change', (e) => {
+            if (!e.target.files.length) return;
+            const file = e.target.files[0];
+            imageUpload.value = "";
+
+            // Stage the image — don't send yet. Show a preview and let user type.
+            const reader = new FileReader();
+            reader.onload = function (ev) {
+                _stagedImage = { file, dataUrl: ev.target.result };
+                _showImagePreview(file.name, ev.target.result);
+                chatInput.focus();
+                chatInput.placeholder = "Ask a question about this image...";
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function _showImagePreview(filename, dataUrl) {
+        // Show a small preview bar above the input
+        let preview = document.getElementById('image-preview-bar');
+        if (!preview) {
+            preview = document.createElement('div');
+            preview.id = 'image-preview-bar';
+            preview.className = 'w-full mb-2 flex items-center gap-3 bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm';
+            const inputArea = document.querySelector('.input-ring');
+            if (inputArea && inputArea.parentElement) {
+                inputArea.parentElement.insertBefore(preview, inputArea);
+            }
+        }
+        preview.innerHTML = `
+            <img src="${dataUrl}" alt="Preview" class="w-10 h-10 rounded-lg object-cover border border-gray-200">
+            <div class="flex-1 min-w-0">
+                <div class="text-[12px] font-semibold text-gray-700 truncate">${filename}</div>
+                <div class="text-[10px] text-gray-400">Image staged — type your question and press Enter</div>
+            </div>
+            <button onclick="cancelStagedImage()" class="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Cancel">
+                <i class="fa-solid fa-xmark text-sm"></i>
+            </button>`;
+    }
+
     // File Upload / Ingestion Logic
     const fileUpload = document.getElementById('file-upload');
     const progressContainer = document.getElementById('upload-progress-container');
@@ -657,6 +850,8 @@ function initChat() {
                             showToast(`Document ingested successfully — ${storedStr} vectors stored${ocrBadge}`, 'success');
                             setTimeout(() => progressContainer.classList.add('hidden'), 6000);
                             fileUpload.value = "";
+                            // Refresh the knowledge-base collection counts (My Uploads grew)
+                            if (typeof initCollectionBar === 'function') initCollectionBar();
                         } else if (statusData.status === 'FAILURE') {
                             clearInterval(pollInterval);
                             localStorage.removeItem('active_ingest_task');
@@ -1026,9 +1221,355 @@ document.addEventListener('DOMContentLoaded', () => {
         closeSettings();
         showToast('Settings saved', 'success', 2000);
 
+        // Keep the top collection bar in sync with the settings dropdown
+        if (typeof renderCollectionBar === 'function') renderCollectionBar();
+
         // Optional UX notification
         const oldHtml = saveBtn.innerHTML;
         saveBtn.innerHTML = '<i class="fa-solid fa-check text-green-300 mr-1.5"></i> Saved!';
         setTimeout(() => saveBtn.innerHTML = oldHtml, 2000);
     });
+
+    // KNOWLEDGE BASE / COLLECTION SELECTOR BAR
+    initCollectionBar();
 });
+
+
+// ── Knowledge Base / Collection Selector ────────────────────────────────────
+// Lets the user pick which vector-store collection to interrogate:
+//   - all            → both collections
+//   - financial_data → scraped institutional reports
+//   - user_data      → documents the user uploaded
+// Selection is persisted in appSettings.collection and sent with every query.
+
+let _collectionsMeta = [];
+
+async function initCollectionBar() {
+    const bar = document.getElementById('collection-bar');
+    if (!bar) return;
+
+    // Fallback metadata so the bar renders even if the API call fails
+    const fallback = [
+        { id: 'all',            label: 'All Sources',        description: 'Institutional reports + your uploads', icon: 'fa-layer-group',      count: null },
+        { id: 'financial_data', label: 'Institutional Docs', description: 'Scraped reports (AMMC, BKAM, HCP, CDC)', icon: 'fa-building-columns', count: null },
+        { id: 'user_data',      label: 'My Uploads',         description: 'Documents you ingested',                icon: 'fa-folder-open',      count: null },
+    ];
+
+    try {
+        const res = await fetch(`${API_BASE}/query/collections`);
+        if (res.ok) {
+            const data = await res.json();
+            _collectionsMeta = (data.collections && data.collections.length) ? data.collections : fallback;
+        } else {
+            _collectionsMeta = fallback;
+        }
+    } catch (e) {
+        console.warn('[Collections] Could not fetch live counts, using fallback.', e);
+        _collectionsMeta = fallback;
+    }
+
+    if (!appSettings.collection) appSettings.collection = 'all';
+    renderCollectionBar();
+}
+
+function renderCollectionBar() {
+    const bar = document.getElementById('collection-bar');
+    if (!bar) return;
+
+    const active = appSettings.collection || 'all';
+    bar.innerHTML = '';
+
+    _collectionsMeta.forEach(c => {
+        const isActive = c.id === active;
+        const pill = document.createElement('button');
+        pill.type = 'button';
+        pill.dataset.collection = c.id;
+        pill.title = c.description || c.label;
+        pill.className = [
+            'collection-pill flex items-center gap-2 px-3 py-1.5 rounded-lg text-[12px] font-semibold',
+            'whitespace-nowrap transition-all duration-200',
+            isActive
+                ? 'bg-[#1a2e1f] text-white shadow-sm'
+                : 'text-gray-500 hover:text-[#2d4a36] hover:bg-emerald-50'
+        ].join(' ');
+
+        const countStr = (c.count !== null && c.count !== undefined)
+            ? `<span class="ml-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? 'bg-emerald-500/30 text-emerald-100' : 'bg-gray-100 text-gray-500'}">${c.count.toLocaleString('fr-FR')}</span>`
+            : '';
+
+        pill.innerHTML = `
+            <i class="fa-solid ${c.icon || 'fa-database'} text-[11px] ${isActive ? 'text-emerald-400' : 'text-gray-400'}"></i>
+            <span>${c.label}</span>
+            ${countStr}`;
+
+        pill.addEventListener('click', () => setActiveCollection(c.id));
+        bar.appendChild(pill);
+    });
+
+    // Update the active-collection hint text + keep settings dropdown in sync
+    const hint = document.getElementById('collection-active-hint');
+    const activeMeta = _collectionsMeta.find(c => c.id === active);
+    if (hint && activeMeta) {
+        hint.textContent = activeMeta.description || '';
+    }
+    const collSelect = document.getElementById('setting-collection');
+    if (collSelect) collSelect.value = active;
+}
+
+function setActiveCollection(id) {
+    if (appSettings.collection === id) return;
+    appSettings.collection = id;
+    localStorage.setItem('ai_settings', JSON.stringify(appSettings));
+    renderCollectionBar();
+
+    const meta = _collectionsMeta.find(c => c.id === id);
+    showToast(`Knowledge base: ${meta ? meta.label : id}`, 'info', 2000);
+}
+
+
+// ── Attachment Menu (Document Upload vs Image Analysis) ──────────────────────
+
+function toggleAttachMenu() {
+    const menu = document.getElementById('attach-menu');
+    if (!menu) return;
+    menu.classList.toggle('hidden');
+}
+
+function triggerDocUpload() {
+    toggleAttachMenu();
+    document.getElementById('file-upload').click();
+}
+
+function triggerImageAnalysis() {
+    toggleAttachMenu();
+    document.getElementById('image-upload').click();
+}
+
+// Close attach menu when clicking outside
+document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('attach-menu-wrapper');
+    const menu = document.getElementById('attach-menu');
+    if (!wrapper || !menu) return;
+    if (!wrapper.contains(e.target)) {
+        menu.classList.add('hidden');
+    }
+});
+
+// ── Typing Indicator Helpers ─────────────────────────────────────────────────
+
+let _typingCounter = 0;
+
+function showTypingIndicator() {
+    const chatHistory = document.getElementById('chat-history');
+    if (!chatHistory) return null;
+
+    // Show chat history if hidden
+    const emptyState = document.getElementById('empty-state');
+    if (emptyState) emptyState.style.display = 'none';
+    chatHistory.classList.remove('hidden');
+    chatHistory.classList.add('flex');
+
+    const id = `typing-${++_typingCounter}`;
+    const div = document.createElement('div');
+    div.id = id;
+    div.className = 'flex w-full mt-4 mb-2 gap-4 justify-start';
+    div.innerHTML = `
+        <div class="shrink-0 w-8 h-8 rounded-full bg-brand-bg flex items-center justify-center text-brand-text shadow-[0_2px_8px_rgba(0,0,0,0.06)] border border-[#d2ddd5] mt-1">
+            <i class="fa-solid fa-chart-line text-[13px]"></i>
+        </div>
+        <div class="bg-white text-gray-800 shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-gray-100 rounded-[20px] rounded-bl-[4px] px-5 py-4 max-w-[85%]">
+            <div class="flex items-center gap-2">
+                <div class="flex gap-1">
+                    <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style="animation-delay:0ms"></span>
+                    <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style="animation-delay:150ms"></span>
+                    <span class="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style="animation-delay:300ms"></span>
+                </div>
+                <span class="text-[12px] text-gray-400 ml-2">Analyzing image...</span>
+            </div>
+        </div>`;
+    chatHistory.appendChild(div);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+    return id;
+}
+
+function removeTypingIndicator(id) {
+    if (!id) return;
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+
+// ── Staged Image Helpers ─────────────────────────────────────────────────────
+
+function _removeImagePreview() {
+    const preview = document.getElementById('image-preview-bar');
+    if (preview) preview.remove();
+}
+
+function cancelStagedImage() {
+    _stagedImage = null;
+    _removeImagePreview();
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) chatInput.placeholder = "Ask Something";
+}
+
+
+// ── Retry Failed Question ────────────────────────────────────────────────────
+
+function retryLastQuestion(btn) {
+    if (!_lastQuestion) return;
+    // Remove the failed message div
+    const msgDiv = btn.closest('.flex.w-full');
+    if (msgDiv) msgDiv.remove();
+    // Re-submit the question
+    const chatInput = document.getElementById('chat-input');
+    if (chatInput) {
+        chatInput.value = _lastQuestion;
+        // Trigger send
+        document.getElementById('send-btn')?.click();
+    }
+}
+
+
+// ── Follow-up Suggestions Generator ─────────────────────────────────────────
+// Generates 2-3 contextual follow-up questions based on the user's original
+// question and the route taken. No API call — instant, client-side.
+
+function _generateFollowUps(originalQuestion, route) {
+    const q = originalQuestion.toLowerCase();
+    const suggestions = [];
+
+    // Detect language
+    const isArabic = /[\u0600-\u06FF]/.test(originalQuestion);
+    const isFrench = /\b(le|la|les|des|est|que|qui|quel|dans|pour)\b/i.test(originalQuestion);
+
+    // Topic-based suggestions
+    if (/taux|inflation|مع[دا]ل|تضخم/i.test(q)) {
+        if (isFrench) {
+            suggestions.push("Quelle est l'évolution de l'inflation sur les 3 dernières années ?");
+            suggestions.push("Quel impact sur le pouvoir d'achat ?");
+        } else if (isArabic) {
+            suggestions.push("ما هو تأثير التضخم على القدرة الشرائية؟");
+            suggestions.push("كيف تطور معدل التضخم خلال السنوات الأخيرة؟");
+        } else {
+            suggestions.push("How has inflation evolved over the past 3 years?");
+            suggestions.push("What is the impact on purchasing power?");
+        }
+    } else if (/bourse|masi|madex|بورصة|سوق/i.test(q)) {
+        if (isFrench) {
+            suggestions.push("Quels sont les secteurs les plus performants ?");
+            suggestions.push("Quelle est la capitalisation boursière totale ?");
+        } else if (isArabic) {
+            suggestions.push("ما هي القطاعات الأكثر أداءً؟");
+            suggestions.push("ما هي القيمة السوقية الإجمالية؟");
+        } else {
+            suggestions.push("Which sectors are performing best?");
+            suggestions.push("What is the total market capitalization?");
+        }
+    } else if (/dette|budget|ميزانية|دين/i.test(q)) {
+        if (isFrench) {
+            suggestions.push("Quel est le ratio dette/PIB actuel ?");
+            suggestions.push("Comment évolue le déficit budgétaire ?");
+        } else if (isArabic) {
+            suggestions.push("ما هي نسبة الدين إلى الناتج المحلي؟");
+            suggestions.push("كيف يتطور العجز في الميزانية؟");
+        } else {
+            suggestions.push("What is the current debt-to-GDP ratio?");
+            suggestions.push("How is the budget deficit evolving?");
+        }
+    } else if (/bank|bkam|بنك|المغرب/i.test(q)) {
+        if (isFrench) {
+            suggestions.push("Quelle est la politique monétaire actuelle ?");
+            suggestions.push("Comment évolue la liquidité bancaire ?");
+        } else if (isArabic) {
+            suggestions.push("ما هي السياسة النقدية الحالية؟");
+            suggestions.push("كيف تتطور السيولة البنكية؟");
+        } else {
+            suggestions.push("What is the current monetary policy stance?");
+            suggestions.push("How is banking liquidity evolving?");
+        }
+    } else {
+        // Generic follow-ups based on route
+        if (route && route.includes("SQL")) {
+            suggestions.push(isFrench ? "Montrer les données sur 30 jours" : isArabic ? "عرض البيانات على 30 يوما" : "Show data for the last 30 days");
+        }
+        if (route && route.includes("Vector")) {
+            suggestions.push(isFrench ? "Pouvez-vous détailler davantage ?" : isArabic ? "هل يمكنك التفصيل أكثر؟" : "Can you elaborate on this?");
+        }
+        if (suggestions.length === 0) {
+            if (isFrench) suggestions.push("Pouvez-vous détailler davantage ?");
+            else if (isArabic) suggestions.push("هل يمكنك التفصيل أكثر؟");
+            else suggestions.push("Can you elaborate further?");
+        }
+    }
+
+    return suggestions.slice(0, 3);
+}
+
+
+// ── Answer Feedback ──────────────────────────────────────────────────────────
+// Sends thumbs up/down feedback to the backend for quality tracking.
+// Falls back silently if the endpoint doesn't exist yet.
+
+function _sendFeedback(question, answer, rating) {
+    try {
+        authFetch(`${API_BASE}/query/feedback`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                question: question.substring(0, 500),
+                answer: answer.substring(0, 1000),
+                rating: rating, // "positive" or "negative"
+                timestamp: new Date().toISOString(),
+            }),
+        }).catch(() => {}); // fire-and-forget
+    } catch (e) { /* non-critical */ }
+}
+
+
+// ── Dark Mode Toggle ─────────────────────────────────────────────────────────
+
+function toggleDarkMode() {
+    const html = document.documentElement;
+    const isDark = html.classList.toggle('dark');
+    localStorage.setItem('dark_mode', isDark.toString());
+    // Update icon
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon) {
+        icon.className = isDark ? 'fa-solid fa-sun text-[1.1rem]' : 'fa-solid fa-moon text-[1.1rem]';
+    }
+}
+
+// Set icon state on load
+document.addEventListener('DOMContentLoaded', () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    const icon = document.getElementById('dark-mode-icon');
+    if (icon && isDark) {
+        icon.className = 'fa-solid fa-sun text-[1.1rem]';
+    }
+});
+
+
+// ── Source Card Extraction ───────────────────────────────────────────────────
+// Parses the context string to extract document references for clickable cards.
+// Context format: [Doc N | source_file (page X) [collection] | score=0.XXX]
+
+function _extractSourceCards(context) {
+    const cards = [];
+    const seen = new Set();
+    // Match patterns like: [Doc 1 | filename.pdf (page 3) [financial_data] | score=0.548]
+    const regex = /\[Doc \d+\s*\|\s*([^|(]+?)(?:\s*\(page\s*(\d+)\))?\s*(?:\[[^\]]*\])?\s*\|\s*score=([\d.]+)\]/g;
+    let match;
+    while ((match = regex.exec(context)) !== null) {
+        const file = match[1].trim();
+        const page = match[2] || "";
+        const score = match[3];
+        const key = `${file}-${page}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        // Short name: last part of path, truncated
+        const shortName = file.split(/[/\\]/).pop().replace(/^(ammc_|hcp_|bkam_|cdc_)/, '').substring(0, 35);
+        cards.push({ file, page, score, shortName });
+    }
+    return cards.slice(0, 5); // Max 5 source cards
+}

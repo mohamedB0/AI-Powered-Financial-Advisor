@@ -379,9 +379,13 @@ async function startNewConversation() {
  * Ensures a conversation exists for the current chat session.
  * Called when the first message is sent.
  */
-async function ensureConversation() {
+async function ensureConversation(firstMessage) {
     if (_currentConversationId) return _currentConversationId;
-    const conv = await createConversation('New Chat');
+    // Use the first user message (truncated) as the conversation title
+    const title = firstMessage
+        ? firstMessage.substring(0, 60) + (firstMessage.length > 60 ? '...' : '')
+        : 'New Chat';
+    const conv = await createConversation(title);
     if (conv) {
         _currentConversationId = conv.id;
         refreshHistory();

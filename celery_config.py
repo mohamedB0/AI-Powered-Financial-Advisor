@@ -25,8 +25,10 @@ elif REDIS_HOST in ("localhost", "127.0.0.1", "redis"):
     else:
         BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}"
     
-    # We MUST use SQLite for results so the Flask UI can run SELECT queries for the Pipeline Monitor
-    RESULT_BACKEND = "db+sqlite:///celery_results.sqlite"
+    # Use Redis for result backend (works in both local and Docker).
+    # SQLite was used before for the Pipeline Monitor but it doesn't work
+    # across Docker containers (different filesystems).
+    RESULT_BACKEND = BROKER_URL
 else:
     # Fallback: SQLite file-based broker (no Redis available)
     BROKER_URL = "sqla+sqlite:///celery_broker.sqlite"
@@ -53,6 +55,11 @@ task_max_retries = 3
 worker_prefetch_multiplier = 1
 worker_max_tasks_per_child = 100
 worker_pool = "threads"
+
+# Keep stdout/stderr attached to the real console so the ingestion progress bar
+# (which uses carriage-return in-place animation) renders correctly instead of
+# being captured line-by-line by Celery's logging proxy.
+worker_redirect_stdouts = False
 
 # Enable events for Flower monitoring
 worker_send_task_events = True

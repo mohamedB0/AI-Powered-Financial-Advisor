@@ -23,24 +23,35 @@ import os
 def _setup_phoenix_tracing():
     """Wire up Arize Phoenix as the OpenTelemetry trace backend.
     Instruments all LangChain / LangGraph calls automatically.
+    Also enables manual spans from api/tracing.py for full pipeline visibility.
     Phoenix UI: http://localhost:6006
     """
     try:
         from opentelemetry.sdk import trace as trace_sdk
         from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.resources import Resource
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         from openinference.instrumentation.langchain import LangChainInstrumentor
         from opentelemetry import trace
 
         endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
         exporter = OTLPSpanExporter(endpoint=endpoint)
-        provider = trace_sdk.TracerProvider()
+
+        # Resource attributes show in Phoenix's service/project filters
+        resource = Resource.create({
+            "service.name": "alpha-insight-api",
+            "service.version": "1.0.0",
+            "deployment.environment": os.getenv("ENVIRONMENT", "development"),
+        })
+
+        provider = trace_sdk.TracerProvider(resource=resource)
         provider.add_span_processor(SimpleSpanProcessor(exporter))
         trace.set_tracer_provider(provider)
 
         # Auto-instruments LangChain chains, LLM calls, retrievers, and LangGraph nodes
         LangChainInstrumentor().instrument()
         print(f"[Phoenix] Tracing active -> {endpoint}  |  UI: http://localhost:6006")
+        print(f"[Phoenix] Service: alpha-insight-api | Manual pipeline spans enabled")
     except Exception as e:
         print(f"[Phoenix] Tracing setup failed (non-fatal): {e}")
 
@@ -59,6 +70,7 @@ from api.routes.bvc import router as bvc_router
 from api.routes.pdf_viewer import router as pdf_router
 from api.routes.conversations import router as conversations_router
 from api.routes.speech import router as speech_router
+from api.routes.vision import router as vision_router
 
 from contextlib import asynccontextmanager
 
@@ -84,11 +96,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS: Allow all origins in development. Auth uses JWT in Authorization
-# headers (not cookies), so allow_credentials is not needed.
+# CORS: Use explicit origins from CORS_ORIGINS env var.
+# Fallback to common dev origins if not set.
+_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5000,http://127.0.0.1:5000,http://localhost:3000")
+_allowed_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -101,6 +116,7 @@ app.include_router(stocks_router)
 app.include_router(bvc_router)
 app.include_router(pdf_router)
 app.include_router(speech_router)
+app.include_router(vision_router)
 
 
 @app.get("/", tags=["Health"])

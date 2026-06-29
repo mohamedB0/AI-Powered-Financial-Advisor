@@ -1,8 +1,9 @@
 """
 api/auth.py
-Google OAuth + JWT session authentication for the Financial Advisor API.
+Authentication utilities for the Financial Advisor API.
 
 Provides:
+  - Password hashing (bcrypt)
   - Google ID token verification
   - JWT session token creation & verification
   - FastAPI dependency for protected routes
@@ -15,6 +16,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 import jwt
+import bcrypt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -39,6 +41,21 @@ JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = int(os.getenv("JWT_EXPIRATION_HOURS", "24"))
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+
+# ── Password Hashing ─────────────────────────────────────────────────────────
+
+
+def hash_password(password: str) -> str:
+    """Hash a plaintext password using bcrypt."""
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify a plaintext password against its bcrypt hash."""
+    return bcrypt.checkpw(
+        plain_password.encode("utf-8"), hashed_password.encode("utf-8")
+    )
+
 
 # ── Google OAuth Verification ─────────────────────────────────────────────────
 

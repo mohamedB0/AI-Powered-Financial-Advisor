@@ -266,19 +266,74 @@ function showLoginModal() {
                 <h2 class="text-2xl font-bold text-[#1a2e1f]" style="font-family: 'Playfair Display', serif;">
                     Alpha <span class="text-emerald-600 italic">Insight</span>
                 </h2>
-                <p class="text-sm text-gray-500 mt-2">Connectez-vous avec votre compte Google</p>
+                <p class="text-sm text-gray-500 mt-1">Connectez-vous pour continuer</p>
             </div>
 
             <div id="auth-error" class="hidden bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-2 mb-4"></div>
 
-            <!-- Google Sign-In Button Container -->
-            <div id="google-btn-container" class="flex justify-center py-4">
-                <!-- Google button will be rendered here -->
+            <!-- Tab Switch -->
+            <div class="flex mb-5 bg-gray-100 rounded-lg p-1">
+                <button id="tab-login" class="flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow text-gray-800 transition-all" onclick="switchAuthTab('login')">Connexion</button>
+                <button id="tab-register" class="flex-1 py-2 text-sm font-medium rounded-md text-gray-500 transition-all" onclick="switchAuthTab('register')">Inscription</button>
             </div>
 
-            <p class="text-xs text-gray-400 text-center mt-4">
-                En vous connectant, vous acceptez nos conditions d'utilisation.
-            </p>
+            <!-- Login Form -->
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="login-email" required
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        placeholder="votre@email.com">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                    <input type="password" id="login-password" required minlength="8"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        placeholder="••••••••">
+                </div>
+                <button type="submit" id="login-btn"
+                    class="w-full bg-[#1a2e1f] hover:bg-[#243b28] text-white font-semibold py-2.5 rounded-lg transition-colors">
+                    Se connecter
+                </button>
+            </form>
+
+            <!-- Register Form (hidden) -->
+            <form id="register-form" class="hidden" onsubmit="handleRegister(event)">
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nom complet</label>
+                    <input type="text" id="register-name"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        placeholder="Votre nom">
+                </div>
+                <div class="mb-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input type="email" id="register-email" required
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        placeholder="votre@email.com">
+                </div>
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+                    <input type="password" id="register-password" required minlength="8"
+                        class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                        placeholder="Min. 8 caractères">
+                </div>
+                <button type="submit" id="register-btn"
+                    class="w-full bg-[#1a2e1f] hover:bg-[#243b28] text-white font-semibold py-2.5 rounded-lg transition-colors">
+                    Créer un compte
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="flex items-center my-5">
+                <div class="flex-1 border-t border-gray-200"></div>
+                <span class="px-3 text-xs text-gray-400">ou</span>
+                <div class="flex-1 border-t border-gray-200"></div>
+            </div>
+
+            <!-- Google Sign-In -->
+            <div id="google-btn-container" class="flex justify-center">
+                <!-- Google button rendered here -->
+            </div>
         </div>
     `;
     document.body.appendChild(modal);
@@ -287,22 +342,129 @@ function showLoginModal() {
     _renderGoogleButton();
 }
 
-function _renderGoogleButton() {
-    if (!window.google || !window.GOOGLE_CLIENT_ID) {
-        // Google SDK not loaded yet, retry after a short delay
-        setTimeout(_renderGoogleButton, 200);
+function switchAuthTab(tab) {
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const errorEl = document.getElementById('auth-error');
+
+    if (errorEl) errorEl.classList.add('hidden');
+
+    if (tab === 'login') {
+        loginForm.classList.remove('hidden');
+        registerForm.classList.add('hidden');
+        tabLogin.className = 'flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow text-gray-800 transition-all';
+        tabRegister.className = 'flex-1 py-2 text-sm font-medium rounded-md text-gray-500 transition-all';
+    } else {
+        loginForm.classList.add('hidden');
+        registerForm.classList.remove('hidden');
+        tabRegister.className = 'flex-1 py-2 text-sm font-semibold rounded-md bg-white shadow text-gray-800 transition-all';
+        tabLogin.className = 'flex-1 py-2 text-sm font-medium rounded-md text-gray-500 transition-all';
+    }
+}
+
+async function handleLogin(e) {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-password').value;
+    const errorEl = document.getElementById('auth-error');
+    const btn = document.getElementById('login-btn');
+
+    btn.disabled = true;
+    btn.innerText = 'Connexion...';
+    errorEl.classList.add('hidden');
+
+    try {
+        const res = await fetch('/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Login failed');
+
+        setToken(data.access_token);
+        setUser(data.user);
+        document.getElementById('auth-modal').remove();
+        showToast(`Welcome, ${data.user.full_name || data.user.email.split('@')[0]}!`, 'success', 3000);
+        updateAuthUI();
+    } catch (err) {
+        errorEl.innerText = err.message;
+        errorEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Se connecter';
+    }
+}
+
+async function handleRegister(e) {
+    e.preventDefault();
+    const name = document.getElementById('register-name').value;
+    const email = document.getElementById('register-email').value;
+    const password = document.getElementById('register-password').value;
+    const errorEl = document.getElementById('auth-error');
+    const btn = document.getElementById('register-btn');
+
+    btn.disabled = true;
+    btn.innerText = 'Création...';
+    errorEl.classList.add('hidden');
+
+    try {
+        const res = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, full_name: name }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Registration failed');
+
+        setToken(data.access_token);
+        setUser(data.user);
+        document.getElementById('auth-modal').remove();
+        showToast(`Account created! Welcome, ${data.user.full_name || data.user.email.split('@')[0]}!`, 'success', 3000);
+        updateAuthUI();
+    } catch (err) {
+        errorEl.innerText = err.message;
+        errorEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = 'Créer un compte';
+    }
+}
+
+function _renderGoogleButton(_attempt = 0) {
+    const container = document.getElementById('google-btn-container');
+    if (!container) return;  // modal closed
+
+    // Missing client ID is a hard configuration error — tell the user instead
+    // of retrying forever (the old behaviour, which silently showed nothing).
+    if (!window.GOOGLE_CLIENT_ID) {
+        console.error('[Auth] GOOGLE_CLIENT_ID is empty. Set it in .env and restart Flask.');
+        _renderGoogleFallback(container, 'Google Sign-In is not configured.');
         return;
     }
 
-    google.accounts.id.initialize({
-        client_id: window.GOOGLE_CLIENT_ID,
-        callback: handleGoogleCredentialResponse,
-        auto_select: false,
-        cancel_on_tap_outside: false,
-    });
+    // Wait for the GSI SDK to load, but only for a bounded time (~6s).
+    if (!window.google || !window.google.accounts || !window.google.accounts.id) {
+        if (_attempt < 30) {
+            setTimeout(() => _renderGoogleButton(_attempt + 1), 200);
+        } else {
+            console.error('[Auth] Google Identity SDK failed to load (network/blocker?).');
+            _renderGoogleFallback(container, 'Could not load Google Sign-In.');
+        }
+        return;
+    }
 
-    const container = document.getElementById('google-btn-container');
-    if (container) {
+    try {
+        google.accounts.id.initialize({
+            client_id: window.GOOGLE_CLIENT_ID,
+            callback: handleGoogleCredentialResponse,
+            auto_select: false,
+            cancel_on_tap_outside: false,
+        });
+
+        container.innerHTML = '';  // clear any previous fallback
         google.accounts.id.renderButton(container, {
             theme: 'outline',
             size: 'large',
@@ -310,6 +472,68 @@ function _renderGoogleButton() {
             text: 'signin_with',
             shape: 'rectangular',
             logo_alignment: 'center',
+        });
+
+        // GSI renders asynchronously and stays EMPTY (no error thrown) when the
+        // current origin is not an Authorized JavaScript origin for this client.
+        // Detect that empty render and show a fallback + a clear hint.
+        setTimeout(() => {
+            if (container && container.childElementCount === 0) {
+                console.error(
+                    `[Auth] Google button rendered empty. Most likely "${window.location.origin}" ` +
+                    `is not in the client's Authorized JavaScript origins ` +
+                    `(Google Cloud Console → Credentials → OAuth client).`
+                );
+                _renderGoogleFallback(
+                    container,
+                    `This address (${window.location.origin}) is not authorized for Google Sign-In.`
+                );
+            }
+        }, 1200);
+    } catch (err) {
+        console.error('[Auth] Google button init failed:', err);
+        _renderGoogleFallback(container, 'Google Sign-In failed to initialize.');
+    }
+}
+
+/**
+ * Fallback shown when the official Google button can't render.
+ * Lets the user trigger the Google One-Tap/prompt flow manually, and surfaces
+ * the underlying reason so login problems are diagnosable instead of silent.
+ */
+function _renderGoogleFallback(container, reason) {
+    if (!container) return;
+    container.innerHTML = `
+        <div class="w-full">
+            <button type="button" id="google-fallback-btn"
+                class="w-full flex items-center justify-center gap-2.5 border border-gray-300 rounded-lg py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+                <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                    <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z"/>
+                    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"/>
+                    <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"/>
+                    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"/>
+                </svg>
+                Continuer avec Google
+            </button>
+            ${reason ? `<p class="text-[11px] text-gray-400 text-center mt-2">${reason}</p>` : ''}
+        </div>
+    `;
+    const btn = document.getElementById('google-fallback-btn');
+    if (btn) {
+        btn.addEventListener('click', () => {
+            if (window.google && google.accounts && google.accounts.id) {
+                try {
+                    google.accounts.id.initialize({
+                        client_id: window.GOOGLE_CLIENT_ID,
+                        callback: handleGoogleCredentialResponse,
+                    });
+                    google.accounts.id.prompt();
+                } catch (e) {
+                    showToast('Google Sign-In unavailable. Use email/password.', 'warning');
+                }
+            } else {
+                showToast('Google Sign-In unavailable. Use email/password.', 'warning');
+            }
         });
     }
 }
@@ -403,4 +627,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
         // API not reachable — don't force logout
     }
+
+    // ── Token expiry watcher ─────────────────────────────────────────────
+    // Check every 5 minutes if the token is about to expire. Warn the user
+    // 30 minutes before expiry so they can re-login without losing work.
+    _startTokenExpiryWatcher();
 });
+
+function _startTokenExpiryWatcher() {
+    setInterval(() => {
+        const token = getToken();
+        if (!token) return;
+        try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const expiresAt = payload.exp * 1000;
+            const now = Date.now();
+            const remaining = expiresAt - now;
+
+            // Warn 30 minutes before expiry
+            if (remaining > 0 && remaining < 30 * 60 * 1000) {
+                const mins = Math.round(remaining / 60000);
+                showToast(`Session expires in ${mins} min. Save your work and re-login.`, 'warning', 8000);
+            }
+            // Already expired
+            if (remaining <= 0) {
+                clearAuth();
+                updateAuthUI();
+                showToast('Session expired. Please sign in again.', 'warning');
+                showLoginModal();
+            }
+        } catch (e) { /* malformed token, ignore */ }
+    }, 5 * 60 * 1000); // Check every 5 minutes
+}

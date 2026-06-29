@@ -228,3 +228,34 @@ class SQLSearch:
             ORDER BY source_file, id
         """
         return self.db.execute_sql(sql)
+
+    # ── Comparative Analysis ──────────────────────────────────────────────────
+
+    def compare_companies(self, ticker_a: str, ticker_b: str) -> str:
+        """
+        Generate a structured comparison between two tickers.
+        Combines price data + financial metrics for both.
+        Returns a formatted markdown table ready for the LLM context.
+        """
+        results = []
+
+        # Price data for both
+        for ticker in [ticker_a.upper(), ticker_b.upper()]:
+            prices = self.get_price_history(ticker, days=5)
+            metrics = self.get_financial_metrics(ticker)
+            if prices:
+                latest = prices[0]
+                results.append(f"### {ticker} — Latest Price Data")
+                results.append(f"| Date | Close | High | Low | Volume |")
+                results.append(f"|------|-------|------|-----|--------|")
+                for p in prices[:5]:
+                    results.append(f"| {p.get('date','')} | {p.get('close','')} | {p.get('high','')} | {p.get('low','')} | {p.get('volume','')} |")
+            if metrics:
+                results.append(f"\n### {ticker} — Financial Metrics")
+                results.append(f"| Metric | Value | Period |")
+                results.append(f"|--------|-------|--------|")
+                for m in metrics[:10]:
+                    results.append(f"| {m.get('metric_name','')} | {m.get('value','')} | {m.get('period','')} |")
+            results.append("")
+
+        return "\n".join(results) if results else "No comparison data found for these tickers."

@@ -38,9 +38,23 @@ services:
       timeout: 3s
       retries: 5
 
+  # ─── Observability ──────────────────────────────────────────────────────────
+
+  # Arize Phoenix — LLM tracing & observability UI
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: fin_phoenix
+    restart: unless-stopped
+    ports:
+      - "6006:6006"
+    environment:
+      - PHOENIX_WORKING_DIR=/data
+    volumes:
+      - phoenix_data:/data
+
   # ─── Application Services ──────────────────────────────────────────────────
 
-  # FastAPI Backend (Production: Uvicorn with multiple workers)
+  # FastAPI Backend (Production: Uvicorn)
   api:
     build: .
     container_name: fin_api
@@ -60,6 +74,7 @@ services:
       - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
       - CHROMA_PERSIST_DIR=/app/chroma_db
       - API_BASE_URL=http://api:8000
+      - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
     volumes:
       - ./data:/app/data
       - ./chroma_db:/app/chroma_db
@@ -70,11 +85,14 @@ services:
       - ./retrieval:/app/retrieval
       - ./storage:/app/storage
       - ./ingestion:/app/ingestion
+      - ./OCR_Processing:/app/OCR_Processing
     depends_on:
       redis:
         condition: service_healthy
       postgres:
         condition: service_healthy
+      phoenix:
+        condition: service_started
 
   # Flask UI (Production: Waitress WSGI server)
   ui:
@@ -97,9 +115,84 @@ services:
     depends_on:
       - api
 
-    # (Removed Celery Worker and Beat per request so they can be run on the host terminal)
+  # ─── Celery Workers ─────────────────────────────────────────────────────────
 
-  # Flower (Celery monitoring dashboard on port 5555)
+  # User upload ingestion worker (high priority, single-threaded)
+  celery-user-worker:
+    build: .
+    container_name: fin_celery_user
+    restart: unless-stopped
+    command: >
+      celery -A tasks.celery_app:celery_app worker
+      --loglevel=info
+      -Q user_ingestion
+      -c 1
+      --pool=solo
+      -n user_worker@%h
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Background worker (scraping, data fetch, local ingestion — normal priority)
+  celery-background-worker:
+    build: .
+    container_name: fin_celery_bg
+    restart: unless-stopped
+    command: >
+      celery -A tasks.celery_app:celery_app worker
+      --loglevel=info
+      -Q scraping,data_fetch,ingestion,local_ingestion,default
+      -c 2
+      --pool=solo
+      -n bg_worker@%h
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+      - POSTGRES_HOST=postgres
+      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+    volumes:
+      - ./data:/app/data
+      - ./chroma_db:/app/chroma_db
+      - ./logs:/app/logs
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  # Celery Beat (periodic task scheduler)
+  celery-beat:
+    build: .
+    container_name: fin_celery_beat
+    restart: unless-stopped
+    command: >
+      celery -A tasks.celery_app:celery_app beat
+      --loglevel=info
+    env_file: .env
+    environment:
+      - REDIS_HOST=redis
+    volumes:
+      - ./logs:/app/logs
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  # Flower (Celery monitoring dashboard)
   flower:
     build: .
     container_name: fin_flower
@@ -121,4 +214,5 @@ services:
 
 volumes:
   postgres_data:
-  hf_cache:      # HuggingFace model cache — BGE-M3 downloaded once, reused across restarts
+  hf_cache:        # HuggingFace model cache — BGE-M3 downloaded once, reused across restarts
+  phoenix_data:    # Phoenix trace storage — persists across container restarts

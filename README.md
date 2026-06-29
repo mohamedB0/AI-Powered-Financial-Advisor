@@ -1,7 +1,8 @@
-# AI Financial Advisor
+# Alpha Insight — AI Financial Advisor
 
-A distributed, multilingual Hybrid RAG (Retrieval-Augmented Generation) platform for financial analysis of Moroccan public finance institutions. Combines vector search over scraped documents with SQL queries over structured financial data and real-time web search to deliver structured insights via natural language — in **French, Arabic, and English**.
-PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada 
+A distributed, multilingual **Hybrid RAG** (Retrieval-Augmented Generation) platform for financial analysis. Combines vector search over institutional documents with SQL queries over structured financial data and real-time web search to deliver structured insights via natural language — in **French, Arabic, and English**.
+
+**PFE 2026** - Final Year Project | Field: AI / FinTech | Author: M.Bouada
 
 ---
 
@@ -9,166 +10,154 @@ PFE 2026 - Final Year Project | Field: AI / FinTech | Author: M.Bouada
 
 | Feature | Description |
 |---------|-------------|
-| **"Two-Brain" LLM Architecture** | Fast 8B model (Llama-3.1) for routing/orchestration + Heavy 72B model (Qwen-2.5) for high-quality generation |
-| **Multilingual RAG** | Native support for French, Arabic, and English queries with language-anchored responses |
-| **Focus Modes** | Chat tabs lock the AI into specific retrieval paths: *New Chat* (auto), *Company Analysis* (SQL), *Market Macro* (Vector/PDF) |
-| **Investment Persona** | Users can select Balanced, Prudent, or Aggressive personas via the Settings panel — dynamically injected into the LLM system prompt |
-| **In-UI PDF Viewer** | Clickable source citations open the original PDF page directly inside the chat interface |
-| **Export Tools** | Copy, Download .md, and Export Full Report buttons on every AI response |
-| **Live Settings Panel** | Adjust research depth, swap API keys, and change personas without restarting the server |
-| **Jina AI Reranker** | Cross-encoder reranking (`jina-reranker-v2-base-multilingual`) of retrieved chunks — 570M params, 100 languages, 8192-token context — for precision and token efficiency |
-| **CRAG Reflection Loop** | Automatic query rewriting and web search fallback when local context is insufficient |
-| **Guardrail System** | Fast safety check blocks illegal investment advice and off-topic queries |
-| **Background Ingestion** | Upload PDFs via the UI — Celery workers handle OCR, chunking, embedding, and storage asynchronously |
-| **Docker-Ready** | Full `docker-compose.yml` with 7 production services |
+| **Hybrid RAG Architecture** | Combines Vector (ChromaDB) + SQL (PostgreSQL) + Web (Tavily) retrieval, orchestrated by LangGraph |
+| **CRAG Reflection Loop** | Auto-evaluates context quality, rewrites queries, and falls back to web search when needed |
+| **Multilingual (FR/AR/EN)** | Native support with automatic language detection and enforced response language matching |
+| **Google OAuth + Email Auth** | Dual authentication: Google Sign-In or classic email/password registration |
+| **Voice Input (STT)** | Microphone button transcribes speech via Groq Whisper Large v3, fills chat input |
+| **Live BVC Market Panel** | Real-time Casablanca stock exchange data with gainers/losers/most active tabs |
+| **Collection Selector** | Users choose which knowledge base to query: All, Documents Only, or My Uploads Only |
+| **Focus Modes** | Chat tabs: *New Chat* (auto), *Company Analysis* (SQL), *Market Macro* (Vector) |
+| **Investment Personas** | Balanced, Prudent, or Aggressive — dynamically injected into LLM system prompt |
+| **In-UI PDF Viewer** | Enhanced modal with zoom, page navigation, download, and fullscreen |
+| **Jina Reranker v2** | Cross-encoder reranking (278M params, 108 languages, 8192 tokens) |
+| **Guardrail System** | Fast keyword pre-screening + LLM safety check for off-topic/illegal queries |
+| **Background Ingestion** | Async Celery workers with progress tracking (OCR → Chunk → Embed → Store) |
+| **Toast Notifications** | Non-intrusive alerts for login, ingestion, errors, session expiry |
+| **Responsive UI** | Mobile/tablet/desktop layouts with collapsible panels |
+| **Message Timestamps** | Hover-to-reveal timestamps on all chat messages |
+| **Help Guide** | Built-in usage guide accessible from the sidebar |
+| **Export Tools** | Copy, Download .md, and Export Full Report (PDF) on every response |
+| **Docker-Ready** | Full `docker-compose.yml` with production services |
+| **Deployment Guide** | Nginx config + HTTPS (Let's Encrypt) + step-by-step VPS deployment |
 
 ---
 
 ## Architecture Overview
 
 ```
-┌─────────────┐      ┌──────────────┐     ┌─────────────────┐
-│ Flask UI    │──▶   │  FastAPI API │──▶│  LangGraph Agent │
-│(Waitress)   │      │  (Uvicorn)   │     │   StateGraph    │
-│Port 5000    │      │  Port 8000   │     └────────┬────────┘
-└─────────────┘      └──────────────┘              │
-                                          ┌───────┼───────┐
-                                          ▼       ▼       ▼
-                                     ┌────────┐ ┌─────┐ ┌─────┐
-                                     │ChromaDB│ │ SQL │ │ Web │
-                                     │ BGE-M3 │ │     │ │     │
-                                     └────────┘ └─────┘ └─────┘
+┌─────────────┐      ┌──────────────┐     ┌─────────────────────────────┐
+│  Flask UI   │──▶   │  FastAPI API │──▶  │   LangGraph Agent (CRAG)    │
+│ (Waitress)  │      │  (Uvicorn)   │     │                             │
+│  Port 5000  │      │  Port 8000   │     │ Guardrail → Contextualize   │
+└─────────────┘      └──────────────┘     │ → Route → Retrieve → Rerank │
+                                          │ → Grade → (Rewrite + Web)   │
+                                          │ → Generate (streaming)      │
+                                          └──────────────┬──────────────┘
+                                                         │
+                                          ┌──────────────┼──────────────┐
+                                          ▼              ▼              ▼
+                                    ┌──────────┐  ┌──────────┐  ┌──────────┐
+                                    │ ChromaDB │  │PostgreSQL│  │  Tavily  │
+                                    │  BGE-M3  │  │   SQL    │  │   Web    │
+                                    │ 12K+ vec │  │ 3.6K rows│  │  Search  │
+                                    └──────────┘  └──────────┘  └──────────┘
                                           │
-                                     ┌────┴────┐
-                                     │Jina AI  │
-                                     │Reranker │
-                                     └─────────┘
+                                    ┌─────┴─────┐
+                                    │  Jina AI  │
+                                    │ Reranker  │
+                                    └───────────┘
 ```
 
 ---
 
 ## Quick Start
 
-### Important Note on Data & PDFs
-> **Note:** The `data/` directory (containing raw downloaded PDFs) is ignored by git to keep the repository lightweight. When you run the Celery workers, they will automatically scrape, download, and ingest the PDFs into ChromaDB.
+### Prerequisites
+- Python 3.12+
+- Docker & Docker Compose
+- PostgreSQL (or use Docker)
+- Redis (or use Docker)
 
-### Option A: Hybrid Deployment (Recommended)
-Docker handles the servers and databases, while you run Celery natively in your Windows terminal to easily watch the live ingestion logs.
-
-#### 1. Setup environment
+### 1. Clone and configure
 ```bash
-cd "Pfe 2026/financial-advisor"
-python -m venv venv
-venv\Scripts\activate        # Windows
-pip install -r requirements.txt
-# Edit .env and ensure REDIS_HOST=localhost and POSTGRES_HOST=localhost
+git clone https://github.com/your-user/financial-advisor.git
+cd financial-advisor
+cp .env.example .env
+# Edit .env with your API keys (GROQ_API_KEY, GOOGLE_CLIENT_ID, etc.)
 ```
 
-#### 2. Start Infrastructure (Docker)
-This boots up PostgreSQL, Redis, the FastAPI backend, the UI, and the Flower monitoring dashboard in the background.
+### 2. Start infrastructure (Docker)
 ```bash
 docker-compose up -d
-# Swagger UI: http://localhost:8000/docs
-# Chat UI: http://localhost:5000/chat
-# Flower UI: http://localhost:5555
 ```
 
-#### 3. Start Diversified Celery Workers (Local Terminals)
-Instead of running one monolithic worker that gets bogged down by background scraping, run separate workers in dedicated Windows terminals based on their queue responsibilities:
-
-**Terminal 1: Chat Uploads Worker (High Priority)**
-Listens strictly to the `user_ingestion` queue so your UI chat uploads process instantly without waiting for long scraping jobs.
+### 3. Run database migrations
 ```bash
-celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q user_ingestion -n chat_worker@%h
+alembic upgrade head
 ```
 
-**Terminal 2: Background Scraping & Data Fetch**
-Handles internet scraping (HCP, AMMC) and automated tasks.
+### 4. Start the API (local dev)
 ```bash
-celery -A tasks.celery_app worker --loglevel=info --concurrency=2 --pool=threads -Q scraping,data_fetch,default -n background_worker@%h
+uvicorn api.main:app --reload --port 8000
 ```
 
-**Terminal 3: Local Bulk Ingestion**
-Dedicated to processing large quantities of historical PDFs placed inside `data/docs/`.
+### 5. Start the UI
 ```bash
-celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q local_ingestion -n local_docs_worker@%h
+cd ui && flask run --port 5000
 ```
 
-#### How to Trigger Manual Bulk Ingestion
-If you dump bulk PDFs into your `data/docs/` folder, trigger them using the Python shell rather than the UI:
-```bash
-python -c "from tasks.document_ingestion_tasks import process_directory; process_directory.apply_async(kwargs={'directory_path': 'data/docs', 'source': 'historical_upload'}, queue='local_ingestion')"
-```
-
-#### 4. Start Celery Beat (Terminal 4 - Optional)
-Run this to schedule automated daily stock and macro data scraping:
-```bash
-celery -A tasks.celery_app beat --loglevel=info
-```
-
-#### ⚠️ Queue Management & Purging Stale Tasks
-Redis persists tasks even when the worker is offline. When you restart the worker, it will pick up **all tasks that accumulated while it was stopped** — including old uploads from past sessions. To avoid this, **purge the queue before starting the worker**:
-
-**Recommended startup habit (run before starting Terminal 1):**
-```bash
-# Purge only the chat uploads queue (safe — won't affect scraping)
-celery -A tasks.celery_app purge -Q user_ingestion -f
-
-# Then start the worker fresh
-celery -A tasks.celery_app worker --loglevel=info --concurrency=1 --pool=threads -Q user_ingestion -n chat_worker@%h
-```
-
-**Other purge commands:**
-```bash
-# Purge ALL queues at once (clears everything pending)
-celery -A tasks.celery_app purge -f
-
-# Inspect what's currently queued before deciding
-celery -A tasks.celery_app inspect reserved
-
-# Nuclear: flush all of Redis (wipes queues, results, and cache)
-python -c "import redis; r = redis.Redis(host='localhost', port=6379); r.flushdb(); print('Redis cleared!')"
-```
-
-#### Production Services Status
-
-| Service | Server | Port | Hosted In |
-|---------|--------|------|-----------|
-| **postgres** | PostgreSQL 18 | 5432 | Docker |
-| **redis** | Redis 7 | 6379 | Docker |
-| **api** | Uvicorn (4 workers) | 8000 | Docker |
-| **ui** | Waitress (4 threads) | 5000 | Docker |
-| **flower** | Flower | 5555 | Docker |
-| **celery-worker** | Celery (2 threads) | — | Local Windows Terminal |
-| **celery-beat** | Celery Beat | — | Local Windows Terminal |
+### 6. Open the app
+- Chat UI: http://127.0.0.1:5000
+- API Docs: http://127.0.0.1:8000/docs
+- Flower: http://localhost:5555
 
 ---
 
-## Data Ingestion
+## Authentication
 
-### Via the UI (Recommended)
-Click the **"Ingest Data"** button in the chat interface, select a PDF, and watch the live progress bar. The file is processed asynchronously by the Celery worker through: Upload → OCR → Chunking → Embedding → ChromaDB Storage.
+The app supports two authentication methods:
 
-### Via Config-Driven Scraping
-Edit `config/scrapers/sites.json` and add a new entry:
-```json
-{
-  "name": "bank_al_maghrib",
-  "display_name": "Bank Al-Maghrib (BKAM)",
-  "base_url": "https://www.bkam.ma",
-  "listing_urls": ["https://www.bkam.ma/Publications-et-recherche/Rapports-annuels"],
-  "pdf_link_pattern": ".pdf",
-  "use_playwright": false,
-  "enabled": true
-}
-```
-Then: `python scripts/trigger_all.py --sites-only`
+- **Google OAuth** — Sign in with Google (requires `GOOGLE_CLIENT_ID` in `.env`)
+- **Email/Password** — Classic registration and login with bcrypt-hashed passwords
 
-### Via Manual Drop
-Place any PDF in `data/docs/` and run:
-```bash
-python scripts/trigger_all.py --local-only
-```
+Both methods issue a JWT session token used for all protected API calls.
+
+---
+
+## Data Sources
+
+### Unstructured (ChromaDB — 12,000+ vectors)
+| Source | Documents | Method |
+|--------|-----------|--------|
+| AMMC | ~109 PDFs (reports, guides, circulars) | Playwright scraping |
+| Bank Al-Maghrib | ~47 PDFs (monetary reports, stability) | BeautifulSoup |
+| HCP | ~80 PDFs (macro bulletins, budgets) | BeautifulSoup |
+| Cour des Comptes | ~5 PDFs (audit reports) | BeautifulSoup |
+| User Uploads | Variable | Chat UI upload |
+
+### Structured (PostgreSQL — 3,656 rows)
+| Table | Content | Source |
+|-------|---------|--------|
+| `stock_prices` (140 rows) | Daily OHLCV for 28 global tickers | yfinance |
+| `financial_metrics` (470 rows) | P/E, EPS, revenue, market cap | yfinance |
+| `macro_indicators` (3,046 rows) | VIX, S&P 500, Gold, Oil, FX, yields | yfinance |
+
+### Live Data
+| Source | Data | Method |
+|--------|------|--------|
+| BVC (Bourse de Casablanca) | Real-time stock prices, indices | REST scraping (30s refresh) |
+| Tavily | Web search results | API (auto-triggered by CRAG) |
+
+---
+
+## Scripts
+
+| Script | Description |
+|--------|-------------|
+| `scripts/ingest_missing.py` | Find and ingest PDFs not yet in ChromaDB |
+| `scripts/populate_global_finance.py` | Populate PostgreSQL with global financial data |
+| `scripts/populate_global_finance.py --update` | Daily update (last 5 days only) |
+| `scripts/check_chromadb.py` | Show ChromaDB ingestion status |
+
+---
+
+## Models (Fine-tuning Notebooks)
+
+| Notebook | Purpose | Dataset |
+|----------|---------|---------|
+| `models/speech_to_text_model.ipynb` | Fine-tune Whisper Tiny for AR/FR/EN | Google FLEURS |
+| `models/text_to_sql_model.ipynb` | Fine-tune SQLCoder for financial SQL generation | Spider + custom |
 
 ---
 
@@ -176,107 +165,79 @@ python scripts/trigger_all.py --local-only
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
-| `POST /query/` | POST | Natural language financial question |
-| `POST /query/stream` | POST | Streaming (SSE) version with token-by-token output |
-| `POST /ingest/async` | POST | Upload a PDF for background ingestion |
-| `GET /ingest/status/{task_id}` | GET | Poll ingestion progress |
-| `GET /pdf/file?path=...` | GET | Serve an ingested PDF for in-UI preview |
-| `GET /stocks/{ticker}` | GET | Stock price snapshot |
-| `GET /stocks/{ticker}/history` | GET | Historical prices |
-| `GET /bvc/prices` | GET | Live BVC (Casablanca Bourse) data |
-| `GET /health` | GET | API health check |
-
-### Query Example (with Focus Mode & Persona)
-```json
-POST /query/stream
-{
-  "question": "Quel est le taux d'inflation au Maroc en 2024 ?",
-  "history": [],
-  "persona": "Prudent",
-  "top_k": 3,
-  "focus_mode": "Market Macro"
-}
-```
+| `/auth/register` | POST | Create account (email/password) |
+| `/auth/login` | POST | Login (email/password) |
+| `/auth/google` | POST | Google OAuth login |
+| `/auth/me` | GET | Get current user profile |
+| `/query/stream` | POST | Streaming RAG query (SSE) |
+| `/query/` | POST | Synchronous RAG query |
+| `/ingest/async` | POST | Upload PDF for async ingestion |
+| `/ingest/status/{task_id}` | GET | Poll ingestion progress |
+| `/speech/transcribe` | POST | Speech-to-text (audio upload) |
+| `/bvc/live` | GET | Live BVC stock prices |
+| `/bvc/indices` | GET | BVC market indices |
+| `/conversations/` | GET/POST | List/create conversations |
+| `/conversations/{id}` | GET/PUT/DELETE | Manage conversation |
+| `/pdf/file?path=...` | GET | Serve PDF for in-UI viewer |
+| `/health` | GET | API health check |
 
 ---
 
 ## Technology Stack
 
-| Component | Technology | Notes |
-|-----------|-----------|-------|
-| **Primary LLM** | `llama-3.3-70b-versatile` via **Groq** | Ultra-fast inference (~10-20× faster than OpenRouter) |
-| **Fallback LLMs** | `qwen-2.5-72b`, `llama-3.3-70b`, `llama-3.1-8b` via **OpenRouter** | Used when Groq quota exceeded |
-| **Fast LLM** | `llama-3.1-8b-instant` via **Groq** | Guardrails, routing, rewriting, contextualisation |
-| **Embeddings** | `BAAI/bge-m3` — 1024 dims, multilingual | French + Arabic + English, local HuggingFace model |
-| **Reranker** | `jina-reranker-v2-base-multilingual` via **Jina AI API** | Cross-encoder, 570M params, 100 languages, 8192-token context window |
-| **Vector DB** | ChromaDB (local persistent) | Collection: `financial_data` |
-| **Relational DB** | PostgreSQL 18 | Stock prices, financial metrics, macro indicators |
-| **Task Queue** | Celery + Redis | Queues: `user_ingestion`, `scraping`, `data_fetch`, `local_ingestion` |
-| **Orchestration** | LangGraph `StateGraph` (CRAG pattern) | Nodes: guardrail → contextualize → retrieve → grade → (rewrite + web) → generate |
-| **Web Search** | Tavily API | Auto-triggered when vector quality score < 0.3 |
-| **Web Scraping** | Playwright + BeautifulSoup | Sources: AMMC, HCP, Bank Al-Maghrib |
-| **Backend API** | FastAPI + Uvicorn | Port 8000, SSE streaming |
-| **Frontend UI** | Flask + Tailwind CSS | Port 5000 |
-| **Observability** | **Arize Phoenix** (local) + Celery Flower | Phoenix UI: http://localhost:6006 — Flower: http://localhost:5555 |
-| **Containerisation** | Docker + Docker Compose | 7 production services |
+| Layer | Technology |
+|-------|-----------|
+| **Primary LLM** | LLaMA 3.3-70B via Groq (free, ultra-fast) |
+| **Fast LLM** | LLaMA 3.1-8B via Groq (routing, guardrail, rewriting) |
+| **Fallback LLMs** | Qwen 2.5-72B, LLaMA 3.3-70B via OpenRouter |
+| **Embeddings** | BAAI/BGE-M3 (1024d, 100+ languages, local) |
+| **Reranker** | Jina Reranker v2 (cross-encoder, 278M, 108 langs) |
+| **Vector DB** | ChromaDB (HNSW cosine, persistent) |
+| **Relational DB** | PostgreSQL 16 |
+| **Orchestration** | LangGraph StateGraph (CRAG pattern) |
+| **STT** | Groq Whisper Large v3 (API) + fine-tuned Whisper Tiny |
+| **Web Search** | Tavily API |
+| **Backend** | FastAPI + Uvicorn (SSE streaming) |
+| **Frontend** | Flask + Tailwind CSS |
+| **Auth** | Google OAuth 2.0 + JWT + bcrypt |
+| **Task Queue** | Celery + Redis |
+| **Monitoring** | Arize Phoenix + Celery Flower |
+| **Deployment** | Docker Compose + Nginx + Let's Encrypt |
 
 ---
 
-## Configuration
+## Deployment
 
-Key environment variables in `.env`:
+See `deploy/DEPLOY.md` for full production deployment instructions including:
+- VPS setup (Docker + Nginx + HTTPS)
+- `deploy/nginx.conf` — ready-to-use reverse proxy config
+- Google OAuth production setup
+- Database migrations and backups
 
-```bash
-# LLM — Primary (Groq, ultra-fast)
-GROQ_API_KEY=gsk_...
-GROQ_MODEL=llama-3.3-70b-versatile        # Primary generation model
+---
 
-# LLM — Fallback (OpenRouter)
-OPENROUTER_API_KEY=sk-or-v1-...
-OPENROUTER_MODEL=qwen/qwen-2.5-72b-instruct
+## Project Structure
 
-# Embeddings (Multilingual, local)
-EMBEDDING_MODEL=BAAI/bge-m3
-EMBEDDING_DIMENSION=1024
-
-# ChromaDB
-CHROMA_PERSIST_DIR=./chroma_db
-CHROMA_COLLECTION=financial_data
-
-# Reranker — Jina AI
-# Model: jina-reranker-v2-base-multilingual
-# API:   https://api.jina.ai/v1/rerank
-# Specs: 570M params | 100 languages | 8192-token context | cross-encoder architecture
-JINA_API_KEY=jina_...
-
-# Web Search
-TAVILY_API_KEY=tvly-...
-
-# PostgreSQL
-DATABASE_URL=postgresql+psycopg2://postgres:root@localhost:5432/financial_advisor
-
-# Redis / Celery
-REDIS_HOST=localhost
-REDIS_PORT=6379
-USE_CELERY=true
-
-# Observability — Arize Phoenix (local, no API key needed)
-# Start Phoenix: python -m phoenix.server.main serve
-# Phoenix UI:   http://localhost:6006
-PHOENIX_COLLECTOR_ENDPOINT=http://localhost:6006/v1/traces
 ```
-
-## Diagnostic Tools
-
-```bash
-# Check ChromaDB ingestion status
-python scripts/check_chromadb.py
-
-# Run API unit tests
-pytest tests/test_api.py -v
-
-# Monitor Celery tasks
-python scripts/run_flower.py    # Open http://localhost:5555
+financial-advisor/
+├── agents/                  # LangGraph agent, prompts, tools
+├── api/                     # FastAPI app + route handlers
+│   └── routes/              # auth, query, ingest, speech, bvc, conversations
+├── alembic/                 # Database migrations
+├── config/                  # Scraper site configurations
+├── data/                    # Collected documents + cache
+├── deploy/                  # Nginx config + deployment guide
+├── ingestion/               # Pipeline: loaders, chunkers, embeddings, dedup
+├── models/                  # Fine-tuning notebooks (STT, Text-to-SQL)
+├── retrieval/               # Vector search, BM25, reranker, query router, RRF
+├── scripts/                 # Utility scripts (ingestion, data population)
+├── storage/                 # ChromaDB + PostgreSQL wrappers
+├── tasks/                   # Celery task definitions
+├── ui/                      # Flask frontend (templates, static JS/CSS)
+├── docker-compose.yml       # Production orchestration
+├── Dockerfile               # Optimized build (CPU PyTorch)
+├── requirements.txt         # Python dependencies
+└── .env.example             # Environment template
 ```
 
 ---
