@@ -28,13 +28,34 @@ def _setup_phoenix_tracing():
     """
     try:
         from opentelemetry.sdk import trace as trace_sdk
-        from opentelemetry.sdk.trace.export import SimpleSpanProcessor
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
         from opentelemetry.sdk.resources import Resource
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         from openinference.instrumentation.langchain import LangChainInstrumentor
         from opentelemetry import trace
 
         endpoint = os.getenv("PHOENIX_COLLECTOR_ENDPOINT", "http://localhost:6006/v1/traces")
+
+        # ⚡ Probe Phoenix once at startup. If it's not reachable, skip the
+        # exporter entirely so we don't pay retry latency on every span.
+        # (Set DISABLE_PHOENIX=true to force-skip even when reachable.)
+        if os.getenv("DISABLE_PHOENIX", "false").lower() == "true":
+            print("[Phoenix] Disabled via DISABLE_PHOENIX env. Skipping tracing setup.")
+            return
+
+        try:
+            from urllib.parse import urlparse
+            import socket
+            parsed = urlparse(endpoint)
+            host = parsed.hostname or "localhost"
+            port = parsed.port or (443 if parsed.scheme == "https" else 6006)
+            with socket.create_connection((host, port), timeout=1.0):
+                pass
+        except Exception as probe_err:
+            print(f"[Phoenix] Collector at {endpoint} is unreachable ({probe_err}). "
+                  f"Tracing disabled this run — start Phoenix to enable it.")
+            return
+
         exporter = OTLPSpanExporter(endpoint=endpoint)
 
         # Resource attributes show in Phoenix's service/project filters
@@ -45,7 +66,7 @@ def _setup_phoenix_tracing():
         })
 
         provider = trace_sdk.TracerProvider(resource=resource)
-        provider.add_span_processor(SimpleSpanProcessor(exporter))
+        provider.add_span_processor(BatchSpanProcessor(exporter))
         trace.set_tracer_provider(provider)
 
         # Auto-instruments LangChain chains, LLM calls, retrievers, and LangGraph nodes
@@ -57,6 +78,25 @@ def _setup_phoenix_tracing():
 
 _setup_phoenix_tracing()
 # ──────────────────────────────────────────────────────────────────────────────
+
+# ⚡ Silence the noisy "Failed to detach context" warnings emitted by
+# OpenTelemetry when LangChain runs inside a thread pool. They log at
+# ERROR via logger.exception(), so we need a filter (or CRITICAL+1).
+# Functionally harmless — but they spam the logs on every parallel stage.
+import logging as _otel_logging
+
+class _DropDetachWarning(_otel_logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        if "Failed to detach context" in msg:
+            return False
+        return True
+
+for _name in ("opentelemetry.context", "opentelemetry.context.contextvars_context",
+              "opentelemetry"):
+    _logger = _otel_logging.getLogger(_name)
+    _logger.addFilter(_DropDetachWarning())
+    _logger.setLevel(_otel_logging.CRITICAL)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -104,8 +144,9 @@ _allowed_origins = [o.strip() for o in _cors_origins.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
 
 app.include_router(auth_router)

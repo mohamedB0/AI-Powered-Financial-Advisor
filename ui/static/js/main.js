@@ -67,7 +67,8 @@ let appSettings = JSON.parse(localStorage.getItem('ai_settings')) || {
     persona: 'Balanced',
     depth: 3,
     focusMode: 'New Chat',
-    collection: 'all'
+    collection: 'all',
+    detail: 'balanced'
 };
 // Ensure collection exists for users with old cached settings
 if (!appSettings.collection) appSettings.collection = 'all';
@@ -365,7 +366,8 @@ function initChat() {
                     persona: appSettings.persona,
                     top_k: parseInt(appSettings.depth),
                     focus_mode: appSettings.focusMode,
-                    collection: appSettings.collection || "all"
+                    collection: appSettings.collection || "all",
+                    detail: appSettings.detail || "balanced"
                 })
             });
 
@@ -377,6 +379,7 @@ function initChat() {
             let isFirstToken = true;
             let finalContext = "";
             let finalRoute = "";
+            let finalChart = null;
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -405,6 +408,7 @@ function initChat() {
                                 if (isFirstToken) bubble.innerHTML = "";
                                 finalContext = data.context || "";
                                 finalRoute = data.route || "";
+                                finalChart = data.chart || null;
                                 historyLog.push({ role: 'assistant', content: fullText });
 
                                 // Persist assistant message to DB
@@ -498,6 +502,23 @@ function initChat() {
             }
 
             if (finalContext && finalContext !== "No context available.") {
+                // ── Inline Chart: render if backend sent chart data ───────
+                if (finalChart && finalChart.plotly) {
+                    const chartDiv = document.createElement('div');
+                    chartDiv.className = "mt-3 rounded-lg border border-gray-200 overflow-hidden";
+                    chartDiv.style.height = "320px";
+                    chartDiv.id = 'chart-' + Date.now();
+                    bubble.appendChild(chartDiv);
+                    try {
+                        Plotly.newPlot(chartDiv.id, finalChart.plotly.data, finalChart.plotly.layout, {
+                            responsive: true,
+                            displayModeBar: false,
+                        });
+                    } catch (e) {
+                        console.error('[Chart] Plotly render error:', e);
+                    }
+                }
+
                 // ── Source cards: extract doc references from context ───
                 const sourceCards = _extractSourceCards(finalContext);
                 if (sourceCards.length > 0) {
@@ -546,6 +567,13 @@ function initChat() {
             }
         } catch (e) {
             clearInterval(_stageTimer);
+            // If we already streamed a successful answer, the error happened in
+            // post-processing (rendering context, highlights, etc.) — don't wipe
+            // out the user's answer. Just log it and keep the bubble as-is.
+            if (fullText && fullText.length > 0) {
+                console.error('[Stream] Post-processing error (answer preserved):', e);
+                return;
+            }
             bubble.innerHTML = `<div class="flex flex-col gap-2">
                 <span class="status-failure text-red-500 text-[13px]">Failed to connect to API</span>
                 <button onclick="retryLastQuestion(this)" class="self-start text-[12px] text-emerald-600 hover:text-emerald-800 font-medium flex items-center gap-1.5 transition-colors">
@@ -572,6 +600,37 @@ function initChat() {
         if (emptyState) emptyState.style.display = '';
         // Start a fresh conversation
         if (typeof startNewConversation === 'function') startNewConversation();
+    });
+
+    // ── Clear Semantic Cache ────────────────────────────────────────────────
+    const clearCacheBtn = document.getElementById('clear-cache-btn');
+    clearCacheBtn?.addEventListener('click', async () => {
+        // Visual feedback while the request is in-flight
+        const original = clearCacheBtn.innerHTML;
+        clearCacheBtn.disabled = true;
+        clearCacheBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Clearing...';
+
+        try {
+            const res = await authFetch(`${API_BASE}/query/cache`, { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: 'Unknown error' }));
+                throw new Error(err.detail || `HTTP ${res.status}`);
+            }
+            const data = await res.json();
+            const cleared = data.cleared || 0;
+            showToast(
+                cleared > 0
+                    ? `Cache cleared (${cleared} entr${cleared === 1 ? 'y' : 'ies'} removed)`
+                    : 'Cache was already empty',
+                'success', 3000
+            );
+        } catch (err) {
+            console.error('[Cache] Clear error:', err);
+            showToast(`Failed to clear cache: ${err.message || 'unknown error'}`, 'error', 4000);
+        } finally {
+            clearCacheBtn.innerHTML = original;
+            clearCacheBtn.disabled = false;
+        }
     });
 
     // Prompt suggestion buttons — click to fill the input
@@ -772,7 +831,15 @@ function initChat() {
             progressContainer.classList.remove('hidden');
             progressBar.className = 'bg-brand-text h-1.5 rounded-full transition-all duration-300';
             progressBar.style.width = '20%';
-            statusText.innerText = isBatch ? `Submitting ${files.length} files...` : 'Submitting to Celery...';
+            const fileExt = files[0]?.name?.split('.').pop()?.toLowerCase();
+            const isExcelOrCsv = ['xlsx', 'xls', 'csv', 'tsv'].includes(fileExt);
+            if (isBatch) {
+                statusText.innerText = `Submitting ${files.length} files...`;
+            } else if (isExcelOrCsv) {
+                statusText.innerText = 'Ingesting Excel/CSV...';
+            } else {
+                statusText.innerText = 'Submitting to Celery...';
+            }
 
             const formData = new FormData();
             if (isBatch) {
@@ -784,7 +851,21 @@ function initChat() {
             }
 
             try {
-                const endpoint = isBatch ? `${API_BASE}/ingest/batch` : `${API_BASE}/ingest/async`;
+                // Check file extensions to decide endpoint
+                const fileExt = files[0]?.name?.split('.').pop()?.toLowerCase();
+                const isExcelOrCsv = ['xlsx', 'xls', 'csv', 'tsv'].includes(fileExt);
+                
+                let endpoint;
+                if (isBatch) {
+                    endpoint = `${API_BASE}/ingest/batch`;
+                } else if (isExcelOrCsv) {
+                    // XLSX/CSV: use sync endpoint (faster, no Celery needed)
+                    endpoint = `${API_BASE}/ingest/`;
+                } else {
+                    // PDF/DOCX: use Celery async (slower, needs background processing)
+                    endpoint = `${API_BASE}/ingest/async`;
+                }
+                
                 const res = await authFetch(endpoint, {
                     method: 'POST',
                     body: formData
@@ -793,42 +874,58 @@ function initChat() {
 
                 if (!res.ok) throw new Error(data.detail || "Upload failed");
 
-                const taskId = data.task_id;
-                // ── Persist task so the progress bar survives page navigation ──
-                localStorage.setItem('active_ingest_task', JSON.stringify({
-                    taskId,
-                    filename: files[0]?.name || 'Document',
-                    startedAt: Date.now()
-                }));
-                statusText.innerText = `Queued (Task: ${taskId.substring(0, 8)}...)`;
-                progressBar.style.width = '15%';
+                let taskId;
+                if (isExcelOrCsv) {
+                    // Sync response: direct result (no Celery)
+                    taskId = null;
+                    progressBar.style.width = '100%';
+                    const stored = data.stored || data.chunks || 0;
+                    statusText.innerText = `Success! ${stored} vectors stored.`;
+                    setTimeout(() => {
+                        progressContainer.classList.add('hidden');
+                        showToast(`${data.filename} ingested successfully!`, 'success');
+                    }, 2000);
+                    fileUpload.value = '';
+                    // Refresh the knowledge-base collection counts
+                    if (typeof initCollectionBar === 'function') initCollectionBar();
+                } else {
+                    // Async response: Celery task (PDF/DOCX)
+                    taskId = data.task_id;
+                    // ── Persist task so the progress bar survives page navigation ──
+                    localStorage.setItem('active_ingest_task', JSON.stringify({
+                        taskId,
+                        filename: files[0]?.name || 'Document',
+                        startedAt: Date.now()
+                    }));
+                    statusText.innerText = `Queued (Task: ${taskId.substring(0, 8)}...)`;
+                    progressBar.style.width = '15%';
 
-                const detailText = document.getElementById('upload-detail-text');
-                const stepOrder = ['loading', 'ocr', 'chunking', 'embedding', 'storing', 'done'];
+                    const detailText = document.getElementById('upload-detail-text');
+                    const stepOrder = ['loading', 'ocr', 'chunking', 'embedding', 'storing', 'done'];
 
-                function highlightStep(currentStep) {
-                    document.querySelectorAll('.step-indicator').forEach(el => {
-                        const s = el.dataset.step;
-                        const idx = stepOrder.indexOf(s);
-                        const curIdx = stepOrder.indexOf(currentStep);
-                        if (idx < curIdx) {
-                            el.classList.remove('text-gray-400', 'text-brand-text');
-                            el.classList.add('text-green-500');
-                        } else if (idx === curIdx) {
-                            el.classList.remove('text-gray-400', 'text-green-500');
-                            el.classList.add('text-brand-text');
-                        } else {
-                            el.classList.remove('text-brand-text', 'text-green-500');
-                            el.classList.add('text-gray-400');
-                        }
-                    });
-                }
+                    function highlightStep(currentStep) {
+                        document.querySelectorAll('.step-indicator').forEach(el => {
+                            const s = el.dataset.step;
+                            const idx = stepOrder.indexOf(s);
+                            const curIdx = stepOrder.indexOf(currentStep);
+                            if (idx < curIdx) {
+                                el.classList.remove('text-gray-400', 'text-brand-text');
+                                el.classList.add('text-green-500');
+                            } else if (idx === curIdx) {
+                                el.classList.remove('text-gray-400', 'text-green-500');
+                                el.classList.add('text-brand-text');
+                            } else {
+                                el.classList.remove('text-brand-text', 'text-green-500');
+                                el.classList.add('text-gray-400');
+                            }
+                        });
+                    }
 
-                let pollCount = 0;
-                const pollInterval = setInterval(async () => {
-                    pollCount++;
-                    try {
-                        const statusRes = await fetch(`${API_BASE}/ingest/status/${taskId}`);
+                    let pollCount = 0;
+                    const pollInterval = setInterval(async () => {
+                        pollCount++;
+                        try {
+                            const statusRes = await fetch(`${API_BASE}/ingest/status/${taskId}`);
                         const statusData = await statusRes.json();
 
                         if (statusData.status === 'PROGRESS') {
@@ -869,6 +966,8 @@ function initChat() {
                         console.error("Polling error", err);
                     }
                 }, 1500);
+
+                } // End else (Celery async)
 
             } catch (e) {
                 progressBar.className = 'bg-red-500 h-1.5 rounded-full transition-all duration-300';
@@ -1186,6 +1285,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if(depthVal) depthVal.innerText = appSettings.depth;
         const collSelect = document.getElementById('setting-collection');
         if (collSelect) collSelect.value = appSettings.collection || 'all';
+        const detailSelect = document.getElementById('setting-detail');
+        if (detailSelect) detailSelect.value = appSettings.detail || 'balanced';
 
         settingsModal.classList.remove('hidden');
         setTimeout(() => {
@@ -1216,6 +1317,8 @@ document.addEventListener('DOMContentLoaded', () => {
         appSettings.depth = sliderDepth.value;
         const collSelect = document.getElementById('setting-collection');
         if (collSelect) appSettings.collection = collSelect.value;
+        const detailSelect = document.getElementById('setting-detail');
+        if (detailSelect) appSettings.detail = detailSelect.value;
         
         localStorage.setItem('ai_settings', JSON.stringify(appSettings));
         closeSettings();
@@ -1293,9 +1396,7 @@ function renderCollectionBar() {
                 : 'text-gray-500 hover:text-[#2d4a36] hover:bg-emerald-50'
         ].join(' ');
 
-        const countStr = (c.count !== null && c.count !== undefined)
-            ? `<span class="ml-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${isActive ? 'bg-emerald-500/30 text-emerald-100' : 'bg-gray-100 text-gray-500'}">${c.count.toLocaleString('fr-FR')}</span>`
-            : '';
+        const countStr = '';
 
         pill.innerHTML = `
             <i class="fa-solid ${c.icon || 'fa-database'} text-[11px] ${isActive ? 'text-emerald-400' : 'text-gray-400'}"></i>
@@ -1552,24 +1653,42 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // ── Source Card Extraction ───────────────────────────────────────────────────
 // Parses the context string to extract document references for clickable cards.
-// Context format: [Doc N | source_file (page X) [collection] | score=0.XXX]
+// Matches the HybridMerger output, which produces lines like:
+//   **Excerpt 1** — [filename.pdf | page: 3 | score: 0.5480](pdf-viewer:...&page=3)
+//   **Excerpt 1** — `[SOURCE: filename.pdf | page: 3 | score: 0.5480]`
+// And a header table row:
+//   | 1 | filename.pdf | Pg 3 | 0.5480 |
 
 function _extractSourceCards(context) {
     const cards = [];
     const seen = new Set();
-    // Match patterns like: [Doc 1 | filename.pdf (page 3) [financial_data] | score=0.548]
-    const regex = /\[Doc \d+\s*\|\s*([^|(]+?)(?:\s*\(page\s*(\d+)\))?\s*(?:\[[^\]]*\])?\s*\|\s*score=([\d.]+)\]/g;
-    let match;
-    while ((match = regex.exec(context)) !== null) {
-        const file = match[1].trim();
-        const page = match[2] || "";
-        const score = match[3];
-        const key = `${file}-${page}`;
-        if (seen.has(key)) continue;
+
+    // Pattern 1: Excerpt with markdown link  → [filename | page: N | score: 0.XXXX](pdf-viewer:...)
+    const linkRe = /\[([^\]|]+?)(?:\s*\|\s*page:\s*(\d+))?(?:\s*\|\s*[^\]]*?score:\s*([\d.]+))?\s*\]\(pdf-viewer:/g;
+    // Pattern 2: Excerpt with [SOURCE: ...] fallback
+    const srcRe  = /\[SOURCE:\s*([^|\]]+?)(?:\s*\|\s*page:\s*(\d+))?(?:\s*\|\s*[^\]]*?score:\s*([\d.]+))?\s*\]/g;
+    // Pattern 3: Old summary table row | N | filename | Pg X | 0.XXXX |
+    const tableRe = /\|\s*\d+\s*\|\s*([^|]+?\.(?:pdf|md|html?|txt))\s*\|\s*([^|]*?)\s*\|\s*([\d.]+)\s*\|/gi;
+
+    const pushCard = (file, page, score) => {
+        if (!file) return;
+        file = file.trim();
+        const key = `${file}-${page || ''}`;
+        if (seen.has(key)) return;
         seen.add(key);
-        // Short name: last part of path, truncated
         const shortName = file.split(/[/\\]/).pop().replace(/^(ammc_|hcp_|bkam_|cdc_)/, '').substring(0, 35);
-        cards.push({ file, page, score, shortName });
+        cards.push({ file, page: page || "", score: score || "", shortName });
+    };
+
+    let m;
+    while ((m = linkRe.exec(context)) !== null)  pushCard(m[1], m[2], m[3]);
+    while ((m = srcRe.exec(context))  !== null)  pushCard(m[1], m[2], m[3]);
+    while ((m = tableRe.exec(context)) !== null) {
+        // Pattern 3 page is in the metadata column like "Pg 3, 2022" or "OCR/Vision"
+        const meta = m[2] || "";
+        const pageMatch = meta.match(/Pg\s*(\d+)/i);
+        pushCard(m[1], pageMatch ? pageMatch[1] : "", m[3]);
     }
+
     return cards.slice(0, 5); // Max 5 source cards
 }

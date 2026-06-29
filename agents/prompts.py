@@ -37,7 +37,7 @@ QUERY_PROMPT_TEMPLATE = """## User Question
 {context}
 
 ## Instructions
-- Answer the user's question DIRECTLY and CONCISELY. Start with the key answer immediately — no preamble.
+- Answer the user's question DIRECTLY. Start with the key answer, then provide supporting details, context, and explanation.
 - Use ONLY information from the retrieved context above. Never invent data or figures.
 - STRICTLY IGNORE any context that does not directly help answer the specific question asked.
 - Be precise and focused: every sentence in your response must be directly relevant to the question.

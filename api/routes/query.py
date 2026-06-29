@@ -29,6 +29,7 @@ class QueryRequest(BaseModel):
     persona: Optional[str] = "Balanced"
     focus_mode: Optional[str] = "New Chat"
     collection: Optional[str] = "all"  # "all", "financial_data", or "user_data"
+    detail: Optional[str] = "balanced"  # "concise", "balanced", "detailed", "expert"
 
 
 class QueryResponse(BaseModel):
@@ -157,7 +158,14 @@ def query(request: QueryRequest, user: dict = Depends(get_current_user)) -> Quer
 
         from agents.financial_agent import ask
         lc_history = _build_history(request.history)
-        result = ask(request.question, history=lc_history)
+        result = ask(
+            request.question,
+            history=lc_history,
+            top_n=request.top_k,
+            persona=request.persona or "Balanced",
+            focus_mode=request.focus_mode or "New Chat",
+            collection=request.collection or "all",
+        )
         
         # 2. Update Cache
         if result.get("answer"):
@@ -204,6 +212,24 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
         )
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
         from api.tracing import trace_query_span, trace_stage, set_output
+
+        # ⚡ Semantic cache short-circuit — skip the entire pipeline for repeat questions
+        try:
+            cache = _get_cache()
+            cached = cache.get(request.question)
+        except Exception as e:
+            print(f"[Cache] Lookup error (non-fatal): {e}")
+            cached = None
+
+        if cached:
+            answer = cached.get("answer", "")
+            ctx = cached.get("context", "")
+            yield f"data: {json.dumps({'token': '⚡ '})}\n\n"
+            # Stream the cached answer in small chunks for nice UX
+            for i in range(0, len(answer), 80):
+                yield f"data: {json.dumps({'token': answer[i:i+80]})}\n\n"
+            yield f"data: {json.dumps({'done': True, 'context': ctx, 'route': 'cache'})}\n\n"
+            return
 
         lc_history = _build_history(request.history)
 
@@ -311,8 +337,18 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
 
             persona_guide = f"You must strongly adopt the following Investment Persona: {state.get('persona', 'Balanced')}."
 
+            # Response detail level
+            detail_instructions = {
+                "concise": "Keep your response brief: 2-3 sentences maximum. Only state the key facts.",
+                "balanced": "",
+                "detailed": "Provide a comprehensive answer with explanations, context, and supporting details. Use 3-5 paragraphs.",
+                "expert": "Provide an in-depth expert analysis covering all relevant data, implications, historical context, and forward-looking considerations. Be thorough.",
+            }
+            detail_level = request.detail or "balanced"
+            detail_guide = detail_instructions.get(detail_level, "")
+
             messages = [
-                SystemMessage(content=SYSTEM_PROMPT + "\n\n" + persona_guide),
+                SystemMessage(content=SYSTEM_PROMPT + "\n\n" + persona_guide + ("\n\n" + detail_guide if detail_guide else "")),
                 *prior,
                 HumanMessage(content=prompt),
             ]
@@ -320,9 +356,17 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             from agents.financial_agent import _FALLBACK_MODELS, _get_llm as _agent_get_llm
 
             openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
-            models_to_try = [None] + [m for m in _FALLBACK_MODELS if m != openrouter_primary] + [openrouter_primary]
+            # Order: Groq primary key → Groq fallback key → OpenRouter chain
+            # Note: "_GROQ_FALLBACK_KEY" is a sentinel handled by _get_llm()
+            models_to_try = (
+                [None]
+                + (["_GROQ_FALLBACK_KEY"] if os.getenv("GROQ_API_KEY_Fallback") else [])
+                + [m for m in _FALLBACK_MODELS if m != openrouter_primary]
+                + [openrouter_primary]
+            )
 
             streamed = False
+            full_answer_for_cache = ""
             with trace_stage("generate") as gen_span:
                 for model_name in models_to_try:
                     try:
@@ -331,6 +375,13 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
                         full_answer = ""
                         _gen_start = _time.time()
                         _STREAM_TIMEOUT = 60  # seconds — hard cutoff for hung LLMs
+
+                        # ⚡ Repetition detector — bail if the model loops on the same
+                        # 80-char phrase 4+ times in the running answer (common
+                        # failure mode of Llama 3.3 70B in Arabic).
+                        _seen_phrases = {}
+                        _repetition_killed = False
+
                         for chunk in llm_stream.stream(messages):
                             # Timeout protection: if no complete response after 60s, bail
                             if _time.time() - _gen_start > _STREAM_TIMEOUT:
@@ -341,9 +392,30 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
                             if token:
                                 full_answer += token
                                 yield f"data: {json.dumps({'token': token})}\n\n"
+
+                                # Repetition check on a sliding 100-char window of the tail
+                                if len(full_answer) > 400 and len(full_answer) % 50 == 0:
+                                    tail = full_answer[-80:].strip()
+                                    if len(tail) >= 40:
+                                        _seen_phrases[tail] = _seen_phrases.get(tail, 0) + 1
+                                        if _seen_phrases[tail] >= 4:
+                                            gen_span.set_attribute("generate.repetition_killed", True)
+                                            _repetition_killed = True
+                                            yield f"data: {json.dumps({'token': '\n\n⚠️ *(génération interrompue : boucle de répétition détectée)*'})}\n\n"
+                                            break
                         else:
                             # Loop completed normally (no break)
                             streamed = True
+                            full_answer_for_cache = full_answer
+                            gen_span.set_attribute("generate.output_length", len(full_answer))
+                            set_output(root_span, full_answer[:2000])
+
+                        # If we killed for repetition, surface the partial
+                        # answer to the user but do NOT cache it — repetition
+                        # loops would otherwise be served forever from cache.
+                        if _repetition_killed:
+                            streamed = True
+                            full_answer_for_cache = ""  # poison flag — skip caching
                             gen_span.set_attribute("generate.output_length", len(full_answer))
                             set_output(root_span, full_answer[:2000])
                         break  # success or timeout — exit model loop
@@ -369,8 +441,51 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
                         yield f"data: {json.dumps({'token': err_token})}\n\n"
                         break
 
-            # ── 4. Done signal with metadata ──────────────────────────────
-            yield f"data: {json.dumps({'done': True, 'context': context, 'route': route})}\n\n"
+            # ── 4. Done signal with metadata + optional chart ─────────────
+            # Detect if the question warrants an inline chart
+            chart_data = None
+            try:
+                from api.routes.charts import detect_chart_intent, generate_chart_data
+                chart_intent = detect_chart_intent(request.question)
+                if chart_intent:
+                    chart_data = generate_chart_data(chart_intent)
+            except Exception as e:
+                print(f"[Chart] Detection error (non-fatal): {e}")
+
+            done_payload = {'done': True, 'context': context, 'route': route}
+            if chart_data:
+                done_payload['chart'] = chart_data
+            yield f"data: {json.dumps(done_payload)}\n\n"
+
+            # ⚡ Update semantic cache so repeat questions return in <1s
+            # but ONLY for clean answers — never cache repetition loops,
+            # error messages, or warning placeholders.
+            def _is_cacheable(ans: str) -> bool:
+                if not ans or len(ans) < 50:
+                    return False
+                if "⚠️" in ans or "Service Temporarily" in ans or "génération interrompue" in ans:
+                    return False
+                # Crude loop detector on the saved text — if any 60-char tail
+                # phrase repeats >5 times, refuse to cache.
+                if len(ans) > 600:
+                    seen = {}
+                    for i in range(0, len(ans) - 60, 30):
+                        chunk = ans[i:i+60]
+                        seen[chunk] = seen.get(chunk, 0) + 1
+                        if seen[chunk] > 5:
+                            return False
+                return True
+
+            if streamed and _is_cacheable(full_answer_for_cache):
+                try:
+                    _get_cache().set(
+                        query=request.question,
+                        answer=full_answer_for_cache,
+                        context=context,
+                        route=route,
+                    )
+                except Exception as e:
+                    print(f"[Cache] Update error (non-fatal): {e}")
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
@@ -412,3 +527,42 @@ def submit_feedback(req: FeedbackRequest, user: dict = Depends(get_current_user)
         pass
 
     return {"status": "ok", "rating": req.rating}
+
+
+# ── Semantic Cache Management ─────────────────────────────────────────────────
+
+
+@router.get("/cache/status")
+def cache_status(user: dict = Depends(get_current_user)) -> dict:
+    """
+    Return the current state of the semantic cache.
+
+    Useful for the UI to display the number of cached entries before
+    offering the user the option to clear them.
+    """
+    try:
+        cache = _get_cache()
+        count = cache.collection.count()
+        return {"entries": count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not read cache: {e}")
+
+
+@router.delete("/cache")
+def clear_cache(user: dict = Depends(get_current_user)) -> dict:
+    """
+    Clear all entries from the semantic cache.
+
+    Useful when users report stale responses or when the system has been
+    updated and previously cached answers are no longer valid.
+    """
+    try:
+        cache = _get_cache()
+        before = cache.collection.count()
+        ids = cache.collection.get().get("ids", [])
+        if ids:
+            cache.collection.delete(ids=ids)
+        after = cache.collection.count()
+        return {"cleared": before - after, "remaining": after}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not clear cache: {e}")

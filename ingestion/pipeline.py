@@ -79,8 +79,23 @@ class IngestionPipeline:
             from ingestion.loaders.web_loader import WebLoader
             records = WebLoader().load(file_path)
         elif ext in (".csv", ".tsv", ".xlsx", ".xls"):
-            from ingestion.loaders.csv_loader import CSVLoader
-            records = CSVLoader().load(file_path)
+            # Use ParserAI for XLSX/CSV (faster, better chunking, financial statement detection)
+            from ingestion.loaders.financial_parser_loader import FinancialParserLoader
+            from storage.chroma_store import CHROMA_COLLECTION_USER_SPREADSHEETS
+            
+            loader = FinancialParserLoader()
+            records = loader.load(file_path)
+            # ParserAI already returns properly chunked data, skip standard chunking
+            # Use dedicated spreadsheet collection
+            if records and self._collection_override != CHROMA_COLLECTION_USER_SPREADSHEETS:
+                # Create a new pipeline with spreadsheet collection
+                from ingestion import IngestionPipeline
+                spreadsheet_pipeline = IngestionPipeline(
+                    collection_override=CHROMA_COLLECTION_USER_SPREADSHEETS
+                )
+                return spreadsheet_pipeline.ingest_records(records)
+            elif records:
+                return self.ingest_records(records)
         elif ext == ".docx":
             from ingestion.loaders.docx_loader import DocxLoader
             records = DocxLoader().load(file_path)
@@ -103,9 +118,12 @@ class IngestionPipeline:
             logger.warning("No content extracted from '%s'", file_path)
             return {"documents": 0, "chunks": 0, "stored": 0}
 
-        # Structured data (Excel, CSV) is stored in PostgreSQL only
+        # ParserAI returns RAG-ready chunks - also store in ChromaDB (not just PostgreSQL)
         if is_structured:
-            return {"documents": len(records), "chunks": 0, "stored": 0, "stored_in": "postgresql"}
+            # Store in both ChromaDB (for RAG) and PostgreSQL (for structured queries)
+            result = self.ingest_records(records)
+            result["stored_in"] = "chroma + postgresql"
+            return result
 
         return self.ingest_records(records)
 

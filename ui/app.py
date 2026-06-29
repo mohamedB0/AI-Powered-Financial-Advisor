@@ -106,7 +106,7 @@ def proxy_google_auth():
             f"{api_url}/auth/google",
             json=request.get_json(),
             headers={"Content-Type": "application/json"},
-            timeout=10,
+            timeout=30,
         )
         try:
             data = resp.json()
@@ -129,7 +129,7 @@ def proxy_register():
             f"{api_url}/auth/register",
             json=request.get_json(),
             headers={"Content-Type": "application/json"},
-            timeout=10,
+            timeout=30,
         )
         try:
             data = resp.json()
@@ -152,7 +152,7 @@ def proxy_login():
             f"{api_url}/auth/login",
             json=request.get_json(),
             headers={"Content-Type": "application/json"},
-            timeout=10,
+            timeout=30,
         )
         try:
             data = resp.json()

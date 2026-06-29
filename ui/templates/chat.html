@@ -90,7 +90,7 @@
             class="bg-[#1a2e1f] hover:bg-[#243b28] shadow-sm text-white border border-[#243b28] rounded-lg px-4 py-1.5 text-[12px] font-semibold transition-all flex items-center">
             <i class="fa-solid fa-upload mr-2 text-emerald-400"></i> Ingest Data
         </button>
-        <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.txt,.csv,.md,.html,.docx">
+        <input type="file" id="file-upload" class="hidden" multiple accept=".pdf,.txt,.csv,.md,.html,.docx,.xlsx,.xls">
         <input type="file" id="image-upload" class="hidden" accept=".png,.jpg,.jpeg,.gif,.webp">
     </div>
 </div>
@@ -109,8 +109,8 @@
         <div class="px-3 py-1.5 text-[12px] text-gray-400 italic">Loading collections...</div>
     </div>
 
-    <!-- Active collection hint -->
-    <span id="collection-active-hint" class="hidden md:inline text-[11px] text-gray-400 truncate"></span>
+    <!-- Active collection hint (removed — clutters the bar) -->
+    <span id="collection-active-hint" class="hidden"></span>
 </div>
 
 <!-- Main two-column layout -->
@@ -254,6 +254,12 @@
                             class="fa-solid fa-file-export"></i> Export Full Report</button>
                     <div class="w-1 h-1 rounded-full bg-gray-300"></div>
                     <button id="clear-btn" class="hover:text-gray-700 transition-colors font-medium">Clear History</button>
+                    <div class="w-1 h-1 rounded-full bg-gray-300"></div>
+                    <button id="clear-cache-btn"
+                        class="hover:text-gray-700 transition-colors font-medium flex items-center gap-1.5"
+                        title="Clear semantic cache (force fresh answers)">
+                        <i class="fa-solid fa-broom"></i> Clear Cache
+                    </button>
                 </div>
             </div>
         </div>

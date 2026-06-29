@@ -142,15 +142,50 @@ def classify_query(query: str) -> dict:
     """
     Classify a query and return routing information via Semantic LLM Routing.
     """
+    # ── ⚡ Hard off-domain pre-router (overrides LLM in trilingual queries) ──
+    # The LLM router has a Moroccan corpus prior and tends to mis-route US/EU
+    # finance questions to VECTOR. We detect off-domain finance entities and
+    # force WEB regardless of language so the answer comes from current sources.
+    q_lower = query.lower()
+    OFF_DOMAIN_TOKENS = [
+        # English
+        "fed ", "federal reserve", "fomc", "powell", "ecb", "bank of england",
+        "bank of japan", "boj ", "pboc", "imf",
+        "apple", "microsoft", "amazon", "google", "alphabet", "meta", "facebook",
+        "tesla", "nvidia", "bitcoin", "ethereum", "crypto",
+        "s&p 500", "dow jones", "nasdaq", "wall street",
+        # French
+        "réserve fédérale", "fed américaine", "bce", "banque centrale européenne",
+        "banque d'angleterre",
+        # Arabic
+        "الفيدرالي", "الاحتياطي الفيدرالي", "البنك المركزي الأوروبي",
+        "وول ستريت", "بيتكوين", "ناسداك", "أبل", "تسلا", "أمازون", "مايكروسوفت",
+        "إنفيديا", "ميتا", "غوغل", "جوجل",
+        # Live-data time markers (latest news, today, this week)
+        "today's", "this week", "currently", "latest news",
+        "اليوم", "هذا الأسبوع", "حالياً", "أحدث",
+        "aujourd'hui", "cette semaine", "actuellement", "dernières nouvelles",
+    ]
+    if any(tok in q_lower for tok in OFF_DOMAIN_TOKENS):
+        print(f"[Router] Off-domain entity / live-data marker detected — forcing WEB route")
+        return {
+            "route": QueryRoute.WEB.value,
+            "detail": None,
+            "sql_keywords": [],
+            "web_keywords": [],
+            "vector_keywords": [],
+            "reason": "Off-domain finance entity or live-data marker",
+        }
+
     llm_decision = _classify_intent_llm(query)
     route = llm_decision["route"]
     reason = llm_decision["reason"]
-    
+
     # Retrieve structured ticker cleanly using Regex if going to SQL
     detail = None
     if route in (QueryRoute.SQL, QueryRoute.HYBRID):
         detail = _extract_ticker(query)
-        
+
     return {
         "route": route.value,
         "detail": detail,

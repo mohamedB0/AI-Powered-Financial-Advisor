@@ -4,16 +4,36 @@
 
 # Security and auto-generated ignores
 .env
+.env.local
+.env.production
 venv/
 __pycache__/
 *.py[cod]
 *$py.class
 *.sqlite
+*.sqlite3
 chroma_db/
 .yfinance_cache/
 pytest_out.txt
 flower.db*
-celerybeat-schedule.db
+celerybeat-schedule*
+
+# Logs
+logs/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.pid
 
 # Ignore data folder to prevent pushing massive PDFs
 data/

@@ -36,16 +36,20 @@ load_dotenv()
 
 def call_groq(messages, model="llama-3.3-70b-versatile", max_tokens=1024, retries=5):
     """
-    Call Groq with exponential backoff. Guarantees a response or raises after retries.
+    Call LLM with exponential backoff. Uses OpenRouter to avoid Groq rate limits
+    during bulk evaluation.
     """
     from langchain_openai import ChatOpenAI
     from langchain_core.messages import SystemMessage, HumanMessage
 
-    groq_key = os.getenv("GROQ_API_KEY")
+    # Use OpenRouter for evaluation (no aggressive per-minute rate limits)
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    eval_model = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-72b-instruct")
+
     llm = ChatOpenAI(
-        model=model,
-        base_url="https://api.groq.com/openai/v1",
-        api_key=groq_key,
+        model=eval_model,
+        base_url="https://openrouter.ai/api/v1",
+        api_key=api_key,
         temperature=0.3,
         max_tokens=max_tokens,
         max_retries=0,
@@ -314,10 +318,10 @@ def main():
                 "latency_ms": 0,
             })
 
-        # Wait between questions (Groq free tier: 30 req/min)
+        # Wait between questions (OpenRouter is less aggressive than Groq)
         if i < len(test_data):
-            print(f"         ... waiting 20s (rate limit protection)")
-            time.sleep(20)
+            print(f"         ... waiting 10s (rate limit protection)")
+            time.sleep(10)
 
     # Latency stats
     latencies = [r["latency_ms"] for r in results if r["latency_ms"] > 0]

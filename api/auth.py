@@ -24,7 +24,16 @@ load_dotenv()
 # ── Configuration ─────────────────────────────────────────────────────────────
 
 JWT_SECRET = os.getenv("JWT_SECRET", "")
+_ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
+
 if not JWT_SECRET or JWT_SECRET == "CHANGE_ME_IN_PRODUCTION":
+    if _ENVIRONMENT == "production":
+        raise RuntimeError(
+            "FATAL: JWT_SECRET is not set or uses the default value in production!\n"
+            "Anyone can forge authentication tokens.\n"
+            "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(64))\"\n"
+            "Then add JWT_SECRET=<value> to your .env file."
+        )
     import warnings
     warnings.warn(
         "\n⚠️  JWT_SECRET is not set or uses the default value!\n"

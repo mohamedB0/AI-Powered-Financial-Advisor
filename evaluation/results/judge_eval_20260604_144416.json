@@ -1,0 +1,1786 @@
+{
+  "metadata": {
+    "date": "2026-06-04T14:44:16.567240",
+    "method": "LLM-as-Judge (GPT-4o)",
+    "num_questions": 100,
+    "valid_evaluations": 100,
+    "generator": "OpenRouter (qwen/qwen-2.5-72b-instruct)",
+    "judge": "Azure GPT-4o",
+    "retrieval": "Dense (BGE-M3) + BM25 + RRF + Jina Reranker v2"
+  },
+  "aggregate_scores": {
+    "faithfulness": {
+      "mean": 3.26,
+      "scores": [
+        5,
+        4,
+        2,
+        2,
+        2,
+        5,
+        3,
+        4,
+        3,
+        4,
+        5,
+        4,
+        1,
+        5,
+        5,
+        3,
+        1,
+        4,
+        2,
+        5,
+        4,
+        2,
+        2,
+        5,
+        3,
+        2,
+        3,
+        2,
+        2,
+        3,
+        4,
+        4,
+        2,
+        4,
+        2,
+        5,
+        5,
+        4,
+        4,
+        2,
+        5,
+        4,
+        5,
+        4,
+        2,
+        1,
+        4,
+        2,
+        2,
+        3,
+        5,
+        2,
+        5,
+        3,
+        4,
+        5,
+        4,
+        4,
+        3,
+        4,
+        4,
+        4,
+        1,
+        4,
+        3,
+        3,
+        4,
+        4,
+        2,
+        3,
+        4,
+        3,
+        4,
+        4,
+        4,
+        3,
+        4,
+        1,
+        2,
+        2,
+        3,
+        5,
+        2,
+        4,
+        1,
+        1,
+        2,
+        4,
+        4,
+        3,
+        5,
+        3,
+        2,
+        2,
+        4,
+        2,
+        3,
+        5,
+        1,
+        3
+      ]
+    },
+    "relevancy": {
+      "mean": 3.73,
+      "scores": [
+        2,
+        5,
+        4,
+        2,
+        4,
+        3,
+        5,
+        5,
+        5,
+        3,
+        3,
+        4,
+        4,
+        5,
+        4,
+        4,
+        3,
+        4,
+        4,
+        3,
+        5,
+        2,
+        4,
+        4,
+        3,
+        2,
+        4,
+        5,
+        4,
+        3,
+        5,
+        4,
+        5,
+        5,
+        2,
+        2,
+        5,
+        4,
+        2,
+        3,
+        5,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        3,
+        4,
+        4,
+        3,
+        3,
+        4,
+        5,
+        3,
+        3,
+        5,
+        5,
+        4,
+        2,
+        5,
+        4,
+        2,
+        4,
+        4,
+        4,
+        4,
+        4,
+        2,
+        2,
+        3,
+        4,
+        4,
+        4,
+        4,
+        5,
+        4,
+        2,
+        4,
+        5,
+        4,
+        3,
+        3,
+        3,
+        3,
+        3,
+        4,
+        5,
+        4,
+        5,
+        5,
+        4,
+        4,
+        4,
+        5,
+        4,
+        4,
+        4,
+        4,
+        3
+      ]
+    },
+    "completeness": {
+      "mean": 2.12,
+      "scores": [
+        1,
+        3,
+        1,
+        1,
+        4,
+        1,
+        3,
+        4,
+        3,
+        2,
+        2,
+        3,
+        1,
+        5,
+        3,
+        2,
+        1,
+        3,
+        3,
+        1,
+        4,
+        1,
+        2,
+        2,
+        1,
+        1,
+        2,
+        3,
+        1,
+        1,
+        3,
+        3,
+        3,
+        2,
+        1,
+        1,
+        3,
+        2,
+        1,
+        2,
+        3,
+        1,
+        2,
+        1,
+        1,
+        1,
+        2,
+        1,
+        2,
+        2,
+        1,
+        2,
+        3,
+        4,
+        2,
+        1,
+        5,
+        4,
+        2,
+        1,
+        3,
+        2,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        4,
+        2,
+        1,
+        2,
+        5,
+        2,
+        1,
+        2,
+        1,
+        1,
+        1,
+        2,
+        3,
+        2,
+        4,
+        5,
+        2,
+        2,
+        2,
+        3,
+        2,
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "language_accuracy": "100/100",
+    "latency": {
+      "mean_ms": 30196.0,
+      "p50_ms": 29100.0,
+      "min_ms": 15224.0,
+      "max_ms": 50602.0
+    }
+  },
+  "category_scores": {
+    "macro": {
+      "faithfulness": 3.39,
+      "relevancy": 3.56,
+      "completeness": 1.76,
+      "count": 41
+    },
+    "market": {
+      "faithfulness": 3.17,
+      "relevancy": 3.71,
+      "completeness": 2.12,
+      "count": 24
+    },
+    "institutional": {
+      "faithfulness": 3.11,
+      "relevancy": 4.05,
+      "completeness": 2.79,
+      "count": 19
+    },
+    "regulatory": {
+      "faithfulness": 3.25,
+      "relevancy": 3.81,
+      "completeness": 2.25,
+      "count": 16
+    }
+  },
+  "language_scores": {
+    "ar": {
+      "faithfulness": 2.88,
+      "relevancy": 3.68,
+      "completeness": 2.04,
+      "language_accuracy": "25/25",
+      "count": 25
+    },
+    "en": {
+      "faithfulness": 3.2,
+      "relevancy": 3.8,
+      "completeness": 2.1,
+      "language_accuracy": "30/30",
+      "count": 30
+    },
+    "fr": {
+      "faithfulness": 3.51,
+      "relevancy": 3.71,
+      "completeness": 2.18,
+      "language_accuracy": "45/45",
+      "count": 45
+    }
+  },
+  "per_question_results": [
+    {
+      "question": "Quel est le taux directeur de Bank Al-Maghrib ?",
+      "ground_truth": "Le taux directeur de Bank Al-Maghrib est de 2,25%. Après l'avoir relevé à 3% pour juguler l'inflation post-Covid, Bank Al-Maghrib a engagé à partir de juin 2024 un cycle d'assouplissement graduel avec trois baisses de 25 points de base en 2024-2025.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le taux directeur de Bank Al-Maghrib a été maintenu à **1,50%** en 2021. Cette orientation accommodante a été conservée pour soutenir la reprise de l'économie.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 32901.6
+    },
+    {
+      "question": "Quels sont les principaux risques identifiés par l'AMMC pour le marché des capitaux marocain ?",
+      "ground_truth": "L'AMMC identifie les risques systémiques liés à la liquidité, l'interconnexion, l'endettement et le contexte macro-économique. Elle évalue aussi les risques de blanchiment des capitaux et de financement du terrorisme (LBC/FT), ainsi que les risques émergents liés au Covid-19.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les principaux risques identifiés par l'AMMC pour le marché des capitaux marocain incluent :\n\n- **Risques liés aux prix des actifs** : Fluctuations importantes des cours des actions et obligations.\n- **Risques de liquidité** : Difficultés pour réaliser des transactions en volume important sans affecter les prix.\n- **Risques d'interconnexion** : Vulnérabilité due aux liens entre différents acteurs du marché.\n- **Risques d'endettement** : Niveau élevé d'endettement des entreprises et des investisseurs.\n- **Risques macro-économiques** : Incidences des conditions économiques générales sur la stabilité du marché.\n\nCes risques sont évalués en termes d'impact et de probabilité pour prendre des mesures préventives.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 26502.1
+    },
+    {
+      "question": "Quelle est la capitalisation boursière de la Bourse de Casablanca ?",
+      "ground_truth": "La capitalisation boursière de la Bourse de Casablanca a atteint 1040,7 milliards de dirhams à fin décembre 2025, en hausse de plus de 38% sur un an. Le MASI a progressé de 27,57% sur l'année 2025.",
+      "category": "market",
+      "language": "fr",
+      "answer": "La capitalisation boursière de la Bourse de Casablanca est de **984,9 milliards de dirhams** à fin novembre 2024.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 21879.1
+    },
+    {
+      "question": "Quel est le taux d'inflation au Maroc ?",
+      "ground_truth": "Le taux d'inflation au Maroc est de 0,9% en 2024, après avoir été de 6,6% en 2022 et 6,1% en 2023. Cette baisse est due aux mesures de Bank Al-Maghrib et du Gouvernement pour soutenir le pouvoir d'achat.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "L'inflation au Maroc a évolué de la manière suivante :\n\n- **Décembre 2020** : -0,3%\n- **Décembre 2021** : 3,2%\n\nLe niveau moyen de l'inflation sur l'ensemble de l'année 2021 est resté modéré, principalement en raison de la baisse des prix des produits alimentaires.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 22604.2
+    },
+    {
+      "question": "Quelles sont les missions de la Cour des Comptes au Maroc ?",
+      "ground_truth": "La Cour des Comptes est chargée du contrôle supérieur des finances publiques, de la vérification de la régularité des opérations de recettes et dépenses des organismes publics, et de l'évaluation de la gestion des établissements publics.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "Les missions de la Cour des Comptes au Maroc sont les suivantes :\n\n- **Contrôle supérieur de l'exécution des lois de finances** : La Cour des Comptes est chargée de contrôler l'exécution des lois de finances, conformément à l'article 96 de la Constitution de 1996.\n- **Protection des principes et valeurs de bonne gouvernance** : Selon l'article 147 de la Constitution de 2011, la Cour des Comptes a pour mission de protéger les principes et valeurs de bonne gouvernance, de transparence, et de reddition des comptes de l'État et des organismes publics.\n- **Contrôle de l'efficacité et de l'efficience des dépenses publiques** : La Cour des Comptes ne se limite plus à contrôler la sincérité de la dépense et la conformité des recettes, mais évalue également l'efficacité et l'utilité de toute action relative aux finances publiques.\n- **Assistance au Parlement** : La Cour des Comptes assiste le Parlement dans les activités de contrôle des finances publiques et répond à toutes les interrogations à caractère législatif et réglementaire de ce domaine.\n- **Vérification et jugement des comptes** : La Cour des Comptes est responsable de la vérification et du jugement des comptes des organismes soumis à son contrôle, conformément à la loi n°62.99 formant Code des Juridictions financières.\n- **Discipline budgétaire et financière** : La Cour des Comptes exerce des compétences en matière de discipline budgétaire et financière, notamment en saisissant la Cour en cas de non-respect des règles budgétaires et financières.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 34142.8
+    },
+    {
+      "question": "Comment fonctionne le marché obligataire marocain ?",
+      "ground_truth": "Le marché obligataire marocain est organisé autour des bons du Trésor émis par adjudications de Bank Al-Maghrib et des obligations privées. Les taux sur le marché secondaire des bons du Trésor ont connu une baisse, particulièrement sur les maturités longues, sous l'effet de l'assouplissement de la politique monétaire.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Le marché obligataire marocain fonctionne comme suit :\n\n- **Volume des transactions** : Le marché obligataire a enregistré des volumes de transactions significatifs. Par exemple, au 2ème trimestre 2018, le volume transactionnel a atteint près de **3,5 millions de dirhams**, réalisé exclusivement sur le marché de blocs.\n- **Acteurs principaux** : Les transactions sont principalement effectuées par les **OPCVM** (Organismes de Placement Collectif en Valeurs Mobilières) et les **personnes morales marocaines**. Les OPCVM achètent, tandis que les personnes morales marocaines vendent.\n- **Types d'obligations** : Depuis quelques années, un type particulier d'obligations a émergé sur le marché marocain : les **obligations subordonnées perpétuelles**. Ces obligations présentent des caractéristiques hybrides entre titres de dette et fonds propres, les rendant éligibles comme fonds propres par les régulateurs prudentiels et les agences de notation.\n\nCes éléments montrent que le marché obligataire marocain est actif et diversifié, avec des instruments financiers innovants.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 25669.5
+    },
+    {
+      "question": "Quels sont les secteurs les plus représentés à la Bourse de Casablanca ?",
+      "ground_truth": "Les secteurs les plus représentés à la BVC sont les banques (Attijariwafa Bank, BCP, Bank of Africa), les télécommunications (Maroc Telecom/IAM), l'immobilier, le ciment (LafargeHolcim Maroc) et les mines (Managem).",
+      "category": "market",
+      "language": "fr",
+      "answer": "Les secteurs les plus représentés à la Bourse de Casablanca sont :\n\n- **Banques** : 203,0 milliards de dirhams\n- **Télécommunications** : 124,4 milliards de dirhams\n- **Bâtiment et Matériaux de Construction** : 69,9 milliards de dirhams\n- **Agroalimentaire / Production** : 32,7 milliards de dirhams\n- **Assurances** : 24,9 milliards de dirhams\n\nCes secteurs représentent une large part de la capitalisation boursière totale, qui s'élève à 582,2 milliards de dirhams.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 19273.5
+    },
+    {
+      "question": "Qu'est-ce qu'un OPCVM au Maroc ?",
+      "ground_truth": "Un OPCVM (Organisme de Placement Collectif en Valeurs Mobilières) est un véhicule d'investissement collectif agréé par l'AMMC. Il permet aux épargnants d'investir dans un portefeuille diversifié géré par une société de gestion. Les OPCVM sont régulés par la circulaire de l'AMMC.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Un Organisme de Placement Collectif en Valeurs Mobilières (OPCVM) est un fonds d'investissement qui permet à des investisseurs de toutes natures (personnes physiques, entreprises, etc.) d'avoir accès au marché des capitaux dans son ensemble (marché des actions, marché des obligations, marché monétaire, etc.). En investissant dans un OPCVM, vous confiez votre épargne à des professionnels de la gestion financière qui mettent en commun les sommes d'argent collectées pour constituer des portefeuilles diversifiés d'instruments financiers tels que des actions cotées, des obligations, et des bons du Trésor.\n\n### Caractéristiques des OPCVM :\n- **Formes juridiques** : Les OPCVM peuvent prendre deux formes juridiques principales :\n  - **SICAV** (Sociétés d’Investissement à Capital Variable)\n  - **FCP** (Fonds Communs de Placement)\n  - Les SICAV et les FCP fonctionnent de la même manière, mais diffèrent par leur nature juridique.\n\n- **Catégories d'OPCVM** :\n  - **OPCVM « actions »** : Investissent principalement en actions d'entreprises.\n  - **OPCVM « obligations »** : Investissent principalement en obligations d'entreprises et d'État.\n  - **OPCVM « monétaires »** : Investissent dans des instruments du marché monétaire à court terme.\n  - **OPCVM « contractuels »** : Investissent selon des stratégies spécifiques définies par contrat.\n  - **OPCVM « diversifiés »** : Investissent dans une combinaison variée d'instruments financiers.\n\n### Importance économique :\nÀ fin 2024, les OPCVM jouent un rôle crucial dans le financement de l'économie marocaine. L'actif net des OPCVM représente 40,91% du PIB, en progression de 3,07 points de pourcentage par rapport à 2023, avec une croissance annuelle de +16,68%.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 30275.9
+    },
+    {
+      "question": "Quel est le rôle du HCP dans l'économie marocaine ?",
+      "ground_truth": "Le Haut-Commissariat au Plan (HCP) est l'institution statistique officielle du Maroc, chargée de la production des statistiques nationales, des comptes nationaux, du recensement et de la publication des indicateurs conjoncturels comme le PIB, l'inflation et le chômage.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "Le Haut-Commissariat au Plan (HCP) joue un rôle crucial dans l'économie marocaine. Ses principales missions incluent :\n\n- **Analyse Économique et Prévisions** : Le HCP fournit des analyses et des prévisions économiques détaillées. Par exemple, il a estimé que l'économie marocaine devrait connaître une récession de 5,8% en 2020, due à la pandémie de COVID-19 et à la sécheresse.\n\n- **Études Socio-Économiques** : Le HCP réalise des études sur les conditions de vie, la pauvreté, et l'emploi. Il a estimé que la proportion de personnes vulnérables à la pauvreté pourrait passer de 17,1% en 2019 à 19,87% en 2020, soit 1,058 million de personnes supplémentaires.\n\n- **Calcul de l'Indice des Prix** : Le HCP détermine la composition et la structure du panier de consommation des ménages, utilisé pour calculer l'indice des prix à la consommation.\n\n- **Suivi de la Situation Économique** : Le HCP contribue à la surveillance de la croissance économique, notamment en fournissant des données sur la contribution des différents secteurs à la croissance du PIB. Par exemple, il a montré que la consommation privée a augmenté de 3,7% en 2023.\n\n- **Impact du Secteur du Tourisme** : Le HCP publie des comptes satellites du tourisme, montrant que ce secteur contribue à environ 7% du PIB marocain et fournit plus d'un demi-million d'emplois directs.\n\nCes activités permettent au HCP de fournir des informations précieuses pour la prise de décision des autorités économiques et la planification stratégique du pays.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 37572.6
+    },
+    {
+      "question": "Quelles sont les conditions d'introduction en bourse au Maroc ?",
+      "ground_truth": "Les conditions d'introduction en bourse au Maroc incluent un capital minimum, la publication de comptes certifiés sur les 3 derniers exercices, un flottant minimum, et l'obtention d'un visa de l'AMMC sur la note d'information destinée aux investisseurs.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Pour s'introduire en bourse au Maroc, une entreprise doit respecter plusieurs conditions et procédures :\n\n- **Choix du marché** : L'entreprise doit choisir entre le marché principal (pour les grandes entreprises) et le marché alternatif (pour les PME). Le choix dépend du total du bilan, du chiffre d’affaires, de la fraction du capital à diffuser dans le public et de la capitalisation boursière.\n\n- **Procédure d’introduction** : L'entreprise peut choisir entre deux types de procédures :\n  - **Offre à Prix Ferme (OPF)** : Consiste à mettre à la disposition du public une quantité de titres en fixant un prix ferme. Les ordres émis par les souscripteurs sont obligatoirement stipulés à ce prix.\n  - **Offre à Prix Ouvert (OPO)** : Consiste à mettre à la disposition du public une quantité de titres en fixant une fourchette de prix. Les ordres émis par les souscripteurs sont obligatoirement stipulés à un cours appartenant à la fourchette de prix.\n\n- **Acteurs impliqués** :\n  - **Organes de gouvernance internes** : Valident le plan d’affaires, choisissent les experts externes, et s'assurent de la qualité et de l’exhaustivité des informations.\n  - **Conseiller juridique** : S’assure que les procédures et les prérequis légaux nécessaires à la validité juridique de l’opération sont observés et réunis.\n  - **Commissaire aux comptes** : Vérifie les informations comptables et financières à inclure dans le prospectus et établit le rapport général de l’audit des états de synthèse.\n  - **Conseiller financier** : Prépare le prospectus de l’opération conformément aux exigences légales et réglementaires, structure l’opération, et promeut l’opération auprès des investisseurs potentiels.\n\n- **Rôle de l’AMMC** : L'entreprise doit être en contact avec l’Autorité Marocaine du Marché des Capitaux (AMMC) pour les aspects réglementaires, notamment le visa du prospectus de l’opération.\n\n- **Rôle de la Bourse de Casablanca** : La société gestionnaire de la bourse (Bourse de Casablanca) gère le marché sur lequel seront admises les actions de l’entreprise.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 43660.3
+    },
+    {
+      "question": "Quelle est la dette du Trésor au Maroc ?",
+      "ground_truth": "La dette du Trésor au Maroc devrait revenir à 67% du PIB en 2025 puis à 65,6% en 2026, grâce à l'accroissement des recettes fiscales et la baisse de la charge de compensation. Le FMI a évalué la soutenabilité de la dette en avril 2025.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "La dette du Trésor au Maroc a été de **692,2 milliards de dirhams** en 2017, selon le Rapport sur la stabilité financière de cette année. Le ratio de cette dette par rapport au PIB était de **65,1%**.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 20952.2
+    },
+    {
+      "question": "Comment Bank Al-Maghrib gère la liquidité bancaire ?",
+      "ground_truth": "Le besoin de liquidité des banques a atteint 128 milliards de dirhams à fin 2024. Bank Al-Maghrib intervient via des opérations d'injection de liquidité, des opérations de pension, et a élargi le collatéral accepté pour les opérations de politique monétaire.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Bank Al-Maghrib gère la liquidité bancaire en utilisant plusieurs mécanismes :\n\n- **Injection de liquidité** : Bank Al-Maghrib injecte de la liquidité aux banques principalement par le biais d'avances à 7 jours. Par exemple, entre le 11 octobre et le 14 novembre 2007, elle a maintenu l'injection de liquidité à 10 milliards de dirhams. En 2021, le volume des injections de liquidité a été réduit en raison de l'amélioration des réserves de change et de la bonne orientation des dépôts de la clientèle.\n\n- **Avances à court terme** : Les banques peuvent également recourir aux avances à 24 heures pour combler des déficits de liquidité résiduels.\n\n- **Opérations de refinancement** : Bank Al-Maghrib maintient des opérations de refinancement à long terme, comme les prêts garantis, pour fournir une liquidité supplémentaire. Par exemple, l'encours de ces opérations a été maintenu à 20 milliards de dirhams.\n\nCes mesures permettent à Bank Al-Maghrib de maintenir la stabilité et la fluidité du système financier bancaire.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 31120.4
+    },
+    {
+      "question": "What is the current GDP growth rate of Morocco?",
+      "ground_truth": "Morocco's GDP growth is projected at 3.4% in 2025 and 3.7% in 2026, driven by the recovery of agricultural activity after drought years and sustained growth in non-agricultural sectors, particularly services and industry.",
+      "category": "macro",
+      "language": "en",
+      "answer": "The current GDP growth rate of Morocco is **5.2%** for the first half of 2025, according to the HCP’s national accounts report. This growth is driven by strong domestic demand and a marked recovery in the productive sectors, particularly in agriculture, manufacturing, mining, and construction.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 4,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 19832.7
+    },
+    {
+      "question": "What is the role of the AMMC in Morocco?",
+      "ground_truth": "The AMMC (Autorité Marocaine du Marché des Capitaux) is the financial markets regulator in Morocco. It supervises stock exchanges, collective investment schemes, ensures investor protection, and monitors market integrity and transparency.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "L'Autorité Marocaine du Marché des Capitaux (AMMC) est le régulateur chargé de la supervision et du contrôle du marché des capitaux marocain, de ses produits et de ses acteurs. Ses principales missions sont :\n\n- **Protection des épargnants** : S'assurer de la protection de l’épargne investie en instruments financiers.\n- **Transparence et intégrité** : Veiller à l'égalité de traitement des épargnants, à la transparence et à l'intégrité du marché des capitaux, ainsi qu'à l'information des investisseurs.\n- **Bon fonctionnement du marché** : S'assurer du bon fonctionnement du marché des capitaux et veiller à l'application des dispositions législatives et réglementaires.\n- **Lutte contre le blanchiment des capitaux** : S'assurer du respect de la législation et de la réglementation en vigueur dans la lutte contre le blanchiment des capitaux.\n- **Éducation financière** : Contribuer à la promotion de l'éducation financière des épargnants.\n\nL'AMMC exerce ses attributions sur :\n\n- Opérations enregistrées sur instruments financiers, y compris les opérations de pension, les opérations d’offres publiques, les opérations sur titres de créance négociables et le prêt de titres.\n- Intermédiaires financiers (sociétés de bourse, sociétés de gestion de portefeuille, sociétés de gestion OPCC, sociétés de gestion FPCT, conseillers en investissement financier).\n- Entreprises de marché (société gestionnaire de la Bourse, société gestionnaire du marché à terme, Dépositaire Central, Chambre de compensation du marché à terme).\n- Teneurs de comptes titres.\n- Émetteurs faisant appel public à l’épargne.\n- Personnes habilitées à exercer des fonctions soumises à l’habilitation de l’AMMC.\n\nPour remplir ses missions, l’AMMC dispose de plusieurs prérogatives et pouvoirs, notamment :\n\n- Contrôle de l’information et visa des notes d’information.\n- Mise en place de contrôles sur place et sur pièces.\n- Agrément, autorisation, enregistrement et habilitation des acteurs et certains instruments financiers.\n- Prononciation de sanctions disciplinaires et pécuniaires en cas de manquements.\n- Saisine de l’autorité judiciaire compétente pour les infractions.\n- Édition de règles de pratique professionnelle et déontologique via des circulaires.\n- Assistance au gouvernement en matière de réglementation du marché des capitaux.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 5,
+        "completeness": 5,
+        "language": 1
+      },
+      "latency_ms": 39292.9
+    },
+    {
+      "question": "How does the Casablanca Stock Exchange work?",
+      "ground_truth": "The Casablanca Stock Exchange (BVC) operates with the MASI as its main index covering all listed stocks. Trading occurs through market-making and order-driven systems. The exchange is regulated by the AMMC and serves as the primary capital market for Morocco.",
+      "category": "market",
+      "language": "en",
+      "answer": "La Bourse de Casablanca est un marché centralisé dirigé par les ordres. Voici comment elle fonctionne :\n\n- **Transmission des ordres** : Les intentions d’achat et de vente sur des titres cotés doivent converger vers le système de cotation de la Bourse pour leur confrontation et exécution.\n- **Types d'ordres** :\n  - **Ordre direct** : Transmis directement à la société de bourse, soit en personne, par fax, ou par téléphone. Il est ensuite acheminé via la Station de négociation ou un système OMS (Order Management System).\n  - **Ordre réseau** : Acheminé via un système de Routage en provenance des agences bancaires. Le client adresse son ordre à son agence bancaire.\n  - **Bourse en ligne** : Le client utilise un service de Bourse en ligne pour transmettre et gérer des ordres via une plateforme internet, offrant plus de flexibilité mais avec des restrictions pour limiter les risques opérationnels.\n- **Réglementation** : Les sociétés de bourse doivent respecter des ratios de couverture des risques inférieurs à 100% et gérer une procédure de garantie de bonne fin des opérations, basée sur des mécanismes de garantie et des procédures de résolution des défauts de livraison ou de paiement.\n- **Indice MASI ESG** : Depuis septembre 2018, la Bourse de Casablanca calcule et publie l’indice MASI ESG, qui regroupe les 20 actions cotées présentant la meilleure notation ESG (Environnemental, Social, et de Gouvernance) établie annuellement par une agence de notation internationale.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 35003.1
+    },
+    {
+      "question": "What are the main monetary policy instruments of Bank Al-Maghrib?",
+      "ground_truth": "Bank Al-Maghrib uses the key interest rate, reserve requirements, open market operations, standing facilities (lending and deposit), and liquidity injection operations as its main monetary policy instruments.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Les principaux instruments de politique monétaire de Bank Al-Maghrib sont :\n\n- **Opérations principales sous forme d’avances à 7 jours sur appel d’offres** : Ces opérations sont consenties au taux directeur et constituent le principal instrument de mise en œuvre de la politique monétaire. En 2015, ces avances ont porté sur un montant de **7 000 831 KDH**.\n- **Taux directeur** : Bank Al-Maghrib maintient son taux directeur à un niveau historiquement bas pour stimuler l’offre de crédit et améliorer la transmission de ses décisions.\n- **Intervention sur le marché monétaire** : Bank Al-Maghrib intervient régulièrement sur le marché monétaire pour combler les déficits de trésorerie des banques.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 22786.3
+    },
+    {
+      "question": "What is Morocco's fiscal deficit?",
+      "ground_truth": "Morocco's fiscal deficit is projected to narrow to 3.5% of GDP in 2025, down from 4.0% in 2024, supported by improved tax revenues and rationalization of subsidy expenditures.",
+      "category": "macro",
+      "language": "en",
+      "answer": "The fiscal deficit of Morocco, as of the latest available data, is **3.9% of GDP**. This figure is based on the most recent report, which indicates a reduction from 5.4% in 2022 to 3.9% in the following year.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 18657.0
+    },
+    {
+      "question": "What are the main exports of Morocco?",
+      "ground_truth": "Morocco's main exports include phosphates and derivatives (OCP Group), automotive sector components, textiles, agriculture products (citrus, vegetables), and electronic components. The automotive sector has become the leading export sector.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Les principaux secteurs d'exportation du Maroc sont :\n\n- **Automobile** : Les exportations du secteur automobile ont atteint 98,7 milliards de dirhams, représentant 32,1% de la valeur totale des exportations.\n- **Textile et cuir** : Les exportations de ce secteur se sont repliées de 4,2% pour atteindre 30,5 milliards de dirhams, représentant 9,9% des exportations.\n- **Aéronautique** : Les ventes du secteur aéronautique ont atteint 18,4 milliards de dirhams, en hausse de 5,6%, représentant 6,0% des exportations.\n- **Métallurgie et travail des métaux** : Les exportations de ce secteur ont augmenté de 18,5%, contribuant à une augmentation globale des autres industries.\n- **Plastique et caoutchouc** : Les exportations de ce secteur ont augmenté de 32%.\n- **Électronique et électricité** : Les exportations de ce secteur ont fléchi de 6,8% pour revenir à 11,3 milliards de dirhams.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 26753.4
+    },
+    {
+      "question": "ما هو مؤشر MASI وكيف يتم حسابه؟",
+      "ground_truth": "مؤشر MASI هو المؤشر الرئيسي لبورصة الدار البيضاء، يضم جميع الأسهم المدرجة ويُحسب على أساس الرسملة السوقية المعدلة بالتعويم. وقد سجل ارتفاعاً بنسبة 27,57% خلال سنة 2025.",
+      "category": "market",
+      "language": "ar",
+      "answer": "مؤشر MASI هو مؤشر رئيسي للسوق المالية في المغرب، ويقيس أداء الأسهم المدرجة في بورصة الدار البيضاء. يتم حسابه باستخدام **القيمة السوقية** للأسهم المدرجة، حيث يأخذ بعين الاعتبار **القيمة الإسمية** للأسهم و**عدد الأسهم المتداولة**.\n\n### كيفية حساب مؤشر MASI:\n- **القيمة السوقية**: يتم حساب القيمة السوقية لكل شركة من خلال ضرب سعر السهم في عدد الأسهم المتداولة.\n- **الوزن النسبي**: يتم حساب الوزن النسبي لكل شركة في المؤشر بناءً على قيمتها السوقية.\n- **التحديث اليومي**: يتم تحديث المؤشر يومياً بناءً على أسعار الإغلاق اليومية للأسهم المدرجة.\n\n### أداء مؤشر MASI:\n- في عام 2024، أغلق مؤشر MASI على ارتفاع بنسبة **22.16%**، حيث وصل إلى **14,773.19** نقطة.\n- في عام 2023، كان المؤشر عند **12,092.88** نقطة.\n\nهذا المؤشر يعتبر مقياساً مهمًا لأداء السوق المالية المغربية ويستخدم كمرجع للمستثمرين والتحليلات المالية.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 28231.2
+    },
+    {
+      "question": "ما هي السياسة النقدية لبنك المغرب؟",
+      "ground_truth": "تستند السياسة النقدية لبنك المغرب إلى سعر الفائدة الرئيسي المحدد حالياً في 2,25%، مع استخدام أدوات تدخل تشمل عمليات ضخ السيولة وعمليات إعادة الشراء والتسهيلات الدائمة.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "السياسة النقدية لبنك المغرب تشمل عدة قرارات وتدابير لتنظيم السياسة النقدية في البلاد. من أهم هذه القرارات:\n\n- **1 أبريل 2010**: خفض معدل الفائدة من 8% إلى 6%.\n- **13 أبريل 2011**:\n  - توسيع نطاق الكفالات المؤهلة لعمليات السياسة النقدية لتشمل شهادات الإيداع.\n  - تعديل فترات الدعوات للعروض لتتوافق مع فترات الاحتياطي النقدي.\n  - إلغاء حسابات الكتب من قاعدة حساب الاحتياطي النقدي.\n\nهذه القرارات تهدف إلى تحسين إدارة السيولة في النظام المالي وتعزيز الاستقرار النقدي في المغرب.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 27338.5
+    },
+    {
+      "question": "ما هو دور الهيئة المغربية لسوق الرساميل؟",
+      "ground_truth": "الهيئة المغربية لسوق الرساميل (AMMC) هي الجهة المنظمة للأسواق المالية بالمغرب. تشرف على البورصة وصناديق الاستثمار وتضمن حماية المستثمرين ومراقبة سلامة السوق وشفافيته.",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "**الهيئة المغربية لسوق الرساميل** هي الجهة المسؤولة عن تنظيم ورقابة سوق الرساميل في المغرب. دورها الرئيسي يشمل:\n\n- **التنظيم والرقابة**: وضع القواعد واللوائح التي تحكم سوق الرساميل وضمان الالتزام بها.\n- **حماية المستثمرين**: حماية حقوق المستثمرين وضمان الشفافية والنزاهة في المعاملات المالية.\n- **تعزيز الاستقرار**: المساهمة في تعزيز الاستقرار والكفاءة في سوق الرساميل.\n- **التطوير والتحديث**: العمل على تطوير وتحديث الإطار القانوني والتنظيمي لسوق الرساميل لمواكبة التطورات العالمية.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 21616.0
+    },
+    {
+      "question": "كيف يتطور التضخم في المغرب؟",
+      "ground_truth": "انخفض معدل التضخم في المغرب إلى 0,9% سنة 2024 بعد أن بلغ 6,6% سنة 2022 و6,1% سنة 2023. ويُتوقع أن يستقر حول 2% في 2025 و2026.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "التضخم في المغرب شهد تقلبات خلال الفترات الأخيرة. وفقًا للبيانات المتوفرة:\n\n- في عام 2015، شهدت التضخم ارتفاعًا من **7.8%** إلى **15.5%**.\n- في عام 2018، خلال الربع الرابع، تراجعت معدلات التضخم إلى **1.4%**، وذلك بسبب انخفاض معدلات زيادة أسعار المنتجات الغذائية.\n\nهذه البيانات تشير إلى أن التضخم في المغرب قد شهد تقلبات، مع وجود فترات من الارتفاع والتراجع.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 19819.4
+    },
+    {
+      "question": "ما هي شروط الإدراج في بورصة الدار البيضاء؟",
+      "ground_truth": "تشمل شروط الإدراج حداً أدنى لرأس المال، ونشر حسابات مصادق عليها لآخر ثلاث سنوات، ونسبة تعويم دنيا، والحصول على تأشيرة الهيئة المغربية لسوق الرساميل على مذكرة الإعلام الموجهة للمستثمرين.",
+      "category": "regulatory",
+      "language": "ar",
+      "answer": "شروط الإدراج في بورصة الدار البيضاء للشركات الصغيرة والمتوسطة (PME) تشمل ما يلي:\n\n- **الشروط العامة**:\n  - **الرأسمال الاجتماعي**: يجب أن يكون الرأسمال الاجتماعي مكتمل الدفع.\n  - **النشر العام**: يجب نشر أسهم رأس المال بمبلغ لا يقل عن 5 ملايين درهم.\n  - **القوائم المالية**: يجب إعداد وتصديق القوائم المالية المجمعة للسنة المالية الأخيرة قبل تاريخ التقديم.\n  - **المساعدة والاستشارة**: يجب إبرام اتفاقية مع شركة وساطة أو مستشار مالي لتقديم المساعدة خلال عملية الإدراج لمدة لا تقل عن سنتين.\n  - **السيولة**: يجب إبرام عقد سيولة مع مزود سيولة لمدة لا تقل عن سنتين.\n\n- **الشروط الخاصة**:\n  - **الشرط الأول**:\n    - يجب أن يكون عدد الموظفين الذين تم توظيفهم خلال الستة أشهر الماضية أقل من 300 شخص.\n  - **الشرط الثاني**:\n    - يجب أن يكون إجمالي الميزانية لا يتجاوز 200 مليون درهم في آخر سنة مالية قبل تاريخ التقديم.\n  - **الشرط الثالث**:\n    - يجب أن يكون الإيرادات السنوية لا تتجاوز 500 مليون درهم في آخر سنة مالية قبل تاريخ التقديم.\n\nهذه الشروط تضمن أن الشركات التي تدرج في بورصة الدار البيضاء تتمتع بالاستقرار المالي والشفافية اللازمة.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 35502.8
+    },
+    {
+      "question": "Quel est le taux de chômage au Maroc ?",
+      "ground_truth": "Le taux de chômage au Maroc s'est établi à 13,3% au troisième trimestre 2024 selon le HCP, en hausse par rapport aux années précédentes. Le chômage touche particulièrement les jeunes (35,8%) et les diplômés.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le taux de chômage au Maroc a baissé de **13,3% à 13%**.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 15223.9
+    },
+    {
+      "question": "Quelles sont les réformes fiscales récentes au Maroc ?",
+      "ground_truth": "Les réformes fiscales récentes incluent la révision de l'IR avec un relèvement du seuil d'exonération, la baisse progressive de l'IS pour les PME, la généralisation de la TVA, et la réforme des droits d'enregistrement dans le cadre de la loi de finances 2025.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les principales réformes fiscales récentes au Maroc, introduites par la Loi de Finances 2021, comprennent :\n\n- **Atténuation temporaire de la charge fiscale** : Allègement temporaire de certains impôts et taxes pour soutenir les secteurs en difficulté.\n- **Conformité au régime fiscal des CFC** : Mise en conformité du régime fiscal des **CFC** (Controlled Foreign Companies) pour renforcer la bonne gouvernance fiscale.\n- **Encouragement du financement des entreprises** : Allégements fiscaux sur les droits d'enregistrement pour faciliter le financement des entreprises.\n- **Mobilisation de l'épargne** : Mesures visant à encourager la mobilisation de l'épargne.\n- **Relèvement du taux d'enregistrement** : Augmentation du taux d'enregistrement applicable aux cessions de parts sociales et d'actions de sociétés de 3% à 4%.\n- **Facilitation de l'acquisition de logements par les étrangers résidents** : Possibilité pour les étrangers résidents au Maroc d'acquérir des logements à faible valeur immobilière ou destinés à la classe moyenne.\n- **Réduction de la durée d'exonération des revenus locatifs** : Réduction de la durée d'exonération des revenus locatifs de 20 à 8 ans, avec un relèvement du loyer de 700 à 1.000 DH.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 30364.8
+    },
+    {
+      "question": "Comment évolue le dirham marocain par rapport à l'euro ?",
+      "ground_truth": "Le dirham marocain évolue dans un régime de flottement dirigé par rapport à un panier composé de l'euro (60%) et du dollar US (40%). Bank Al-Maghrib a élargi la bande de fluctuation à ±5% depuis 2020.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le dirham marocain a évolué de manière significative par rapport à l'euro en 2018. Voici les principaux points :\n\n- **Appréciation du dirham vis-à-vis de l'euro** : Sur la période allant du 15 janvier au 31 décembre 2018, le dirham s'est **apprécié de 3,2%** face à l'euro.\n- **Facteurs influençant cette évolution** :\n  - **Effet panier baissier** : La dépréciation de l'euro de 6,7% vis-à-vis du dollar a contribué à l'appréciation du dirham.\n  - **Effet marché haussier** : Un effet marché haussier de 0,5% a également soutenu l'appréciation du dirham.\n- **Comparaison avec d'autres monnaies** : Le dirham s'est renforcé par rapport à plusieurs autres monnaies, notamment la livre turque (+37,1%), le dinar tunisien (+12,8%), et le yuan chinois (+1%).\n\nCes éléments montrent que le dirham a connu une période de renforcement par rapport à l'euro en 2018.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 26875.6
+    },
+    {
+      "question": "Quelle est la stratégie de développement du marché des capitaux au Maroc ?",
+      "ground_truth": "La stratégie de développement du marché des capitaux repose sur la diversification des instruments financiers, le renforcement de la gouvernance, l'encouragement de l'épargne longue, le développement du marché de la dette privée et l'alignement avec les standards internationaux.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "La stratégie de développement du marché des capitaux au Maroc sur 5 ans comprend plusieurs axes clés :\n\n- **Élaboration et mise en œuvre de la stratégie finance climat** : Cette stratégie vise à orienter les flux financiers vers des activités durables et à mettre en place une taxonomie verte.\n- **Encouragement de l’épargne populaire** : L'objectif est de canaliser l’épargne populaire vers des instruments financiers plus accessibles et mieux adaptés aux investisseurs individuels.\n- **Modernisation des infrastructures de marché** : La démutualisation de la Bourse de Casablanca et l'alignement avec les exigences internationales visent à créer une organisation de marché centralisée et intégrée, couvrant toute la chaîne de valeur des transactions.\n- **Collaboration avec la Banque mondiale** : L'AMMC et la Banque mondiale collaborent sur plusieurs projets majeurs pour accompagner le développement du marché des capitaux marocain, notamment sur des études et des initiatives liées à la finance durable.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 28811.3
+    },
+    {
+      "question": "Quel est le rôle de l'OCP dans l'économie marocaine ?",
+      "ground_truth": "L'OCP (Office Chérifien des Phosphates) est le leader mondial des phosphates et de la nutrition des plantes. Il contribue significativement aux recettes d'exportation du Maroc et investit massivement dans la transformation locale et les engrais durables.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "L'Office Chérifien des Phosphates (OCP) joue un rôle crucial dans l'économie marocaine, bien que les extraits fournis ne mentionnent pas directement l'OCP, ils mettent en évidence l'importance des Organismes de Placement Collectif en Valeurs Mobilières (OPCVM) dans l'économie marocaine. Cependant, pour répondre à votre question sur l'OCP :\n\n- **Contribution au PIB** : L'OCP est l'un des principaux contributeurs au PIB du Maroc. Il est le plus grand exportateur de phosphates et de produits dérivés au monde, ce qui renforce la position économique du Maroc sur le marché international.\n- **Emploi** : L'OCP est également un important employeur, offrant des emplois directs et indirects à des milliers de Marocains.\n- **Investissements** : L'OCP investit massivement dans la modernisation de ses installations et dans la recherche et développement, ce qui stimule l'innovation et la croissance économique.\n- **Exportations** : Les exportations de l'OCP représentent une part significative des exportations totales du Maroc, contribuant ainsi à l'équilibre des paiements et à la balance commerciale.\n- **Fiscalité** : Les contributions fiscales de l'OCP au budget de l'État sont importantes, soutenant les finances publiques et les investissements dans les infrastructures et les services publics.\n\nBien que les extraits ne fournissent pas de données spécifiques sur l'OCP, ils soulignent l'importance des institutions financières et économiques dans le développement du pays.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 34188.3
+    },
+    {
+      "question": "What is the current state of Morocco's banking sector?",
+      "ground_truth": "Morocco's banking sector is well-capitalized with a solvency ratio above 15%. The three largest banks (Attijariwafa Bank, BCP, Bank of Africa) hold over 60% of total assets. Non-performing loans represent about 8% of total credit.",
+      "category": "market",
+      "language": "en",
+      "answer": "Le secteur bancaire marocain est actuellement solide et résilient, malgré un contexte économique difficile. Voici les principaux points :\n\n- **Taille et Importance** : Le secteur bancaire représente environ **122% du PIB** en 2023, avec un total agrégé des actifs de **1 789 milliards de dirhams**, en hausse de **4,8%** par rapport à 2022.\n- **Résilience** : Les banques ont consolidé leur assise financière en fonds propres, leurs coussins de liquidité, et leurs dispositifs de gouvernance et de gestion des risques. Les exercices de stress tests réalisés par Bank Al-Maghrib confirment leur résilience face aux chocs macroéconomiques.\n- **Structure** : Le secteur est largement dominé par trois banques d'importance systémique à capital privé et majoritairement marocain, qui détiennent **60,5%** du total actif agrégé des banques, distribuent **57,1%** du total des crédits nets, et détiennent **62,5%** du total des dépôts collectés.\n- **Réseau** : Ces trois banques disposent d'un réseau de **2 953 agences** au niveau national et **51 filiales et 22 succursales** à l'étranger.\n- **Finance Participative** : La finance participative continue de croître, avec une progression de **21%** des emplois des banques participatives à **33 milliards de dirhams** en 2023, contre **22%** en 2022.\n\nCes indicateurs montrent que le secteur bancaire marocain reste robuste et bien positionné pour faire face aux défis actuels.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 45516.2
+    },
+    {
+      "question": "How does Morocco manage its public debt?",
+      "ground_truth": "Morocco manages its public debt through a mix of domestic Treasury bonds (representing about 75% of total debt) and external borrowing from multilateral institutions and international markets. The debt-to-GDP ratio is projected at 67% in 2025.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Morocco manages its public debt through a comprehensive approach that includes:\n\n- **Enhanced Parliamentary Oversight**: The 2011 Constitution expanded the powers of the Parliament and the Cour des Comptes to oversee and evaluate public financial policies. The Parliament now has the authority to discuss and assess government actions, control state expenditures, and ensure they align with the budget law.\n\n- **Performance-Based Management**: The government has adopted a performance-based approach to public finance management, focusing on efficiency, effectiveness, and relevance in setting objectives and achieving results. This approach aims to rationalize public spending and improve the overall performance of public administration.\n\n- **Sustainability Analysis**: The sustainability of public debt is a critical concern. Studies by the OECD suggest that tolerable debt levels depend on the country's development level, and high debt ratios can negatively impact economic growth. The Moroccan government is mindful of these factors and aims to maintain a sustainable debt level.\n\n- **Reforms and Transparency**: Significant reforms have been implemented to enhance transparency and control in public finance. These reforms include the Organic Law on Finance Laws (OLFL), which aims to improve public performance and modernize the administration.\n\nBy integrating these strategies, Morocco seeks to ensure the sustainability and effectiveness of its public debt management.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 26975.1
+    },
+    {
+      "question": "What is the impact of climate change on Morocco's economy?",
+      "ground_truth": "Climate change impacts Morocco through recurring droughts affecting agricultural GDP (12-14% of total GDP), water stress, and the need for massive investment in renewable energy and water infrastructure. Agricultural GDP contracted significantly during drought years.",
+      "category": "macro",
+      "language": "en",
+      "answer": "The impact of climate change on Morocco's economy is significant and multifaceted:\n\n- **Water Scarcity and Droughts**: Morocco has experienced a **decline in annual precipitation** and **increased temperatures** over the past decades, leading to **water scarcity** and **successive droughts**. These conditions severely affect agricultural productivity, which is a crucial sector of the economy.\n\n- **Economic Growth and Stability**: The **intensification of climate-related phenomena** such as droughts and floods can disrupt economic activities, particularly in agriculture, tourism, and infrastructure. This can lead to **reduced economic growth** and increased **fiscal pressures**.\n\n- **Financial Sector Risks**: Climate change poses **risks to the financial sector** through the **decrease in asset values** and **exposure to companies with carbon-intensive business models**. Financial institutions may face increased credit risks and potential losses.\n\n- **Public Expenditure**: The Moroccan government has had to allocate significant resources to **manage the impacts of climate change**, such as **water management** and **disaster relief**. This can strain public finances and divert funds from other critical areas.\n\n- **Socioeconomic Impact**: The **increase in business insolvencies** and **job losses in rural areas** can be exacerbated by climate-related shocks, affecting the welfare and economic stability of households and communities.\n\nIn summary, climate change poses significant challenges to Morocco's economic stability and growth, affecting various sectors and requiring substantial public and private sector responses.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 30111.2
+    },
+    {
+      "question": "What are the main challenges of the Moroccan insurance sector?",
+      "ground_truth": "The main challenges include low insurance penetration rate (3.7% of GDP), concentration of premiums in auto insurance, the need for digital transformation, and strengthening governance and risk management frameworks as required by the ACAPS.",
+      "category": "market",
+      "language": "en",
+      "answer": "Les principaux défis du secteur des assurances au Maroc sont les suivants :\n\n- **Pressions inflationnistes** : L'inflation augmente le coût des sinistres, notamment en assurance non-vie, ce qui peut entraîner des risques de souscription et de sous-provisionnement, surtout pour les catégories d'assurance à développement long.\n- **Risque de liquidité** : La branche vie est exposée au risque de liquidité en raison de la possibilité que les assurés rachètent massivement leur épargne en cas de hausse des taux d'intérêt, à la recherche d'un meilleur rendement.\n- **Dépréciation des actifs** : Le portefeuille obligataire des assureurs a enregistré une forte dépréciation (-69,1%), et les plus-values latentes sur les actions cotées ont été concédées à hauteur de 51,5%, soit 12,2 milliards de dirhams.\n- **Adaptation aux nouvelles normes prudentielles** : Les assureurs doivent rapidement s'adapter aux nouvelles normes prudentielles de solvabilité, ce qui nécessite des investissements importants en termes de conformité et de gestion des risques.\n- **Potentiel de développement limité** : Malgré un taux de pénétration de 3,7%, le marché marocain de l'assurance reste relativement faible par rapport aux pays développés, ce qui limite le potentiel de croissance.\n- **Vulnérabilité systémique** : Les entreprises d'assurance affichent un indice de vulnérabilité élevé, ce qui souligne leur sensibilité aux chocs financiers et économiques.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 37278.4
+    },
+    {
+      "question": "How does the Moroccan pension system work?",
+      "ground_truth": "The Moroccan pension system operates through multiple funds: CNSS for private sector employees, CMR for civil servants, RCAR for contract workers, and CIMR as a supplementary scheme. The system faces structural deficits due to demographic transitions.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "The Moroccan pension system is structured around several key components:\n\n- **Caisse Marocaine des Retraites (CMR)**: This is the main institution responsible for managing the pensions of civil servants and military personnel.\n- **Caisse Interprofessionnelle Marocaine de Retraite (CIMR)**: This institution manages the pensions of private sector employees.\n- **Caisse Nationale de Sécurité Sociale (CNSS)**: This organization oversees social security contributions and benefits, including pensions, for the private sector.\n\nThe system includes different regimes such as:\n- **Régime des Pensions Civiles (RPC)**: For civil servants.\n- **Régime des Pensions Militaires (RPM)**: For military personnel.\n- **Régime Collectif d’Allocation de Retraite (RCAR)**: For private sector employees.\n\nThese institutions and regimes work together to ensure that pension benefits are calculated and distributed based on contributions made during the working years.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 26320.0
+    },
+    {
+      "question": "ما هو حجم الاستثمارات الأجنبية المباشرة في المغرب؟",
+      "ground_truth": "بلغت الاستثمارات الأجنبية المباشرة في المغرب حوالي 35 مليار درهم سنوياً، موجهة أساساً نحو قطاعات الصناعة والعقار والطاقات المتجددة والسياحة.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "حجم الاستثمارات الأجنبية المباشرة في المغرب في عام 2024 كان **28,392 مليون درهم**. هذا الرقم يمثل القيمة الإجمالية للاستثمارات الأجنبية المباشرة في المغرب خلال ذلك العام.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 20943.6
+    },
+    {
+      "question": "ما هي خصائص سوق السندات بالمغرب؟",
+      "ground_truth": "يتميز سوق السندات المغربي بهيمنة سندات الخزينة، مع تطور تدريجي لسوق السندات الخاصة. تتراوح آجال الاستحقاق بين 13 أسبوعاً و30 سنة، وتُصدر عبر مزادات ينظمها بنك المغرب.",
+      "category": "market",
+      "language": "ar",
+      "answer": "خصائص سوق السندات بالمغرب تشمل:\n\n- **السندات البلدية**: تُظهر البيانات وجود سندات بلدية بقيمة **208.3** مليار درهم في إحدى السنوات، و**210.8** مليار درهم في سنة أخرى.\n- **التقلبات**: هناك تغيرات في قيمة السندات البلدية، حيث سُجلت قيمة **210.9** مليار درهم في إحدى الفترات، و**207.5** مليار درهم في فترة أخرى.\n\nهذه البيانات تشير إلى وجود نشاط في سوق السندات البلدية بالمغرب، مع بعض التقلبات في قيمة هذه السندات.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 23759.9
+    },
+    {
+      "question": "كيف يعمل نظام الصرف في المغرب؟",
+      "ground_truth": "يعتمد نظام الصرف المغربي على التعويم الموجه في إطار سلة عملات مكونة من الأورو (60%) والدولار (40%)، مع هامش تذبذب يبلغ ±5% يديره بنك المغرب.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "عذرًا، ولكن المعلومات المتوفرة لدي لا تشمل تفاصيل حول نظام الصرف في المغرب. إذا كنت ترغب في معرفة المزيد عن هذا الموضوع، يمكنني إجراء بحث إضافي للحصول على المعلومات المطلوبة. هل ترغب في ذلك؟",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 17794.0
+    },
+    {
+      "question": "Quelle est la contribution du secteur touristique au PIB marocain ?",
+      "ground_truth": "Le secteur touristique contribue à environ 7% du PIB marocain directement et jusqu'à 12% en incluant les effets indirects. Le Maroc a accueilli un record de 17,4 millions de touristes en 2024, avec des recettes dépassant 105 milliards de dirhams.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le secteur touristique contribue à environ **7 pour cent** du PIB marocain, selon le dernier compte satellite du tourisme publié par le HCP. Son impact économique réel pourrait être encore plus important en raison de ses nombreuses interconnexions et de ses effets multiplicateurs dans divers autres secteurs.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 21709.7
+    },
+    {
+      "question": "Quelles sont les principales sociétés de gestion d'OPCVM au Maroc ?",
+      "ground_truth": "Les principales sociétés de gestion d'OPCVM au Maroc incluent Wafa Gestion, CDG Capital Gestion, BMCE Capital Gestion, Valoris Management et Upline Capital Management. L'actif net global des OPCVM dépasse 600 milliards de dirhams.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Les principales sociétés de gestion d'OPCVM au Maroc sont :\n\n- **TWIN Capital Gestion**\n- **Advisory and Finance Asset Management**\n- **RMA Asset Management**\n- **Valoris Capital**\n- **Upline Investments**\n- **BMCE Capital Investments**\n- **REDMED Private Equity**",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 23016.0
+    },
+    {
+      "question": "Comment fonctionne le système de compensation au Maroc ?",
+      "ground_truth": "Le système de compensation (Caisse de Compensation) subventionne les prix du gaz butane, du sucre et de la farine nationale. Le budget de compensation a été réduit grâce à la décompensation partielle des carburants et à la mise en place d'aides directes ciblées.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "Le système de compensation au Maroc fonctionne principalement grâce à la **Chambre de Compensation Contrepartie Centrale (CCP)**. Cette institution a pour rôle de neutraliser les risques systémiques sur les marchés qu'elle sert. Voici les principales caractéristiques de son fonctionnement :\n\n- **Compensation multilatérale des opérations** : La CCP centralise et compense les transactions entre les différents acteurs du marché, réduisant ainsi les risques de contrepartie.\n- **Gestion des risques** : Elle met en place des mesures de gestion des risques, notamment par le biais de marges et de contributions à un fonds de garantie.\n- **Supervision et encadrement** : L'Instance de Coordination du Marché à Terme (ICMAT) est chargée de l'encadrement et de la supervision de la CCP, assurant ainsi le bon fonctionnement du marché à terme et de la chambre de compensation.\n\nCe système permet de garantir la stabilité et la sécurité des transactions financières sur les marchés marocains.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 35840.4
+    },
+    {
+      "question": "Quel est l'impact du Nouveau Modèle de Développement sur la finance marocaine ?",
+      "ground_truth": "Le Nouveau Modèle de Développement préconise le doublement du PIB d'ici 2035, la mobilisation de l'épargne nationale, le développement de la finance verte et durable, le renforcement de l'inclusion financière et la digitalisation des services financiers.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "Le Nouveau Modèle de Développement (NMD) a un impact significatif sur la finance marocaine, notamment à travers les priorités suivantes :\n\n- **Accélération de la protection sociale** : Le NMD vise à construire un socle élargi de protection sociale, efficace et responsable, qui favorise la solidarité sociale et l'inclusion financière.\n\n- **Inclusion financière** : Une attention particulière est accordée à l'inclusion financière, notamment pour les populations travaillant dans l'informel, les jeunes, les femmes, et les personnes à besoins spécifiques. Cela inclut la généralisation de la couverture numérique en milieu rural, facilitant l'accès à l'information et aux plateformes de commercialisation.\n\n- **Régionalisation** : Le NMD prévoit l'accélération du transfert des compétences aux régions, ce qui devrait stimuler le développement économique local et régional, ainsi que l'investissement.\n\n- **Centralité du citoyen** : L'impact concret sur la vie des citoyens et l'obligation de résultats sont des critères primordiaux pour évaluer les stratégies et les politiques publiques, ce qui devrait améliorer la transparence et la responsabilité dans la gestion financière.\n\nCes mesures visent à créer un environnement financier plus inclusif et durable, favorisant la croissance économique et le bien-être social.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 40792.0
+    },
+    {
+      "question": "Quel est le taux de croissance économique prévu pour le Maroc en 2026 ?",
+      "ground_truth": "Le taux de croissance économique du Maroc est prévu à 3,7% en 2026, porté par la reprise agricole et la dynamique des secteurs non agricoles, notamment les services et l'industrie.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le taux de croissance économique prévu pour le Maroc en 2026 est de **3,6%**.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 24919.0
+    },
+    {
+      "question": "Quelle est la politique de change du Maroc ?",
+      "ground_truth": "Le Maroc applique un régime de flottement dirigé du dirham par rapport à un panier composé de l'euro (60%) et du dollar américain (40%), avec une bande de fluctuation de ±5% depuis 2020.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "La politique de change du Maroc a été assouplie en 2017, avec une dépréciation du taux de change effectif réel. Cette dépréciation est liée à l'appréciation de l'euro et au faible niveau d'inflation au Maroc comparativement aux principaux pays partenaires commerciaux et concurrents. A moyen terme, cette situation devrait se poursuivre, bien que l'atténuation de la dépréciation par rapport à 2017 soit prévue.\n\nEn outre, le Maroc a entamé la flexibilisation de son régime de change, une transition qui vise à rehausser la capacité de l'économie à absorber les chocs externes et à soutenir sa compétitivité. Cette décision s'inscrit dans le cadre de nouvelles réformes économiques.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 31660.1
+    },
+    {
+      "question": "Quel est le montant des réserves de change du Maroc ?",
+      "ground_truth": "Les réserves de change du Maroc couvrent plus de 5 mois d'importations de biens et services, gérées par Bank Al-Maghrib et investies dans des actifs sûrs et liquides.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Les réserves de change du Maroc se sont établies à **330,8 milliards de dirhams** au terme de l'année 2021, contre **320,6 milliards de dirhams** un an auparavant.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 24393.4
+    },
+    {
+      "question": "Comment évolue le crédit bancaire au Maroc ?",
+      "ground_truth": "Le crédit bancaire au Maroc a progressé d'environ 5% en 2024, porté par le crédit à l'équipement et le crédit immobilier. Les créances en souffrance représentent environ 8% de l'encours total.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le crédit bancaire au Maroc a connu une évolution relativement synchrone avec la croissance économique, avec une corrélation de **65%** sur la période 1999-2019. Une étude de causalité réalisée par Bank Al-Maghrib (BAM) a montré une relation de causalité bidirectionnelle entre ces deux variables.\n\nCependant, les résultats varient selon les périodes :\n- **1999-2007** : Avant la crise financière internationale, le sens de la causalité était différent.\n- **2008-2019** : Après la crise, la relation a continué à être bidirectionnelle, mais avec des caractéristiques différentes.\n\nÀ fin 2020, les actifs des banques représentaient **137,5%** du PIB, et les crédits accordés au secteur non financier atteignaient **70,9%** du PIB, des niveaux supérieurs à la moyenne des pays à revenu intermédiaire et de la région MENA.\n\nÀ moyen terme, le crédit bancaire destiné au secteur non financier a connu une hausse de **4,5%** en 2017, et cette tendance devrait se poursuivre.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 30777.1
+    },
+    {
+      "question": "Quel est le poids de l'agriculture dans le PIB marocain ?",
+      "ground_truth": "L'agriculture représente entre 12% et 14% du PIB marocain selon les années, avec une forte volatilité liée aux conditions climatiques. Elle emploie environ 33% de la population active.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le poids de l'agriculture dans le PIB marocain varie selon les années. Voici quelques données pertinentes :\n\n- **2019** : Le PIB agricole a contribué à hauteur de **-5%** au PIB réel.\n- **2020** : Le PIB agricole a contribué à hauteur de **-8,1%** au PIB réel.\n- **2021** : Le PIB agricole a contribué à hauteur de **19,5%** au PIB réel.\n- **2022** : Le PIB agricole a contribué à hauteur de **-11,3%** au PIB réel.\n- **2023** : Le PIB agricole a contribué à hauteur de **1,4%** au PIB réel.\n- **2024** : Le PIB agricole est projeté à **-3,3%** du PIB réel.\n- **2025** : Le PIB agricole est projeté à **9,5%** du PIB réel.\n- **2026** : Le PIB agricole est projeté à **0,7%** du PIB réel.\n\nCes chiffres montrent que la contribution de l'agriculture au PIB marocain peut fluctuer significativement d'une année à l'autre, en fonction des conditions climatiques et autres facteurs.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 38910.8
+    },
+    {
+      "question": "Quelles sont les recettes fiscales du Maroc en 2025 ?",
+      "ground_truth": "Les recettes fiscales du Maroc ont connu une progression significative en 2025, soutenues par la réforme de l'IS, l'élargissement de l'assiette TVA et l'amélioration du recouvrement.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Les recettes fiscales du Maroc en 2025 sont prévues à **388,0 milliards de dirhams**, selon les projections. Cette augmentation de 15,3% par rapport à 2024 est due principalement à l'augmentation des impôts directs et indirects. \n\n- **Impôts directs** : 161,9 milliards de dirhams, en hausse de 19,3%.\n- **Impôts indirects** : 185,1 milliards de dirhams, en hausse de 12,8%.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 31815.8
+    },
+    {
+      "question": "Comment se comporte le marché de l'emploi au Maroc ?",
+      "ground_truth": "Le marché de l'emploi marocain est caractérisé par un taux de chômage de 13,3% au T3 2024, touchant particulièrement les jeunes (35,8%) et les diplômés. L'économie informelle représente une part importante.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le marché de l'emploi au Maroc se caractérise par des niveaux relativement bas de participation, en particulier pour les femmes. Le taux de participation des femmes au marché du travail est très faible, avec moins de trois femmes sur dix globalement et moins de deux sur dix en milieu urbain qui sont actives.\n\nLa pandémie a également continué de peser sur le marché du travail en 2021. Selon les enquêtes de la Banque mondiale, entre décembre 2019 et juin 2021, 47,2% des entreprises ont diminué le nombre de leurs employés.\n\nEn revanche, le troisième trimestre a été marqué par une création nette de 56.000 postes d'emplois, principalement dans les secteurs agricoles et de services, qui ont fourni un total de 143.000 postes.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 28936.0
+    },
+    {
+      "question": "Quelle est la balance commerciale du Maroc ?",
+      "ground_truth": "La balance commerciale du Maroc affiche un déficit d'environ 297 milliards de dirhams en 2024. Les exportations sont tirées par les phosphates, l'automobile et l'agroalimentaire.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le déficit commercial du Maroc s'est atténué de 6,8% à 170 milliards de dirhams à fin novembre 2014, par rapport à la même période de 2013. Cette évolution est due à la progression des exportations de 6,7%.\n\n- **Exportations** : 180 692 millions de dirhams en 2014, en augmentation de 6,7% par rapport à 2013.\n- **Importations** : 350 692 millions de dirhams en 2014, en diminution de 6,8% par rapport à 2013.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 28908.5
+    },
+    {
+      "question": "Quel est l'impact de la sécheresse sur l'économie marocaine ?",
+      "ground_truth": "La sécheresse affecte directement le PIB agricole (12-14% du PIB total), provoque un stress hydrique, et nécessite des investissements massifs en infrastructure hydraulique et dessalement.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "La sécheresse a un impact significatif sur l'économie marocaine, principalement à travers le secteur agricole et ses répercussions sur la croissance globale du PIB.\n\n- **Réduction de la production agricole** : La sécheresse a entraîné une baisse importante de la production céréalière, avec une récolte prévue à 40 millions de quintaux pour la saison 2023-2024, contre 55 millions de quintaux l'année précédente. Cela a conduit à une diminution de 3,3% de la valeur ajoutée agricole en 2024.\n  \n- **Influence sur les revenus et la consommation des ménages ruraux** : Le ralentissement de l'activité agricole a négativement affecté les revenus des ménages ruraux, ce qui peut réduire leur consommation et leur pouvoir d'achat.\n\n- **Accroissement de la dépendance aux importations** : La baisse de la production céréalière a augmenté la dépendance du pays vis-à-vis des importations de céréales pour satisfaire la demande locale.\n\n- **Impact sur la croissance économique** : La croissance globale du PIB est prévue à 2,9% en 2024, en partie due à la contraction du secteur agricole. Cependant, le secteur non agricole devrait compenser partiellement ce ralentissement, avec une croissance prévue à 3,7% en 2024, soutenue par les performances robustes de l'industrie.\n\n- **Effets sociaux** : La sécheresse, combinée à d'autres facteurs comme la pandémie de COVID-19, a potentiellement augmenté la proportion de personnes vulnérables à la pauvreté et pauvres, passant de 17,1% de la population en 2019 à environ 19,87% en 2020, soit 1,058 million de personnes supplémentaires.\n\nCes impacts soulignent l'importance de la résilience du secteur agricole et de la nécessité de mettre en place des stratégies pour atténuer les effets des sécheresses futures.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 50601.9
+    },
+    {
+      "question": "Comment le Maroc finance-t-il son déficit budgétaire ?",
+      "ground_truth": "Le Maroc finance son déficit budgétaire principalement par l'émission de bons du Trésor sur le marché domestique (75% de la dette) et par des emprunts extérieurs auprès d'institutions multilatérales et sur les marchés internationaux.",
+      "category": "macro",
+      "language": "fr",
+      "answer": "Le Maroc finance son déficit budgétaire principalement par **la dette publique à long terme** et **les recettes d’investissements directs étrangers (IDE)**. Voici les détails :\n\n- **Dette publique à long terme** : Le gouvernement marocain utilise la dette publique à long terme pour financer son déficit. Cette stratégie permet de répartir le fardeau du remboursement sur une période plus longue, réduisant ainsi l’impact à court terme sur les finances publiques.\n\n- **Recettes d’investissements directs étrangers (IDE)** : Les IDE ont fortement augmenté, contribuant à la stabilisation du déficit budgétaire. Par exemple, entre janvier et mai, les IDE nets ont augmenté de **110%** en glissement annuel.\n\n- **Réformes fiscales** : Le gouvernement a lancé des réformes fiscales visant à augmenter les recettes fiscales et non fiscales. Ces réformes incluent la standardisation des taux de l’impôt sur les sociétés, le renforcement de l’impôt sur le revenu des personnes physiques, et la rationalisation des taux de TVA. Ces efforts devraient augmenter les recettes totales, passant de **21,8%** du PIB en 2021–2023 à **22%** en 2024–2026.\n\n- **Opérations de financement innovants** : Le gouvernement prévoit de poursuivre les opérations de financement innovants pour réduire le déficit. Ces opérations devraient mobiliser près de **2,2%** du PIB par an entre 2024 et 2026, soit environ **35 milliards de dirhams**.\n\nCes mesures combinées visent à réduire progressivement le déficit budgétaire, qui devrait atteindre **3%** du PIB en 2026, proche du niveau d’avant la pandémie.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 48398.1
+    },
+    {
+      "question": "Quelles sont les performances du secteur bancaire coté à la BVC ?",
+      "ground_truth": "Le secteur bancaire est le plus capitalisé à la BVC, représentant plus de 30% de la capitalisation totale. Les trois grandes banques (Attijariwafa, BCP, BOA) affichent des PER moyens de 15-20x.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Le secteur bancaire coté à la Bourse de Casablanca (BVC) a affiché des performances notables en 2021, marquées par une forte amélioration de la rentabilité. Le résultat net cumulé du secteur a enregistré une croissance de **76,4%** en 2021, après une contraction de 43,2% en 2020. Cette évolution positive est principalement due à la baisse du coût du risque d'environ **17%** et à la reprise de l'activité économique. \n\nEn 2019, le secteur bancaire avait déjà affiché une bonne situation financière, avec un résultat net positif de **12 milliards de dirhams**, en progression de **8%** par rapport à l'année précédente. Cette performance reflète un accroissement du produit net bancaire, soutenu par une progression significative du résultat des opérations de marché et une diminution des charges. \n\nEn 2021, le secteur est resté solide et résilient, avec une activité globalement soutenue, une rentabilité positive en amélioration, et une sinistralité sur prêts en ralentissement. Les stress-tests effectués ont également confirmé la résilience du secteur aux chocs économiques.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 27235.5
+    },
+    {
+      "question": "Comment fonctionne le marché des changes au Maroc ?",
+      "ground_truth": "Le marché des changes marocain est un marché interbancaire où Bank Al-Maghrib intervient pour maintenir la stabilité du dirham dans la bande de fluctuation autorisée de ±5%.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Le marché des changes au Maroc fonctionne principalement à travers l'Office des Changes (OC), qui supervise les transactions de change et veille à la stabilité du dirham. Le régime de change du Maroc a évolué au fil des années pour devenir plus flexible, permettant une meilleure intégration de l'économie marocaine aux marchés internationaux.\n\n- **Régime de Change** : Le régime de change du Maroc a été progressivement libéralisé, mais reste encadré par l'Office des Changes pour assurer la stabilité monétaire et financière.\n- **Parité des Rendements** : Les rendements sur les marchés financiers nationaux et externes (principalement la zone euro) sont équilibrés, tenant compte d'une prime de risque. Cette parité est ajustée en fonction des transferts des Marocains résidant à l'étranger et du taux de change réel.\n- **Taux de Change Réel** : Le taux de change réel du dirham par rapport à l'euro est utilisé comme indicateur des effets des flux commerciaux et financiers sur la valeur nominale du dirham.\n\nCes mécanismes permettent de maintenir l'équilibre des transactions internationales et de soutenir la compétitivité de l'économie marocaine.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 33357.8
+    },
+    {
+      "question": "Quelle est la liquidité du marché boursier marocain ?",
+      "ground_truth": "La liquidité du marché boursier marocain, mesurée par le taux de rotation, s'établit autour de 9-10%. Le volume moyen quotidien des échanges est d'environ 300-400 millions de dirhams.",
+      "category": "market",
+      "language": "fr",
+      "answer": "La liquidité du marché boursier marocain est relativement faible. Le ratio de liquidité, qui est une moyenne mobile du volume mensuel des marchés central et de blocs rapportée à la capitalisation boursière totale, s'est établi à **10,4%** en 2017, contre **9,5%** en 2016. Cependant, en 2018, ce ratio a baissé pour atteindre **7,55%**.\n\nCette faiblesse de la liquidité est principalement due à la prépondérance des parts stratégiques détenues par des actionnaires stables, qui représentent près de **76%** en 2017, limitant ainsi le nombre de titres susceptibles d'être échangés à court terme. En comparaison avec d'autres places boursières, la liquidité de la Bourse de Casablanca est nettement inférieure, par exemple, à celle de l'Afrique du Sud (38,4%) et de l'Égypte (39,2%).",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 4,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 31161.5
+    },
+    {
+      "question": "Quels sont les principaux indices de la Bourse de Casablanca ?",
+      "ground_truth": "Les principaux indices sont le MASI (toutes valeurs), le MASI 20 (20 valeurs les plus liquides), le MADEX (valeurs les plus actives) et les indices sectoriels.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Les principaux indices de la Bourse de Casablanca sont :\n\n- **MASI (Moroccan All Shares Index)** : Cet indice intègre toutes les actions cotées.\n- **MADEX (Moroccan Most Active Shares Index)** : Cet indice est composé des valeurs les plus liquides.\n- **MSI20** : Cet indice est également suivi, bien qu'il soit moins cité que les deux premiers.\n\nCes indices sont utilisés pour mesurer la performance globale et la liquidité des actions cotées à la Bourse de Casablanca.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 33072.8
+    },
+    {
+      "question": "Comment évolue le marché des OPCVM au Maroc ?",
+      "ground_truth": "Le marché des OPCVM au Maroc dépasse 600 milliards de dirhams d'actifs nets gérés, dominé par les fonds obligataires et monétaires. La progression est soutenue par l'épargne institutionnelle.",
+      "category": "market",
+      "language": "fr",
+      "answer": "Le marché des OPCVM au Maroc a connu une évolution significative :\n\n- **Progression des transactions** : Les OPCVM ont augmenté leur part relative dans le volume transactionnel sur le marché central de la Bourse de Casablanca. En 2017, ils ont généré 34% du volume transactionnel, contre 27% en 2016 et 23% en 2015.\n\n- **Position nette acheteuse** : Sur l'année 2021, les OPCVM ont cumulé une position nette acheteuse de **6,34 milliards de dirhams**, après une position nette acheteuse de **1,07 milliard de dirhams** en 2020.\n\n- **Diversification et adaptation** : Il y a eu des demandes d'autorisation pour le changement de catégorie et de stratégie d'investissement des OPCVM, visant à mieux s'adapter aux exigences évolutives du marché. La périodicité de calcul de la valeur liquidative a également été modifiée, passant de « hebdomadaire » à « quotidienne », offrant ainsi une liquidité accrue aux porteurs de parts.\n\n- **Répartition des transactions** : En 2017, les personnes physiques marocaines ont vu leur volume d'activité doubler, passant de 11% à 20% du volume transactionnel. Les OPCVM ont également vu leur part augmenter de 7 points, passant de 27% à 34%.\n\nCes évolutions montrent une dynamique positive et une adaptation continue des OPCVM au marché marocain.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 43236.3
+    },
+    {
+      "question": "Quelles sont les exigences de Bâle III au Maroc ?",
+      "ground_truth": "Les banques marocaines doivent respecter un ratio de solvabilité minimum de 12%, un ratio de liquidité LCR supérieur à 100%, et des exigences de fonds propres renforcées conformément à Bâle III.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les exigences de Bâle III au Maroc incluent :\n\n- **Mesure préventive** : Les banques sont obligées de constituer des **fonds propres de base de catégorie 1** pendant les périodes de forte croissance du crédit. Ce coussin peut être libéré pendant les périodes de ralentissement de l’activité pour permettre aux banques de continuer à prêter à l’économie réelle.\n- **Ratio de levier minimum** : La Banque Centrale a introduit un **ratio de levier minimum** que les banques doivent respecter.\n- **Réformes prudentielles** : Des réformes ont été adoptées pour libérer des fonds propres au titre du financement des TPME et des investissements dans le numérique.\n- **Développement de la finance durable et digitale** : Des initiatives ont été lancées pour accélérer le développement de la finance durable et digitale.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 28496.2
+    },
+    {
+      "question": "Comment est régulé le secteur des assurances au Maroc ?",
+      "ground_truth": "Le secteur des assurances est régulé par l'ACAPS (Autorité de Contrôle des Assurances et de la Prévoyance Sociale), qui veille au respect des normes prudentielles et à la protection des assurés.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Le secteur des assurances au Maroc est régulé par l’**Autorité de Contrôle des Assurances et de la Prévoyance Sociale (ACAPS)**. Cette autorité est responsable de la surveillance et de la régulation du secteur, en collaboration avec Bank Al-Maghrib et l’Autorité Marocaine du Marché des Capitaux (AMMC).\n\n- **Réglementation Prudentielle** : L’ACAPS a finalisé un projet d’amendement de la circulaire générale visant à instaurer un **nouveau régime prudentiel relatif à la solvabilité basée sur les risques (Solvabilité II)**. Ce régime vise à renforcer la capacité des compagnies d’assurance à faire face aux risques.\n\n- **Surveillance et Contrôle** : L’ACAPS met en place des dispositifs de surveillance pour assurer la stabilité financière du secteur. Cela inclut des analyses régulières des risques et des vulnérabilités, ainsi que des mesures pour prévenir les risques systémiques.\n\n- **Coopération Inter-institutionnelle** : La régulation du secteur des assurances implique une collaboration étroite entre l’ACAPS, Bank Al-Maghrib et l’AMMC. Cette coopération vise à coordonner les politiques budgétaires et macroprudentielles, et à renforcer le dispositif de surveillance.\n\nEn résumé, le secteur des assurances au Maroc est soumis à une régulation stricte et coordonnée visant à assurer sa stabilité et sa résilience face aux risques.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 5,
+        "language": 1
+      },
+      "latency_ms": 31103.0
+    },
+    {
+      "question": "Quelles sont les règles de gouvernance des sociétés cotées au Maroc ?",
+      "ground_truth": "Les sociétés cotées doivent respecter le Code de gouvernance de l'AMMC, incluant la composition du conseil d'administration, les comités spécialisés, la transparence de l'information et les règles relatives aux conflits d'intérêts.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les règles de gouvernance des sociétés cotées au Maroc sont définies par le Code de bonne gouvernance d'entreprise spécifique aux entreprises faisant appel public à l’épargne. Voici les principaux points :\n\n- **Composition du Conseil d'Administration** :\n  - Les comités d'audit doivent être composés d'au moins 3 membres, tous administrateurs non exécutifs ou membres du Conseil de surveillance n’exerçant aucune fonction de direction.\n  - Au moins deux membres doivent être indépendants pour les sociétés cotées au marché principal.\n  - La présidence de ce comité doit être assurée par l’un des membres indépendants.\n\n- **Représentation Équilibrée** :\n  - À l’horizon 2024, la proportion des membres des Conseils d’administration et de surveillance de chaque genre ne pourra être inférieure à 30%.\n  - Cette proportion devra atteindre 40% en 2027.\n  - Les comités constitués au sein du Conseil d’administration doivent comporter au moins un représentant de chaque genre dès 2024.\n\n- **Droits des Actionnaires** :\n  - Les sociétés doivent respecter les droits des actionnaires, qu’ils soient majoritaires ou minoritaires, marocains ou étrangers.\n  - Elles doivent susciter l’intérêt et l’attachement d’investisseurs fidèles.\n\n- **Transparence et Information** :\n  - Les sociétés cotées sont assujetties à des obligations d’informations occasionnelles, périodiques et importantes.\n  - Ces obligations sont définies par les dispositions de la circulaire de l’AMMC n°03/19 relative aux opérations et informations financières.\n\n- **Culture et Éthique** :\n  - Les sociétés doivent respecter les dispositions législatives et réglementaires en vigueur (droit boursier, droit du travail, droit des sociétés, droit commercial, droit de la propriété industrielle, etc.).\n  - Elles doivent consolider leurs relations avec les parties prenantes : employés, clients, créanciers, pouvoirs publics, collectivités territoriales, associations professionnelles, etc.\n\nCes règles visent à assurer une plus grande transparence, un renforcement du respect des actionnaires et de leurs droits, et une meilleure attractivité du marché des capitaux.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 34791.5
+    },
+    {
+      "question": "Comment fonctionne la protection des investisseurs au Maroc ?",
+      "ground_truth": "La protection des investisseurs est assurée par l'AMMC via l'obligation d'information permanente des émetteurs, le contrôle des opérations d'initiés, la régulation des offres publiques et le fonds de garantie des déposants.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "La protection des investisseurs au Maroc est assurée par plusieurs mécanismes et institutions, notamment l’Autorité Marocaine du Marché des Capitaux (AMMC). Voici les principaux aspects de cette protection :\n\n- **Accès à l'information claire et transparente** : Les investisseurs ont le droit d'accéder à des informations précises et complètes sur les opérations financières, les instruments financiers, et leurs émetteurs. Ces informations doivent être mises à jour régulièrement et couvrir les états financiers et la situation économique des émetteurs.\n\n- **Égalité de traitement** : Tous les investisseurs doivent être traités de manière équitable, sans discrimination. Les détenteurs de parts ou d'actions d'OPCVM (Organismes de Placement Collectif en Valeurs Mobilières) bénéficient des mêmes opportunités et informations concernant la gestion, indépendamment du montant de leur investissement.\n\n- **Protection contre la fraude** : Le cadre légal et réglementaire du marché des capitaux prévoit des dispositions pour protéger les investisseurs contre les pratiques frauduleuses, telles que le délit d'initié et la manipulation des cours.\n\n- **Supervision renforcée** : Le projet de loi n°03-25 prévoit un renforcement des pouvoirs de supervision de l'AMMC. Les sociétés de gestion d'OPCVM doivent obtenir un agrément préalable de l'AMMC, garantissant un contrôle renforcé et une transparence accrue des pratiques de gestion.\n\n- **Diversification des investissements** : Le projet de loi impose des limites sur les investissements dans des titres émis par un même émetteur, sauf pour les titres d'État. Un OPCVM ne peut investir plus de 20% de ses actifs dans des titres émis par un même émetteur, avec une exception possible jusqu'à 35% sous certaines conditions.\n\n- **Gestion des risques** : Le projet de loi affine les règles de gestion des risques, notamment en prévoyant le plafonnement temporaire des ordres de rachat et la possibilité de suspendre temporairement les rachats en cas de circonstances exceptionnelles. Un mécanisme de « Side Pocket » est également introduit pour isoler les titres en difficulté dans une structure parallèle, tout en maintenant la liquidité sur les actifs sains.\n\n- **Participation aux assemblées générales** : Les investisseurs ont le droit de participer aux assemblées générales des sociétés anonymes, où ils peuvent s'informer sur les performances passées et prendre part aux décisions futures, exercer leur droit de vote et faire entendre leur opinion.\n\nCes mesures visent à renforcer la confiance des investisseurs dans le marché des capitaux marocain et à aligner le cadre réglementaire sur les meilleures pratiques internationales.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 31871.0
+    },
+    {
+      "question": "Quelles sont les obligations des émetteurs d'obligations au Maroc ?",
+      "ground_truth": "Les émetteurs d'obligations doivent obtenir une notation financière, publier une note d'information visée par l'AMMC, respecter des ratios financiers et assurer une information continue aux porteurs.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les émetteurs d'obligations au Maroc ont plusieurs obligations, notamment :\n\n- **Clause de remboursement anticipé** : Pour les obligations subordonnées perpétuelles de **Type 1** et **Type 2**, l'émetteur peut rembourser les obligations à partir de la 10ème année, après accord de Bank Al-Maghrib et avec un préavis minimum de 5 ans.\n- **Paiement des intérêts** : L'émetteur peut différer les paiements des intérêts si sa situation financière l'exige. Pour le **Type 2**, l'émetteur peut également différer le paiement d'un ou plusieurs coupons à sa discrétion, mais dans ce cas, il ne peut pas distribuer de dividendes ou rémunérer des titres de même rang.\n- **Annulation des intérêts** : Pour les obligations du **Type 3** (AT1), l'émetteur peut, après accord préalable de Bank Al-Maghrib, annuler en totalité ou en partie le paiement des intérêts pour une période indéterminée et sur une base non cumulative.\n- **Dépréciation des titres** : Pour les obligations du **Type 3**, la valeur nominale des titres est dépréciée lorsque le ratio Common Equity Tier 1 (CET1) devient inférieur à 6% des risques pondérés. Cette dépréciation permet à l'émetteur de reconstituer ses fonds propres de base jusqu'à l'atteinte du seuil de 6%.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 24399.8
+    },
+    {
+      "question": "What is Morocco's strategy for renewable energy?",
+      "ground_truth": "Morocco aims for 52% renewable energy capacity by 2030 through massive investments in solar (Noor Ouarzazate complex), wind, and hydroelectric projects, exceeding $30 billion in total investment.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Le Maroc a lancé en 2009 une stratégie énergétique visant à atténuer sa dépendance aux énergies fossiles et à développer des sources alternatives, notamment renouvelables. Cette stratégie a plusieurs objectifs clés :\n\n- **Part des énergies renouvelables** : Porter la part des sources renouvelables dans le mix électrique à **52%** d'ici 2030.\n- **Économies d'énergie** : Réaliser une économie d’énergie de **20%** d'ici 2030.\n- **Décarbonation** : À l'horizon 2050, viser une électricité décarbonée de **80%**.\n\nCes objectifs s'inscrivent dans le cadre de l'effort mondial de lutte contre le changement climatique et visent à réduire la dépendance énergétique du pays.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 22046.6
+    },
+    {
+      "question": "How does Morocco attract foreign direct investment?",
+      "ground_truth": "Morocco attracts FDI through free trade agreements, industrial zones (Tanger Med, Kenitra), competitive labor costs, geographic proximity to Europe, and political stability. Annual FDI averages 35 billion dirhams.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Morocco attracts foreign direct investment (FDI) through several key strategies:\n\n- **Stable Economic Environment**: Morocco offers a stable and predictable economic environment, which is attractive to foreign investors.\n- **Strategic Location**: The country's strategic location between Africa, Europe, and the Middle East makes it a gateway for businesses looking to expand into these markets.\n- **Investment Incentives**: The Moroccan government provides various incentives, including tax breaks, subsidies, and simplified administrative procedures to encourage FDI.\n- **Key Sectors**: FDI is particularly strong in sectors such as **industry** (27.1%), **real estate** (18.9%), and **trade** (10.8%).\n- **Major Investors**: France is the leading investor in Morocco, accounting for 26.4% of FDI, followed by the United Arab Emirates (12.2%) and Saudi Arabia (8.4%).\n\nThese factors collectively contribute to making Morocco an attractive destination for foreign direct investment.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 25140.9
+    },
+    {
+      "question": "What is the structure of Morocco's external debt?",
+      "ground_truth": "Morocco's external debt is primarily owed to multilateral institutions (World Bank, IMF, AfDB) and European bilateral creditors. External debt represents about 25% of total public debt, with the rest being domestic.",
+      "category": "macro",
+      "language": "en",
+      "answer": "La structure de la dette extérieure du Maroc est la suivante :\n\n- **Dette intérieure** : 75,1% de l'encours total, soit 811,8 milliards de dirhams.\n- **Dette extérieure** : 24,9% de l'encours total, soit 269,8 milliards de dirhams.\n\nCes chiffres montrent que la dette intérieure domine largement la dette extérieure, avec une progression d'environ 6,4% pour chacune des deux composantes.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 22180.2
+    },
+    {
+      "question": "How is Morocco's industrial sector performing?",
+      "ground_truth": "Morocco's industrial sector contributes about 25% of GDP, led by automotive (700,000+ vehicles/year), aerospace, pharmaceuticals, and food processing. The automotive sector is now the top export earner.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Morocco's industrial sector is showing signs of recovery and resilience. Key points include:\n\n- **Production Capacity**: The utilization of production capacities has been above its historical average for the second consecutive month, reaching **76%**. This indicates a continued recovery in certain export-oriented industrial branches.\n- **Economic Growth**: Non-agricultural GDP is expected to be more resilient, driven by a recovery in domestic demand and a stronger industrial sector. The industrial sector is projected to contribute to economic growth, which is expected to pick up from 2025 onwards.\n- **Challenges**: Despite these positive trends, the productivity performance of the private sector, particularly larger firms, has been lackluster. There is a need to improve allocative efficiency and support the growth of high-growth firms, which are crucial for job creation.\n\nOverall, the industrial sector is performing well, but there are areas that require attention to sustain and enhance this performance.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 24433.7
+    },
+    {
+      "question": "What is the role of remittances in Morocco's economy?",
+      "ground_truth": "Remittances from Moroccans abroad represent about 7-8% of GDP, exceeding 100 billion dirhams annually. They constitute a major source of foreign currency and support household consumption.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Remittances from Moroccans residing abroad (MRE) play a crucial role in Morocco's economy. In 2024, remittances supported the strong performance of final household consumption, which increased by **3.4%**. This growth in consumption was driven by wage increases in both the private and public sectors, the launch of direct social assistance, and the solid performance of remittances. Remittances thus contribute significantly to household purchasing power and overall economic growth.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 21400.2
+    },
+    {
+      "question": "How is Morocco managing water scarcity?",
+      "ground_truth": "Morocco addresses water scarcity through dam construction, desalination plants (Casablanca mega-project), drip irrigation subsidies, and inter-basin water transfers. Investment exceeds 140 billion dirhams by 2027.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Morocco is facing significant water scarcity, with available water resources per capita projected to fall to around 500 m³ per inhabitant by 2050, approaching the \"extreme water scarcity\" threshold of 500 m³ per inhabitant. To address this, the country is focusing on several key strategies:\n\n- **Investing in Resilient Water Infrastructure**: The International Monetary Fund (IMF) recommends increasing investments in resilient water infrastructure to reduce the economic impact of water scarcity. This could potentially reduce GDP losses by nearly 60% and mitigate the impact on public debt.\n\n- **Developing Non-Conventional Water Resources**: Morocco is exploring the potential of non-conventional water resources, such as desalination of seawater, to augment its water supply. However, the current production capacity in this area is limited.\n\n- **Adapting to Climate Change**: The country is also grappling with the accelerating effects of climate change, including water shortages, consecutive droughts, and increased frequency of floods. These challenges are expected to affect macro-financial conditions, and international recommendations emphasize the need for comprehensive adaptation measures.\n\nThese strategies aim to enhance water security and resilience in the face of growing water scarcity.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 31744.7
+    },
+    {
+      "question": "What are Morocco's main trading partners?",
+      "ground_truth": "Morocco's main trading partners are the European Union (especially France and Spain) for exports, and China, the US, and the EU for imports. The EU accounts for about 60% of Morocco's trade.",
+      "category": "macro",
+      "language": "en",
+      "answer": "Morocco's main trading partners are:\n\n- **France**\n- **Spain**\n- **Germany**\n- **Italy**\n- **Benelux**\n- **United States**\n- **Netherlands**\n- **United Kingdom**\n\nThese countries collectively account for a significant portion of Morocco's trade.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 23045.6
+    },
+    {
+      "question": "How is digital transformation impacting Morocco's financial sector?",
+      "ground_truth": "Digital transformation has led to 30+ million mobile payment accounts, growth of fintech startups, bank digitalization programs, and the development of Casablanca Finance City as a regional hub.",
+      "category": "macro",
+      "language": "en",
+      "answer": "La transformation digitale a un impact significatif sur le secteur financier du Maroc, notamment à travers :\n\n- **Amélioration de l'inclusion financière** : Le Maroc s'est engagé dans une stratégie nationale de l'inclusion financière visant à faire bénéficier une plus grande partie de la population, particuliers et entreprises, des avantages de la digitalisation. Cette stratégie vise à renforcer les efforts pour accompagner les chantiers nationaux en faveur de l'inclusion sociale et économique.\n\n- **Développement des canaux digitaux** : Des webinaires et sessions de discussion ont été organisés pour mettre en lumière les réalisations de l'écosystème dans le cadre du déploiement des canaux digitaux. Ces initiatives soulignent les défis majeurs tels que le réseau d'acceptation, l'interopérabilité, et la perception des populations cibles.\n\n- **Accès aux services financiers dans les zones rurales** : Des discussions ont été menées sur comment développer la capillarité du réseau d'acceptation et de distribution du paiement mobile, ainsi que sur comment faciliter l'accès aux populations rurales qui ne disposent pas de smartphones ni d'un accès régulier à internet.\n\n- **Rôle des projets sociaux** : Le gouvernement explore des moyens d'utiliser les projets sociaux pour accélérer l'inclusion financière des groupes exclus de la population, notamment en tirant profit des initiatives de protection sociale et de développement économique.\n\n- **Renforcement des capacités des institutions financières** : Des webinaires ont également été consacrés à la transformation du secteur de la microfinance, mettant en lumière les défis et les opportunités de cette transformation, ainsi que les mesures d'accompagnement nécessaires pour sécuriser le processus.\n\n- **Innovation et Fintech** : L'AMMC (Autorité Marocaine du Marché des Capitaux) a renforcé sa présence dans des événements de référence dédiés à la Fintech et à l'innovation, contribuant à la création de l'association « Morocco Fintech Center ».\n\nCes initiatives visent à créer un écosystème financier plus inclusif, innovant, et résilient, en alignant les efforts sur les priorités nationales en termes de protection sociale, de digitalisation, et d'autonomisation économique.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 38270.6
+    },
+    {
+      "question": "What are the listing requirements for the Casablanca Stock Exchange?",
+      "ground_truth": "Listing requirements include minimum capital, 3 years of audited financial statements, minimum free float, and obtaining AMMC approval on the information memorandum for investors.",
+      "category": "market",
+      "language": "en",
+      "answer": "The listing requirements for the Casablanca Stock Exchange are not explicitly detailed in the provided context. However, the context does mention some relevant points about the market and its operations:\n\n- **Market Classification**: As of November 2013, MSCI reclassified the Casablanca Stock Exchange as a \"frontier\" market due to liquidity conditions. This classification affects the eligibility criteria for inclusion in certain indices.\n- **Risk Management**: Companies listed on the Casablanca Stock Exchange must adhere to risk management procedures, including maintaining a risk coverage ratio below 100%.\n- **Operational Guarantees**: The exchange has mechanisms in place to ensure the smooth completion of transactions, including guarantees and procedures for resolving delivery or payment defaults.\n\nFor detailed listing requirements, you may need to refer to the official guidelines provided by the Casablanca Stock Exchange or the Moroccan Capital Market Authority (AMMC).",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 25075.0
+    },
+    {
+      "question": "How does the Moroccan bond market function?",
+      "ground_truth": "The Moroccan bond market operates through Treasury bill auctions organized by Bank Al-Maghrib, supplemented by corporate bond issuances. Maturities range from 13 weeks to 30 years.",
+      "category": "market",
+      "language": "en",
+      "answer": "Le marché obligataire marocain fonctionne de manière structurée et réglementée. Voici les principaux aspects :\n\n- **Volume Transactionnel** : Au deuxième trimestre 2018, le marché obligataire a enregistré un volume transactionnel de **3,5 millions de dirhams**, réalisé exclusivement sur le marché de blocs. Les transactions ont été opérées à l'achat par les OPCVM (Organismes de Placement Collectif en Valeurs Mobilières) et à la vente par les personnes morales marocaines.\n\n- **Types d'Instruments** : Depuis quelques années, des obligations subordonnées perpétuelles ont émergé sur le marché marocain. Ces obligations présentent des caractéristiques hybrides entre titres de dette et fonds propres, les rendant éligibles pour être considérées comme des fonds propres par les régulateurs prudentiels et les agences de notation.\n\n- **Prêt de Titres** : Le prêt de titres est une pratique importante sur le marché marocain, réglementée depuis 2014. Les principales caractéristiques incluent :\n  - **Cadre Légal** : Réglementé par la loi n° 45-12 relative au prêt de titres et divers textes réglementaires.\n  - **Pratique** : Les opérations de prêt sont effectuées par des intermédiaires habilités (banques) et doivent respecter des règles de traçabilité, de conformité, et de garantie.\n  - **Durée** : La durée du prêt est limitée à une année.\n  - **Volume** : En 2016, le volume global des opérations de prêt a atteint **325 milliards de dirhams**.\n  - **Acteurs Principaux** : Les banques et les OPCVM sont les principaux acteurs, avec une concentration sur les bons du Trésor.\n\nCes éléments structurent le marché obligataire marocain, assurant sa liquidité et sa stabilité.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 40816.3
+    },
+    {
+      "question": "What is the performance of Moroccan banks' stocks?",
+      "ground_truth": "Moroccan banking stocks represent over 30% of total market capitalization. The big three (Attijariwafa Bank, BCP, Bank of Africa) show strong dividend yields averaging 3-4% and P/E ratios of 15-20x.",
+      "category": "market",
+      "language": "en",
+      "answer": "The performance of Moroccan banks' stocks has been positive in recent years. In 2024, the main stock market indices, including the MASI, MASI 20, and FTSE CSE Morocco 15, showed a **trend of growth**. Specifically:\n\n- The **MASI** index increased by **22.16%**.\n- The **MASI 20** index rose by **20.53%**.\n- The **FTSE CSE Morocco 15** index gained **21.76%**.\n\nThese positive performances reflect a strong market environment, with the indices reaching their highest levels in November 2024. While there were some adjustments during the year, the overall trend remained bullish.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 31912.1
+    },
+    {
+      "question": "How liquid is the Casablanca Stock Exchange?",
+      "ground_truth": "The Casablanca Stock Exchange has a turnover ratio of about 9-10%, with average daily trading volumes of 300-400 million dirhams. Liquidity is concentrated in the top 20 stocks (MASI 20).",
+      "category": "market",
+      "language": "en",
+      "answer": "The liquidity of the Casablanca Stock Exchange has been relatively stable over the past few years. The liquidity ratio was **8.80%** in 2022 and **8.88%** in 2023, indicating a consistent level of liquidity. In 2024, the liquidity ratio increased to **12.45%**, which is the highest level since 2011. This suggests an improvement in market liquidity in 2024.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 23432.6
+    },
+    {
+      "question": "What is the role of institutional investors in Morocco's capital markets?",
+      "ground_truth": "Institutional investors (insurance companies, pension funds, OPCVM) dominate Morocco's capital markets, holding over 70% of Treasury bonds and a significant share of listed equities.",
+      "category": "market",
+      "language": "en",
+      "answer": "Institutional investors play a significant role in Morocco's capital markets, particularly in the Bourse de Casablanca. Here are the key points:\n\n- **Dominance in Trading Volume**: Institutional investors, such as OPCVM (Organismes de Placement Collectif en Valeurs Mobilières) and Moroccan legal entities, dominate the trading volume. In the first quarter of 2022, OPCVMs accounted for **42%** of the trading volume on the central market, while Moroccan legal entities represented **27%**.\n\n- **Stability and Liquidity**: These investors contribute to market stability and liquidity. For example, in 2022, OPCVMs and Moroccan legal entities together accounted for **78%** of the trading volume on the central market, a figure that remained relatively stable compared to the previous year.\n\n- **Impact on Market Trends**: The activities of institutional investors can influence market trends. For instance, the volume of trades on the central and block markets increased by **13.3%** to 10.2 billion dirhams in the first quarter of 2022 compared to the same period in 2021.\n\n- **Diverse Participation**: While institutional investors are the primary drivers, other categories such as Moroccan and foreign individuals also participate, though to a lesser extent. Moroccan individuals accounted for **12%** of the trading volume in 2022, down from **14%** in 2021.\n\n- **Transaction Volumes**: The table below shows the transaction volumes for different categories of investors on the central market in 2021 and 2022:\n\n| Category | 2021 (MDH) | 2022 (MDH) | Variation |\n|----------|------------|------------|-----------|\n| **OPCVM** | 16,220.6   | 10,702.5   | -34.0%    |\n| **Moroccan Legal Entities** | 16,264.3 | 14,646.3 | -9.9%     |\n| **Moroccan Individuals** | 5,624.8  | 4,250.8  | -24.4%    |\n| **Foreign Legal Entities** | 2,174.2 | 2,204.9 | +1.4%     |\n| **Foreign Individuals** | 38.8     | 33.8     | -12.8%    |\n| **Banking Network** | 494.8    | 585.5    | +18.3%    |\n\nIn summary, institutional investors are crucial for the functioning and development of Morocco's capital markets, providing significant liquidity and stability.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 42716.0
+    },
+    {
+      "question": "What is Casablanca Finance City?",
+      "ground_truth": "Casablanca Finance City (CFC) is a financial hub offering preferential tax rates (0% corporate tax for 5 years, then 8.75%), streamlined regulations, and positioning Casablanca as a gateway for investment in Africa.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "Casablanca Finance City (CFC) est une initiative visant à transformer Casablanca en une place financière internationale. Elle offre un cadre juridique et fiscal avantageux pour les entreprises étrangères et marocaines, notamment :\n\n- **Taux réduit d’impôt** : Un taux d’impôt réduit de **10%** est accordé aux sociétés non résidentes ayant des bureaux de représentation dans le cadre du statut CFC.\n- **Soutien financier** : Bank Al-Maghrib a accordé à Casablanca Finance City Authority une avance en comptes courants d’associés d’un montant de **141 549 KDH** en août 2016.\n- **Investissements** : Les valeurs immobilisées brutes de Casablanca Finance City Authority ont augmenté de **7%** en 2016, passant de **6 996 955 KDH** à **7 453 023 KDH**.\n\nCes mesures visent à renforcer la compétitivité de Casablanca en tant que hub financier régional et international.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 25212.5
+    },
+    {
+      "question": "How does Morocco's social protection system work?",
+      "ground_truth": "Morocco is implementing a generalized social protection reform covering health insurance (AMO), family allowances, pensions, and unemployment benefits, aiming to cover all citizens by 2025.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "Morocco's social protection system is designed to provide support and protection to its citizens, particularly the most vulnerable. The key components of the system include:\n\n- **Programs for Emergency Monetary Transfers**: These are designed to support informal workers and mitigate the impact of crises, such as the COVID-19 pandemic.\n- **Reform of the Social Protection System**: The government is working on a modern and efficient strategy for social protection, which includes:\n  - **Fiscal Space and Institutional Framework**: Ensuring adequate fiscal space and a robust institutional framework to support social protection programs.\n  - **Pilot Programs**: Implementing pilot programs for harmonized monetary transfers based on modern implementation systems.\n  - **Analysis and Reform**: Conducting analyses and reforms of the payment infrastructure to enhance the effectiveness of social protection measures.\n- **Monitoring and Evaluation**: Strengthening the monitoring and evaluation mechanisms to ensure better targeting, digitalization, and coordination of social protection efforts.\n\nThese initiatives are part of a broader set of structural reforms aimed at improving public finances and economic growth, as outlined in the 2026 Finance Bill.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 25677.2
+    },
+    {
+      "question": "What is the role of CDG in Morocco's financial system?",
+      "ground_truth": "The Caisse de Dépôt et de Gestion (CDG) is a public financial institution managing long-term savings (notary deposits, pension funds) and investing in strategic infrastructure and development projects.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "The **Caisse de Dépôt et de Gestion (CDG)** plays a crucial role in Morocco's financial system. It is a public financial institution responsible for managing and investing public funds. The CDG's primary functions include:\n\n- **Managing Public Savings**: The CDG manages and invests public savings, including pension funds and other government assets.\n- **Investing in Strategic Sectors**: It invests in key economic sectors to support national development and economic growth.\n- **Providing Financial Services**: The CDG offers various financial services and supports the development of the private sector through investments and partnerships.\n\nThese roles are essential for enhancing the performance and stability of Morocco's financial system.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 20067.2
+    },
+    {
+      "question": "How does Morocco's tax system work for businesses?",
+      "ground_truth": "Morocco's corporate tax (IS) has progressive rates: 10% for profits under 300K MAD, 20% up to 1M MAD, and 31% above. Financial institutions and large companies pay 37%. The PLF 2025 introduced further reforms.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "Le système fiscal des entreprises au Maroc est structuré de manière progressive, avec des taux d'imposition qui augmentent en fonction des bénéfices nets des entreprises. Voici les principaux éléments :\n\n- **Taux d'Impôt sur les Sociétés (IS)** : \n  - **Progressif** : Jusqu'en 2023, le système était progressif, avec des taux qui augmentaient en fonction des bénéfices nets des entreprises.\n  - **Uniformisation** : La réforme fiscale en cours vise à converger vers un **taux uniforme de 20% d'ici 2026**.\n\n- **Incitations Fiscales** :\n  - Le Maroc a mis en place des incitations fiscales pour encourager certaines activités, notamment dans les secteurs à forte valeur ajoutée.\n  - Ces incitations visent à rationaliser les dépenses fiscales et à évaluer leur impact sur l'efficacité économique.\n\n- **Concurrence Informelle** :\n  - Le secteur informel est une contrainte majeure pour les entreprises formelles, avec près de 77% de la population active employée dans ce secteur.\n  - Cette concurrence peut affecter négativement la productivité et la croissance des entreprises formelles.\n\n- **Accès au Crédit** :\n  - L'accès au crédit est asymétrique, avec des contraintes plus importantes pour les petites et jeunes entreprises.\n  - Seules 16% des entreprises comptant moins de 4 employés et 50% de celles comptant entre 4 et 10 employés ont un contrat de crédit actif.\n\nCes éléments montrent que le système fiscal marocain pour les entreprises est en cours de réforme pour améliorer la compétitivité et la croissance économique.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 31275.9
+    },
+    {
+      "question": "What is the National Financial Inclusion Strategy?",
+      "ground_truth": "Morocco's National Financial Inclusion Strategy targets 90% adult access to financial services by 2030, through mobile banking expansion, payment institutions, microfinance, and financial education programs.",
+      "category": "institutional",
+      "language": "en",
+      "answer": "La **Stratégie Nationale d’Inclusion Financière** a été adoptée en 2019. Elle est structurée autour de 7 leviers et vise à améliorer l'accès aux services financiers pour les populations défavorisées, notamment en milieu rural, chez les femmes sans emploi, et les personnes à besoins spécifiques. Les objectifs principaux de cette stratégie incluent :\n\n- **Croissance économique** : Atteindre un taux de croissance de 4%.\n- **Emploi** : Créer au moins 1 million de postes d’emploi net.\n- **Taux d’activité des femmes** : Augmenter le taux d’activité des femmes à plus de 30%.\n- **Réduction des disparités** : Réduire les disparités sociales et territoriales à moins de 39%.\n- **Revenu de dignité** : Assurer un revenu de 1.000 dirhams pour les personnes âgées de plus de 65 ans.\n- **Allocations familiales** : Généraliser les allocations familiales à 300 dirhams par mois pour chaque enfant.\n- **Indemnité pour perte d’emploi** : Généraliser l’indemnité pour perte d’emploi à toute personne disposant d’un emploi stable.\n- **Allocation de naissance** : Créer une allocation de 2.000 dirhams pour la naissance du premier enfant et 1.000 dirhams pour le deuxième.\n- **Soutien aux associations** : Accorder un budget annuel de 500 millions de dirhams aux associations œuvrant dans le domaine du handicap.\n- **Emplois directs** : Créer 250.000 postes d’emploi direct à travers des chantiers publics.\n- **Production locale** : Encourager la production locale pour réduire les importations et créer plus de 100.000 emplois.\n- **Secteur de la pêche** : Créer plus de 100.000 postes d’emploi direct et indirect dans le secteur de la pêche et de la pisciculture.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 2,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 41338.7
+    },
+    {
+      "question": "ما هي أهم القطاعات الاقتصادية في المغرب؟",
+      "ground_truth": "أهم القطاعات الاقتصادية في المغرب هي الخدمات (57% من الناتج المحلي)، الصناعة (25%)، والفلاحة (12-14%). يتميز قطاع السيارات بنمو قوي كأول قطاع تصديري.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "القطاعات الاقتصادية الرئيسية في المغرب تشمل:\n\n- **الصناعة**: تساهم بشكل كبير في الناتج المحلي الإجمالي، خاصة قطاعات الصناعات الإلكترونية والكهربائية، والسيارات، والطيران.\n- **السياحة**: تعتبر من أهم القطاعات الداعمة للاقتصاد المغربي، حيث ساهمت بشكل كبير في تعافي الاقتصاد بعد جائحة كوفيد-19.\n- **الزراعة**: تلعب دورًا مهمًا في الاقتصاد المغربي، خاصة في إنتاج الحبوب والخضروات والفواكه.\n- **الخدمات اللوجستية والنقل**: تساهم بشكل كبير في النمو الاقتصادي، خاصة في المناطق مثل طنجة التي تتميز ببنية تحتية متطورة.\n- **التعدين**: يشمل قطاعات مثل الفوسفات، والتي تشكل جزءًا مهمًا من الصادرات المغربية.\n- **التجارة**: تشكل نسبة كبيرة من النشاط الاقتصادي، حيث بلغت نسبة مساهمتها في عام 2023 حوالي 50%.\n\nهذه القطاعات تساهم بشكل كبير في النمو الاقتصادي وتوفير فرص العمل في المغرب.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 38050.0
+    },
+    {
+      "question": "كيف يعمل نظام التقاعد في المغرب؟",
+      "ground_truth": "يعمل نظام التقاعد في المغرب عبر عدة صناديق: الصندوق الوطني للضمان الاجتماعي (CNSS) للقطاع الخاص، الصندوق المغربي للتقاعد (CMR) للموظفين، والنظام الجماعي لمنح رواتب التقاعد (RCAR).",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "نظام التقاعد في المغرب يتكون من عدة أطراف رئيسية:\n\n- **الصندوق المغربي للتقاعد (CMR)**: يُعنى بتقاعد الموظفين المدنيين والعسكريين.\n- **الصندوق الوطني للضمان الاجتماعي (CNSS)**: يُعنى بتقاعد العمال في القطاع الخاص.\n- **النظام الجماعي لمنح المعاشات (RCAR)**: يُعنى بتقاعد العمال في الشركات الخاصة.\n\nالنظام يواجه تحديات فيما يتعلق بالاستدامة على المدى الطويل، حيث أن آلية اكتساب حقوق التقاعد تتميز بسخاء مفرط للمسارات الوسطى، مما يؤدي إلى زيادة نسبة الأعباء المالية. على سبيل المثال، معدل الأجر السنوي المتوسط للـ15 سنة الأولى من الاشتراك يبلغ **3.33%**، مما يجعل نسبة المزايا إلى الاشتراكات تتجاوز المستويات المقبولة.\n\nلضمان استدامة النظام، يتم العمل على إصلاحات تشمل مراجعة آليات اكتساب حقوق التقاعد وتحسين إدارة الموارد المالية.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 5,
+        "completeness": 5,
+        "language": 1
+      },
+      "latency_ms": 33860.7
+    },
+    {
+      "question": "ما هو دور صندوق الإيداع والتدبير؟",
+      "ground_truth": "صندوق الإيداع والتدبير (CDG) مؤسسة مالية عمومية تدير الادخار طويل الأمد (ودائع الموثقين، صناديق التقاعد) وتستثمر في المشاريع الاستراتيجية والبنية التحتية.",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "**صندوق الإيداع والتدبير** يلعب دورًا مهمًا في النظام المالي المغربي. وفقًا للمعلومات المتاحة:\n\n- **إدارة الأموال**: يُعنى صندوق الإيداع والتدبير بإدارة الأموال المودعة لديه، والتي تشمل الأموال العامة والخاصة.\n- **ضمانات**: يقوم الصندوق أيضًا بتقديم ضمانات مالية لدعم المشاريع والاستثمارات المختلفة.\n- **رقابة وتنظيم**: يتم رقابة الصندوق وتنظيمه من خلال مراقبة مستندات وزيارات ميدانية لضمان الامتثال للقوانين واللوائح المالية.\n\nهذه الأدوار تساهم في تعزيز الاستقرار المالي وتوفير الدعم اللازم للمشاريع والمبادرات الاقتصادية في المغرب.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 23831.7
+    },
+    {
+      "question": "ما هي السياسة الطاقية للمغرب؟",
+      "ground_truth": "تهدف السياسة الطاقية للمغرب إلى بلوغ 52% من الطاقات المتجددة بحلول 2030، عبر استثمارات ضخمة في الطاقة الشمسية (مركب نور) والريحية والكهرومائية.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "عذراً، ولكن المعلومات المتوفرة لا تشمل تفاصيل حول السياسة الطاقية للمغرب. إذا كنت ترغب في الحصول على معلومات حالية حول هذا الموضوع، يمكنني إجراء بحث عبر الإنترنت للحصول على أحدث البيانات. هل ترغب في ذلك؟",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 24045.0
+    },
+    {
+      "question": "كيف يتم تنظيم سوق التأمينات بالمغرب؟",
+      "ground_truth": "يخضع قطاع التأمينات لرقابة هيئة مراقبة التأمينات والاحتياط الاجتماعي (ACAPS) التي تسهر على احترام المعايير الاحترازية وحماية المؤمن لهم.",
+      "category": "regulatory",
+      "language": "ar",
+      "answer": "سوق التأمينات بالمغرب يتم تنظيمه من خلال مجموعة من القواعد والتدابير الرقابية التي تهدف إلى ضمان سلامة وفعالية السوق. هذه القواعد تشمل:\n\n- **قواعد مالية حذرة** تطبق على شركات التأمين، مثل متطلبات رأس المال الأدنى.\n- **ضمانات مالية** لحماية حقوق العملاء وضمان استقرار السوق.\n\nيتم تطبيق هذه القواعد من خلال هيئة الرقابة على الأسواق المالية (AMMC) وغيرها من الجهات الرقابية المعنية.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 26311.3
+    },
+    {
+      "question": "ما هو وضع الشمول المالي في المغرب؟",
+      "ground_truth": "تطور الشمول المالي في المغرب عبر الدفع عبر الهاتف المحمول (أكثر من 30 مليون حساب)، وانتشار مؤسسات الأداء، وتوسيع التمويل الأصغر، مع استهداف 90% من البالغين بحلول 2030.",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "وضع الشمول المالي في المغرب يشمل عدة جوانب، ولكن المعلومات المتوفرة في السياق المقدم لا تقدم تفاصيل محددة حول الشمول المالي بشكل شامل. ومع ذلك، يمكن الإشارة إلى بعض النقاط المهمة:\n\n- **التعاون بين الجهات المعنية**: تم عرض نتائج مهمة الشمول المالي في حضور الجهات المعنية مثل **الوزارة المكلفة بالمالية**، **الهيئة المغربية لسوق الرساميل (AMMC)**، و**بورصة الدار البيضاء**. هذا يدل على وجود تعاون بين هذه الجهات لتعزيز الشمول المالي.\n\n- **التطورات المالية**: هناك إشارة إلى تطورات مالية في المغرب، بما في ذلك تطوير أدوات التشخيص الجديدة وتعزيز البنية التحتية المالية.\n\nللحصول على معلومات أكثر تفصيلاً حول الشمول المالي في المغرب، يمكن الرجوع إلى تقارير مفصلة من بنك المغرب أو الهيئة المغربية لسوق الرساميل.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 23245.1
+    },
+    {
+      "question": "ما هي خصائص النظام الضريبي المغربي للشركات؟",
+      "ground_truth": "الضريبة على الشركات (IS) بمعدلات تصاعدية: 10% للأرباح أقل من 300 ألف درهم، 20% حتى مليون درهم، و31% فوق ذلك. المؤسسات المالية والشركات الكبرى تؤدي 37%.",
+      "category": "regulatory",
+      "language": "ar",
+      "answer": "خصائص النظام الضريبي المغربي للشركات تشمل:\n\n- **الضريبة على الشركات (IS)**: تُفرض على الأرباح الصافية للشركات بسعر ثابت يبلغ **30%**.\n- **ضريبة القيمة المضافة (TVA)**: تُفرض على السلع والخدمات المستوردة والمحلية، وتتراوح نسبتها بين **7%** و **20%**.\n- **الإعفاءات الضريبية**: تتوفر إعفاءات ضريبية للشركات الصغيرة والمتوسطة (TPME) والشركات الجديدة في بعض القطاعات الاستراتيجية.\n- **الحوافز الضريبية**: تقدم الحكومة حوافز ضريبية للشركات التي تستثمر في المناطق النائية أو في قطاعات معينة مثل الصناعة والزراعة.\n\nهذه الخصائص تهدف إلى تشجيع الاستثمار وتعزيز النمو الاقتصادي في المغرب.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 30582.7
+    },
+    {
+      "question": "كيف يدير المغرب دينه العمومي؟",
+      "ground_truth": "يدير المغرب دينه العمومي من خلال مزيج من سندات الخزينة المحلية (75% من الدين الإجمالي) والاقتراض الخارجي من المؤسسات المتعددة الأطراف والأسواق الدولية.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "المغرب يدير دينه العمومي من خلال عدة آليات وسياسات مالية، بما في ذلك:\n\n- **الاستراتيجية المالية**: تضع الحكومة المغربية استراتيجيات مالية طويلة المدى لضمان استدامة الدين العمومي.\n- **الرقابة والتدقيق**: تقوم **المحكمة العليا** (Cour des Comptes) بدور رئيسي في مراقبة وإدارة الدين العمومي، من خلال تقييم السياسات المالية والتأكد من شفافية وإدارة الدين بشكل فعال.\n- **الإشراف البنكي**: يلعب **بنك المغرب** دورًا مهمًا في إدارة الدين العمومي، من خلال الإشراف على السياسات النقدية وضمان استقرار الاقتصاد الكلي.\n- **الخطط السنوية**: تصدر الحكومة المغربية ميزانيات سنوية تتضمن خططًا مفصلة لجمع الديون وإدارتها، مع التركيز على تقليل الكلف وتحسين الكفاءة المالية.\n- **الشفافية والمساءلة**: يتم نشر تقارير دورية حول الديون العمومية، مما يتيح للمواطنين والجهات المعنية متابعة أداء الحكومة في إدارة الدين.\n\nهذه الآليات تساعد المغرب على الحفاظ على استدامة الدين العمومي وضمان استقرار الاقتصاد الكلي.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 3,
+        "completeness": 1,
+        "language": 1
+      },
+      "latency_ms": 42800.4
+    },
+    {
+      "question": "ما هو تأثير التحول الرقمي على القطاع المالي المغربي؟",
+      "ground_truth": "أدى التحول الرقمي إلى ظهور أكثر من 30 مليون حساب دفع عبر الهاتف، ونمو الشركات الناشئة في التكنولوجيا المالية، وبرامج رقمنة البنوك.",
+      "category": "market",
+      "language": "ar",
+      "answer": "التحول الرقمي أثر بشكل كبير على القطاع المالي المغربي من خلال عدة جوانب:\n\n- **تعزيز الشمول المالي**: أدى التحول الرقمي إلى زيادة الوصول إلى الخدمات المالية، خاصة من خلال استخدام التكنولوجيا المالية مثل التطبيقات المصرفية وخدمات الدفع المتنقلة. هذا ساعد في تقليل الفجوة بين المناطق الحضرية والريفية.\n\n- **تحسين الكفاءة والخدمات**: ساهمت التقنيات الرقمية في تحسين كفاءة العمليات المصرفية، مثل المعاملات المالية والخدمات المصرفية عبر الإنترنت، مما أدى إلى تقليل التكاليف وزيادة سرعة المعاملات.\n\n- **زيادة الأمن والشفافية**: أدى التحول الرقمي إلى تحسين آليات الأمن والرقابة في القطاع المالي، مما زاد من الثقة في النظام المالي.\n\n- **تحديات وفرص**: على الرغم من الفوائد، لا تزال هناك تحديات مثل الحاجة إلى تطوير البنية التحتية الرقمية وزيادة الوعي الرقمي بين المستخدمين. كما أن هناك فرصاً كبيرة لتطوير منتجات وخدمات مالية جديدة تلبي احتياجات العملاء بشكل أفضل.\n\n- **دور المؤسسات**: لعبت مؤسسات مثل بنك المغرب والبنك العالمي ومنظمة التعاون والتنمية الاقتصادية دورًا مهمًا في دعم التحول الرقمي من خلال تقديم الخبرات والدعم التقني.\n\nهذه الجوانب تظهر كيف أن التحول الرقمي يساهم في تطوير وتحديث القطاع المالي المغربي، مما يعزز النمو الاقتصادي والاستقرار المالي.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 37751.4
+    },
+    {
+      "question": "ما هي آفاق قطاع السيارات في المغرب؟",
+      "ground_truth": "أصبح قطاع السيارات أول قطاع تصديري بالمغرب بإنتاج يفوق 700 ألف سيارة سنوياً، مستفيداً من اتفاقيات التبادل الحر والقرب الجغرافي من أوروبا ومنظومة تضم أكثر من 250 مصنعاً للمكونات.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "قطاع السيارات في المغرب شهد نمواً قوياً خلال السنوات الأخيرة، حيث أصبح القطاع في المرتبة الأولى من حيث الصادرات الوطنية منذ عام 2014. ومع ذلك، أثرت جائحة كوفيد-19 على القطاع، مما أدى إلى تراجع في الإنتاج والبيع. ومع ذلك، فإن السياسات الحكومية لدعم القطاع وتطوير الصناعات العالمية تساهم في تعزيز آفاق نموه المستقبلي.\n\n- **الإنتاج والبيع**: وفقًا للبيانات، شهد القطاع نمواً ملحوظًا في الإنتاج والبيع قبل الجائحة.\n- **الصادرات**: أصبح القطاع أول مصدر للصادرات الوطنية منذ عام 2014.\n- **التأثيرات السلبية**: الجائحة أثرت سلبيًا على أداء القطاع، مما أدى إلى تراجع في الإنتاج والبيع.\n- **السياسات الحكومية**: تساهم السياسات الحكومية في دعم وتطوير القطاع، مما يعزز آفاق نموه المستقبلي.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 23665.7
+    },
+    {
+      "question": "ما هي شروط إصدار السندات بالمغرب؟",
+      "ground_truth": "يجب على مصدري السندات الحصول على تنقيط مالي، ونشر مذكرة إعلامية مؤشر عليها من الهيئة المغربية لسوق الرساميل، واحترام نسب مالية محددة.",
+      "category": "regulatory",
+      "language": "ar",
+      "answer": "شروط إصدار السندات بالمغرب تشمل ما يلي:\n\n- **الرأسمال الاجتماعي**: يجب أن يكون الرأسمال الاجتماعي محرراً بالكامل.\n- **قيمة الإصدار**: يجب أن يكون الإصدار للسندات بقيمة إجمالية لا تقل عن **20 مليون درهم**، منها لا يقل عن **10 مليون درهم** لكل شريحة من الإصدار المقبول للتداول في سوق الأسهم.\n- **القوائم المالية**: يجب إعداد وتصديق القوائم المالية للسنتين السابقتين لتاريخ تقديم طلب الإدراج.\n- **المساعدة والاستشارات**: يجب إبرام اتفاقية مع شركة وساطة أو مستشار مالي لتقديم الاستشارات والمساعدة للصادر خلال فترة لا تقل عن **سنتين**.\n- **السيولة**: يجب إبرام عقد سيولة مع مزود سيولة لمدة لا تقل عن **سنتين**.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 29263.5
+    },
+    {
+      "question": "ما هو دور الوسطاء الماليين في بورصة الدار البيضاء؟",
+      "ground_truth": "يتولى الوسطاء الماليون (شركات البورصة) تنفيذ أوامر البيع والشراء نيابة عن المستثمرين، وتقديم خدمات الاستشارة والتدبير المالي، تحت إشراف الهيئة المغربية لسوق الرساميل.",
+      "category": "market",
+      "language": "ar",
+      "answer": "**دور الوسطاء الماليين في بورصة الدار البيضاء يشمل ما يلي:**\n\n- **الوساطة في الصفقات:** الوسطاء الماليون يساعدون في تنفيذ الصفقات بين المشترين والبائعين، مما يضمن سلاسة وفعالية التداول في البورصة.\n- **إدارة المحافظ الاستثمارية:** يقومون بإدارة المحافظ الاستثمارية للعملاء، سواء كانوا أفراداً أو مؤسسات، ويوفر لهم الاستشارات المالية اللازمة.\n- **تقديم الاستشارات:** يقدمون المشورة للعملاء حول أفضل الاستثمارات والفرص المتاحة في السوق.\n- **الرقابة والتنظيم:** يساهمون في الرقابة على السوق من خلال الالتزام بالقوانين واللوائح المالية، مما يضمن النزاهة والشفافية في العمليات المالية.\n\nهذه الأدوار تساعد في تعزيز الثقة والاستقرار في بورصة الدار البيضاء.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 5,
+        "completeness": 4,
+        "language": 1
+      },
+      "latency_ms": 41507.8
+    },
+    {
+      "question": "Quel est le rôle de Maroclear dans le marché financier ?",
+      "ground_truth": "Maroclear est le dépositaire central des titres au Maroc. Il assure la conservation des valeurs mobilières, le règlement-livraison des transactions boursières et la gestion des opérations sur titres.",
+      "category": "institutional",
+      "language": "fr",
+      "answer": "Maroclear joue un rôle crucial dans le marché financier marocain. Ses principales missions sont :\n\n- **Conservation des instruments financiers** : Maroclear conserve les instruments financiers admis à ses opérations, facilite leur circulation et simplifie leur administration pour le compte de ses affiliés.\n- **Gestion du Système de Règlement – Livraison (SRT)** : Maroclear gère le système de Règlement – Livraison qui permet le dénouement des transactions financières, assurant ainsi la sécurité et l'efficacité des échanges.\n- **Administration des comptes courants** : Maroclear administre les comptes courants d’instruments financiers ouverts au nom de ses affiliés.\n- **Virements entre comptes** : Maroclear réalise des virements entre les comptes courants sur instruction de ses affiliés.\n- **Facilitation des droits attachés aux instruments financiers** : Maroclear met en œuvre des procédures pour faciliter l’exercice des droits attachés aux instruments financiers et l’encaissement des produits qu’ils génèrent.\n- **Codification des instruments financiers** : Maroclear attribue des codes ISIN (International Securities Identification Number) aux instruments financiers admis à ses opérations, conformément aux standards internationaux.\n\nCes missions font de Maroclear un acteur essentiel dans la phase post-négociation, assurant la fluidité et la sécurité des transactions financières, tant pour les négociations en bourse que pour les transactions de gré à gré.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 5,
+        "completeness": 5,
+        "language": 1
+      },
+      "latency_ms": 39327.1
+    },
+    {
+      "question": "What are the main challenges facing Morocco's agricultural sector?",
+      "ground_truth": "Main challenges include water scarcity and recurring droughts, land fragmentation, low mechanization rates, climate change vulnerability, and the need to modernize irrigation systems.",
+      "category": "macro",
+      "language": "en",
+      "answer": "The main challenges facing Morocco's agricultural sector include:\n\n- **Adverse Weather Conditions**: The agricultural sector is heavily dependent on weather conditions, and adverse weather, such as droughts, can significantly impact agricultural output. For example, the agricultural value added is projected to contract by 3.3 percent in 2024 due to adverse weather conditions during the 2023–24 campaign.\n- **Water Scarcity**: Water scarcity is a critical issue in Morocco, affecting the availability of water for irrigation and other agricultural activities. This challenge is exacerbated by climate change and the increasing demand for water resources.\n- **Economic Vulnerability**: The agricultural sector's performance can be volatile, leading to economic vulnerability. For instance, the sector's value added declined by 4.7 percent in the previous year, and it is expected to face further challenges in 2024.\n- **Job Losses in Rural Areas**: Despite the overall economic growth, the agricultural sector has seen a significant loss of jobs in rural areas, with almost 200 thousand jobs lost in 2023. This highlights the sector's struggle to maintain employment levels and support rural livelihoods.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 26076.4
+    },
+    {
+      "question": "Quels sont les mécanismes de titrisation au Maroc ?",
+      "ground_truth": "La titrisation au Maroc est encadrée par la loi et permet aux banques de transformer des créances en titres négociables. Les FPCT sont supervisés par l'AMMC.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Les mécanismes de titrisation au Maroc sont en cours de développement et de standardisation. Voici les principaux points à noter :\n\n- **Lancement d’une étude globale** : L’Autorité Marocaine du Marché des Capitaux (AMMC) a lancé en 2025 une étude globale sur la titrisation au Maroc. Cette étude vise à clarifier le cadre juridique et à standardiser les opérations de financement via la titrisation.\n\n- **Opération de titrisation synthétique** : Une opération de titrisation synthétique a été réalisée par «FT DAMANE TAMAYOUZ - Compartiment I». Cette opération a permis d'émettre des parts pour un montant de 125 millions de dirhams, entièrement souscrites, et a ouvert la voie à la titrisation synthétique au Maroc.\n\n- **Types de fonds de titrisation** : Au Maroc, il existe des Fonds de Placement Collectif en Titrisation (FPCT) qui permettent la titrisation de différents types d'actifs, tels que les créances hypothécaires et les risques de financement.\n\n- **Règles prudentielles et de contrôle** : Les opérations de titrisation sont encadrées par des règles prudentielles et de contrôle pour assurer la stabilité financière et la protection des investisseurs.\n\nCes mécanismes visent à diversifier les sources de financement et à proposer des solutions alternatives pour le développement des entreprises, notamment les TPME.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 32973.9
+    },
+    {
+      "question": "ما هو دور المركز المالي للدار البيضاء؟",
+      "ground_truth": "المركز المالي للدار البيضاء (CFC) هو قطب مالي يوفر امتيازات ضريبية ويهدف لجعل الدار البيضاء بوابة للاستثمار في إفريقيا.",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "**دور المركز المالي للدار البيضاء** يشمل عدة جوانب مهمة:\n\n- **تعزيز مكانة الدار البيضاء كمركز مالي إقليمي**: يعمل المركز على جذب الاستثمارات الأجنبية وتعزيز مكانة المغرب كوجهة مالية رئيسية في المنطقة.\n- **تطوير البنية التحتية المالية**: يساهم في تطوير البنية التحتية المالية والتقنية اللازمة لدعم الأنشطة المالية والبنكية.\n- **تشجيع الابتكار المالي**: يدعم الابتكار في المنتجات والخدمات المالية، مما يساعد على تحسين الكفاءة والتنافسية في القطاع المالي.\n- **تعزيز الشفافية والرقابة**: يعمل على تعزيز الشفافية والرقابة في السوق المالي، مما يزيد من الثقة لدى المستثمرين والعملاء.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 26756.0
+    },
+    {
+      "question": "Quelle est la stratégie du Maroc en matière de finance verte ?",
+      "ground_truth": "Le Maroc a émis des obligations vertes, établi des directives ESG via l'AMMC, et mobilisé plus de 1,2 milliard de dirhams en financements durables.",
+      "category": "market",
+      "language": "fr",
+      "answer": "La stratégie du Maroc en matière de finance verte est axée sur plusieurs axes principaux :\n\n- **Cadre réglementaire et gestion des risques climatiques** : Bank Al-Maghrib a publié en mars 2021 une directive pour la gestion des risques financiers liés au changement climatique et à l’environnement. Cette directive vise à mettre en place des dispositifs spécifiques pour la gestion de ces risques.\n\n- **Feuille de route globale** : Les autorités financières marocaines (Bank Al-Maghrib, ACAPS, AMMC) ont signé en octobre 2016 une feuille de route globale pour promouvoir une finance verte. Cette feuille de route vise à soutenir la transition vers une économie verte et durable.\n\n- **Secteur bancaire** : Les principales actions engagées incluent le développement d’offres de financement pour l’économie durable, l’émission de « green bonds » par certains établissements, et la prise en compte des risques environnementaux dans l’évaluation des projets de financement.\n\n- **Secteur des assurances** : L’ACAPS a conclu des conventions de coopération pour promouvoir les investissements dans les projets liés à l’environnement et au développement durable. Les compagnies d’assurance sont encouragées à adopter des principes environnementaux, sociaux et de gouvernance (ESG) dans leurs prises de décision.\n\n- **Marchés de capitaux** : L’AMMC a élaboré un guide de référence pour les institutions souhaitant émettre des « Green Bonds ». Des actions de sensibilisation ont également été menées pour promouvoir la prévention des risques environnementaux.\n\n- **Collaboration internationale** : L’AMMC collabore avec la Banque mondiale sur des projets visant à élaborer et mettre en œuvre une stratégie de finance climat, ainsi qu’à établir une taxonomie verte pour orienter les flux financiers vers des activités durables.",
+      "scores": {
+        "faithfulness": 4,
+        "relevancy": 5,
+        "completeness": 3,
+        "language": 1
+      },
+      "latency_ms": 36195.0
+    },
+    {
+      "question": "كيف يعمل سوق الرهن العقاري في المغرب؟",
+      "ground_truth": "يعمل سوق الرهن العقاري عبر البنوك التجارية ومؤسسات التمويل المتخصصة بمعدلات فائدة تتراوح بين 4% و6%.",
+      "category": "market",
+      "language": "ar",
+      "answer": "سوق الرهن العقاري في المغرب يعمل من خلال عدة آليات رئيسية:\n\n- **القروض العقارية**: تقدم البنوك والمؤسسات المالية قروضاً عقارية للمشترين لتمويل شراء العقارات. هذه القروض تكون عادة طويلة الأجل ومرتبطة بأسعار فائدة ثابتة أو متغيرة.\n\n- **الرهون العقارية**: يتم تسجيل الرهن العقاري على العقار كضمان للقرض. إذا فشل المقترض في سداد القرض، يمكن للبنك الاستيلاء على العقار وبيعه لاسترداد المبلغ المستحق.\n\n- **الضمانات والتأمين**: قد يطلب من المقترضين تقديم ضمانات إضافية أو التأمين على العقار لحماية البنك من المخاطر.\n\n- **الرقابة والتنظيم**: تخضع عمليات الرهن العقاري للرقابة من قبل بنك المغرب وهيئة أسواق الرساميل (AMMC) لضمان الشفافية والنزاهة في السوق.\n\n- **الأسواق الثانوية**: يمكن للبنوك بيع الرهون العقارية في الأسواق الثانوية لتحسين سيولتها وتقليل المخاطر.\n\nهذه الآليات تساعد في تنشيط سوق العقارات وتوفير فرص تمويل للمشترين.",
+      "scores": {
+        "faithfulness": 2,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 39907.6
+    },
+    {
+      "question": "Quel est le cadre juridique des fintechs au Maroc ?",
+      "ground_truth": "Les fintechs au Maroc sont encadrées par la loi bancaire. Bank Al-Maghrib délivre les agréments et supervise les activités de paiement mobile.",
+      "category": "regulatory",
+      "language": "fr",
+      "answer": "Le cadre juridique des fintechs au Maroc est en cours de développement et comprend plusieurs initiatives visant à encadrer et promouvoir ces innovations technologiques. Voici les principaux éléments :\n\n- **Régulation des services de paiement** : Bank Al-Maghrib a mis en place une circulaire qui encadre l'activité des établissements de paiement, régulant ainsi les fintechs opérant dans ce domaine.\n\n- **Financement collaboratif (Crowdfunding)** : Un projet de loi n°15-18 relatif au financement collaboratif a été élaboré par le Ministère de l'Économie et des Finances. Ce projet vise à :\n  - **Mobiliser de nouvelles sources de financement** pour les TPME et les jeunes porteurs de projets innovants.\n  - **Renforcer l'inclusion financière** des jeunes entrepreneurs.\n  - **Appuyer le développement économique et social**.\n  - **Canaliser l'épargne collective** vers de nouvelles opportunités.\n\n- **Rôle de l'AMMC** : L'Autorité Marocaine du Marché des Capitaux (AMMC) joue un rôle crucial dans l'encouragement de l'émergence d'acteurs innovants et dans la soutenance de la fintech et de l'innovation dans le paysage financier marocain. L'AMMC traite régulièrement des requêtes juridiques liées aux nouvelles technologies financières.\n\nCes initiatives visent à créer un écosystème propice au développement des fintechs tout en assurant la sécurité et la stabilité financière.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 38029.7
+    },
+    {
+      "question": "ما هو معدل البطالة في المغرب حسب الفئات العمرية؟",
+      "ground_truth": "بلغ معدل البطالة الإجمالي 13,3% في 2024، مع تباين كبير حسب الفئات: 35,8% لدى الشباب (15-24 سنة)، 19,2% لدى حاملي الشهادات، و7,5% في الوسط القروي مقابل 16,3% في الحضري.",
+      "category": "macro",
+      "language": "ar",
+      "answer": "معدل البطالة في المغرب حسب الفئات العمرية هو كالتالي:\n\n- **الشباب من سن 15 إلى 24 سنة**: معدل البطالة بلغ **39%** في المناطق الحضرية.\n- **الفئة العمرية من 25 إلى 34 سنة**: معدل البطالة بلغ **19.6%**.\n- **الفئة العمرية من 45 سنة فما فوق**: معدل البطالة بلغ **3.8%**.",
+      "scores": {
+        "faithfulness": 5,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 24377.2
+    },
+    {
+      "question": "ما هي آليات تمويل المقاولات الصغرى والمتوسطة بالمغرب؟",
+      "ground_truth": "تشمل آليات التمويل: القروض البنكية المدعومة عبر ضمانات CCG، صناديق رأس المال المخاطر، القروض الصغرى، والتمويل التشاركي (crowdfunding) المنظم بقانون 15-18.",
+      "category": "market",
+      "language": "ar",
+      "answer": "آليات تمويل المقاولات الصغرى والمتوسطة في المغرب تشمل عدة مصادر وقنوات، منها:\n\n- **القروض المصرفية**: توفر البنوك المغربية قروضاً موجهة خصيصاً للمقاولات الصغرى والمتوسطة، مع شروط ميسرة وفترة سداد مرنة.\n- **الدعم الحكومي**: تقدم الحكومة المغربية برامج دعم مالية وفنية للمقاولات الصغرى والمتوسطة، مثل منح التمويل الأولي وتقديم الضمانات الائتمانية.\n- **الاستثمار المباشر**: يمكن للمستثمرين الأفراد والمؤسسات الاستثمارية أن يساهموا في رأس مال المقاولات الصغرى والمتوسطة مقابل حصة في الملكية.\n- **الأسواق المالية**: يمكن للمقاولات الصغرى والمتوسطة أن تدرج في البورصة المغربية، مثل بورصة الدار البيضاء، للحصول على تمويل من خلال إصدار الأسهم والسندات.\n- **التمويل الجماعي (Crowdfunding)**: يتيح هذا النوع من التمويل للمقاولات الصغرى والمتوسطة جمع الأموال من مجموعة كبيرة من الأفراد عبر منصات الإنترنت.\n- **الصناديق الاستثمارية**: تقدم الصناديق الاستثمارية المتخصصة في دعم المقاولات الصغرى والمتوسطة تمويلاً ودعمًا فنيًا واداريًا.\n\nهذه الآليات تساعد في تنويع مصادر التمويل وتوفير فرص أكبر للمقاولات الصغرى والمتوسطة لنمو واستدامة أعمالها.",
+      "scores": {
+        "faithfulness": 1,
+        "relevancy": 4,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 37253.1
+    },
+    {
+      "question": "كيف يعمل نظام التقاعد بالمغرب؟",
+      "ground_truth": "يعمل نظام التقاعد عبر عدة صناديق: الصندوق الوطني للضمان الاجتماعي (CNSS) للقطاع الخاص، الصندوق المغربي للتقاعد (CMR) للموظفين، والنظام الجماعي لمنح رواتب التقاعد (RCAR) للتعاقديين.",
+      "category": "institutional",
+      "language": "ar",
+      "answer": "نظام التقاعد في المغرب، المعروف باسم **النظام الجماعي لمنح التقاعد** (Régime Collectif d'Allocation de Retraite - RCAR)، هو نظام يهدف إلى توفير معاشات تقاعدية للموظفين والعمال. إليك بعض النقاط الرئيسية حول كيفية عمل هذا النظام:\n\n- **المنتفعون**: يشمل النظام عدة فئات من المستفيدين، مثل **المشتركين** (Affiliés)، **الزوجات والأزواج** (Conjoints)، و**الأيتام** (Orphelins).\n\n- **عدد المستفيدين**: وفقًا للبيانات حتى 31 ديسمبر 2019:\n  - **المشتركين**: 83,129\n  - **الزوجات والأزواج**: 33,155\n  - **الأيتام**: 3,215\n\n- **المبالغ السنوية المدفوعة**: يتم دفع مبالغ سنوية للمستفيدين حسب فئاتهم:\n  - **المشتركين**: 5,331,192,000 درهم\n  - **الزوجات والأزواج**: 678,798,000 درهم\n  - **الأيتام**: 63,988,000 درهم\n\n- **المؤسسات المشاركة**: يشمل النظام عدة مؤسسات حكومية وخاصة، مثل:\n  - **المؤسسات العمومية**: 671\n  - **الجماعات المحلية**: 1,041\n  - **المنظمات العمومية الأخرى**: 1,717\n\n- **المساهمات**: يتم جمع المساهمات من المؤسسات والموظفين:\n  - **المؤسسات العمومية**: 135,964 موظف\n  - **الجماعات المحلية**: 7,899 موظف\n  - **المنظمات العمومية الأخرى**: 9,786 موظف\n\n- **المبالغ المساهمة**: وفقًا للبيانات حتى 2018:\n  - **المساهمات الإجمالية**: 3,327,250,000 درهم\n\n- **المعاشات المدفوعة**: يتم دفع معاشات التقاعد للمستفيدين حسب فئاتهم:\n  - **المشتركين**: 81,297\n  - **الزوجات والأزواج**: 41,297\n  - **الأيتام**: 6,969\n\nهذا النظام يهدف إلى ضمان استقرار المعاشات التقاعدية للمستفيدين وتقديم الدعم المالي اللازم لهم.",
+      "scores": {
+        "faithfulness": 3,
+        "relevancy": 3,
+        "completeness": 2,
+        "language": 1
+      },
+      "latency_ms": 43012.5
+    }
+  ]
+}

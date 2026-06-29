@@ -187,6 +187,18 @@
                     <input type="range" id="setting-depth" min="1" max="10" value="3" class="w-full accent-brand-text">
                     <p class="text-[11px] text-gray-400 mt-1">Lower = Faster & prevents Token limit crashes.</p>
                 </div>
+
+                <!-- Response Detail -->
+                <div>
+                    <label class="block text-[13px] font-medium text-gray-700 mb-1.5">Response Detail</label>
+                    <select id="setting-detail" class="w-full text-sm rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 outline-none focus:border-brand-text focus:ring-1 focus:ring-brand-text transition-all">
+                        <option value="concise">Concise (2-3 sentences)</option>
+                        <option value="balanced" selected>Balanced (default)</option>
+                        <option value="detailed">Detailed (full explanation)</option>
+                        <option value="expert">Expert (in-depth analysis)</option>
+                    </select>
+                    <p class="text-[11px] text-gray-400 mt-1">Controls how verbose the AI response will be.</p>
+                </div>
             </div>
             
             <div class="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">

@@ -37,5 +37,13 @@ COPY . .
 # Ensure data directories exist
 RUN mkdir -p /app/data/uploads /app/data/collected_data /app/chroma_db /app/logs
 
+# Security: Run as non-root user
+RUN useradd --create-home --shell /bin/bash appuser && \
+    chown -R appuser:appuser /app
+USER appuser
+
+# Set HuggingFace cache to a predictable location for volume mounting
+ENV HF_HOME=/app/.hf_cache
+
 # Default command (overridden by docker-compose per service)
 CMD ["python", "--version"]

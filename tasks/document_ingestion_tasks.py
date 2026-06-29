@@ -127,9 +127,16 @@ def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name
       PDF → OCR/Vision (if enabled) → Markdown → Chunk → BGE Embed → ChromaDB Upsert
 
     Progress updates are pushed via self.update_state() so the UI can poll them.
+
+    For user uploads (collection_name="user_data"), OCR is auto-enabled to ensure
+    proper table extraction from financial PDFs.
     """
     from ingestion.embeddings import Embedder
     from storage.chroma_store import ChromaStore
+
+    # Auto-enable OCR for user uploads (financial PDFs have tables that need it)
+    if collection_name == "user_data" and not use_ocr:
+        use_ocr = True
 
     path = Path(file_path)
 
@@ -145,13 +152,14 @@ def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name
         _progress_error(path.name, "File not found")
         return {"status": "error", "detail": f"File not found: {path}"}
 
-    # Filter: only process PDFs and DOCX
-    if path.suffix.lower() not in (".pdf", ".docx"):
+    # Filter: support PDFs, DOCX, and XLSX/CSV (via ParserAI)
+    supported = {".pdf", ".docx", ".csv", ".tsv", ".xlsx", ".xls"}
+    if path.suffix.lower() not in supported:
         logger.info(
-            "INGESTION WORKER: Skipping %s (not a PDF/DOCX — financial docs only)", path.name
+            "INGESTION WORKER: Skipping %s (unsupported type)", path.name
         )
-        _progress_error(path.name, "Skipped (not a PDF/DOCX file)")
-        return {"status": "skipped", "detail": "Not a PDF/DOCX file"}
+        _progress_error(path.name, "Skipped (unsupported file type)")
+        return {"status": "skipped", "detail": f"Unsupported file type: {path.suffix}"}
 
     # ── 0. Progress: Starting ────────────────────────────────────────────────
     _emit_progress(self, "loading", f"Loading {path.name}...", 5, _pstate)
@@ -193,6 +201,11 @@ def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name
             elif path.suffix.lower() == ".docx":
                 from ingestion.loaders.docx_loader import DocxLoader
                 records = DocxLoader().load(str(path))
+            elif path.suffix.lower() in (".csv", ".tsv", ".xlsx", ".xls"):
+                # Use ParserAI for financial spreadsheets
+                from ingestion.loaders.financial_parser_loader import FinancialParserLoader
+                loader = FinancialParserLoader()
+                records = loader.load(str(path))
         except Exception as e:
             logger.error("INGESTION WORKER: Loader failed for %s: %s", path.name, e)
             _progress_error(path.name, f"Loader failed: {e}")
@@ -206,27 +219,39 @@ def ingest_document(self, file_path: str, use_ocr: bool = False, collection_name
     logger.info("INGESTION WORKER: Extracted %d text records from %s", len(records), path.name)
 
     # ── 2. Chunk ─────────────────────────────────────────────────────────────
-    _emit_progress(self, "chunking",
-                   f"Chunking {len(records)} records...", 40, _pstate)
-
-    try:
-        # Use RecursiveChunker for user uploads — it keeps table headers with
-        # their data rows (semantic chunker splits tables into isolated lines).
-        from ingestion.chunkers.recursive import RecursiveChunker
-        chunker = RecursiveChunker(chunk_size=800, chunk_overlap=100)
+    # Skip chunking for XLSX/CSV - ParserAI already provides token-aware chunks
+    if path.suffix.lower() in (".csv", ".tsv", ".xlsx", ".xls"):
+        _emit_progress(self, "chunking", f"Using ParserAI chunks ({len(records)} chunks)...", 40, _pstate)
         all_chunks = []
         for text, meta in records:
             meta["source_file"] = path.name
-            meta["source"] = "financial_scraping_pipeline"
+            meta["source"] = "user_upload"
             meta["file_path"] = str(path.absolute())
-            if ocr_used:
-                meta["extraction_method"] = "ocr_vision"
-            chunks = chunker.chunk(text, meta)
-            all_chunks.extend(chunks)
-    except Exception as e:
-        logger.error("INGESTION WORKER: Chunking failed for %s: %s", path.name, e)
-        _progress_error(path.name, f"Chunking failed: {e}")
-        return {"status": "error", "detail": f"Chunking failed: {e}"}
+            meta["extraction_method"] = "parserai"
+            all_chunks.append((text, meta))
+    else:
+        _emit_progress(self, "chunking",
+                       f"Chunking {len(records)} records...", 40, _pstate)
+
+        try:
+            # Use TableAwareChunker for user uploads — it detects tables and keeps
+            # them as atomic units with their headers, preventing the fragmentation
+            # that makes financial data unsearchable.
+            from ingestion.chunkers.table_aware import TableAwareChunker
+            chunker = TableAwareChunker(chunk_size=800, chunk_overlap=100)
+            all_chunks = []
+            for text, meta in records:
+                meta["source_file"] = path.name
+                meta["source"] = "financial_scraping_pipeline"
+                meta["file_path"] = str(path.absolute())
+                if ocr_used:
+                    meta["extraction_method"] = "ocr_vision"
+                chunks = chunker.chunk(text, meta)
+                all_chunks.extend(chunks)
+        except Exception as e:
+            logger.error("INGESTION WORKER: Chunking failed for %s: %s", path.name, e)
+            _progress_error(path.name, f"Chunking failed: {e}")
+            return {"status": "error", "detail": f"Chunking failed: {e}"}
 
     if not all_chunks:
         logger.warning("INGESTION WORKER: No chunks produced from %s", path.name)

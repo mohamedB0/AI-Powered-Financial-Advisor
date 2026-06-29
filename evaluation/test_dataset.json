@@ -2,66 +2,601 @@
     {
         "question": "Quel est le taux directeur de Bank Al-Maghrib ?",
         "ground_truth": "Le taux directeur de Bank Al-Maghrib est de 2,25%. Après l'avoir relevé à 3% pour juguler l'inflation post-Covid, Bank Al-Maghrib a engagé à partir de juin 2024 un cycle d'assouplissement graduel avec trois baisses de 25 points de base en 2024-2025.",
-        "category": "macro"
+        "category": "macro",
+        "language": "fr"
     },
     {
         "question": "Quels sont les principaux risques identifiés par l'AMMC pour le marché des capitaux marocain ?",
         "ground_truth": "L'AMMC identifie les risques systémiques liés à la liquidité, l'interconnexion, l'endettement et le contexte macro-économique. Elle évalue aussi les risques de blanchiment des capitaux et de financement du terrorisme (LBC/FT), ainsi que les risques émergents liés au Covid-19.",
-        "category": "regulatory"
+        "category": "regulatory",
+        "language": "fr"
     },
     {
         "question": "Quelle est la capitalisation boursière de la Bourse de Casablanca ?",
         "ground_truth": "La capitalisation boursière de la Bourse de Casablanca a atteint 1040,7 milliards de dirhams à fin décembre 2025, en hausse de plus de 38% sur un an. Le MASI a progressé de 27,57% sur l'année 2025.",
-        "category": "market"
+        "category": "market",
+        "language": "fr"
     },
     {
         "question": "Quel est le taux d'inflation au Maroc ?",
         "ground_truth": "Le taux d'inflation au Maroc est de 0,9% en 2024, après avoir été de 6,6% en 2022 et 6,1% en 2023. Cette baisse est due aux mesures de Bank Al-Maghrib et du Gouvernement pour soutenir le pouvoir d'achat.",
-        "category": "macro"
+        "category": "macro",
+        "language": "fr"
     },
     {
         "question": "Quelles sont les missions de la Cour des Comptes au Maroc ?",
         "ground_truth": "La Cour des Comptes est chargée du contrôle supérieur des finances publiques, de la vérification de la régularité des opérations de recettes et dépenses des organismes publics, et de l'évaluation de la gestion des établissements publics.",
-        "category": "institutional"
+        "category": "institutional",
+        "language": "fr"
     },
     {
         "question": "Comment fonctionne le marché obligataire marocain ?",
         "ground_truth": "Le marché obligataire marocain est organisé autour des bons du Trésor émis par adjudications de Bank Al-Maghrib et des obligations privées. Les taux sur le marché secondaire des bons du Trésor ont connu une baisse, particulièrement sur les maturités longues, sous l'effet de l'assouplissement de la politique monétaire.",
-        "category": "market"
+        "category": "market",
+        "language": "fr"
     },
     {
         "question": "Quels sont les secteurs les plus représentés à la Bourse de Casablanca ?",
         "ground_truth": "Les secteurs les plus représentés à la BVC sont les banques (Attijariwafa Bank, BCP, Bank of Africa), les télécommunications (Maroc Telecom/IAM), l'immobilier, le ciment (LafargeHolcim Maroc) et les mines (Managem).",
-        "category": "market"
+        "category": "market",
+        "language": "fr"
     },
     {
         "question": "Qu'est-ce qu'un OPCVM au Maroc ?",
         "ground_truth": "Un OPCVM (Organisme de Placement Collectif en Valeurs Mobilières) est un véhicule d'investissement collectif agréé par l'AMMC. Il permet aux épargnants d'investir dans un portefeuille diversifié géré par une société de gestion. Les OPCVM sont régulés par la circulaire de l'AMMC.",
-        "category": "regulatory"
+        "category": "regulatory",
+        "language": "fr"
     },
     {
         "question": "Quel est le rôle du HCP dans l'économie marocaine ?",
         "ground_truth": "Le Haut-Commissariat au Plan (HCP) est l'institution statistique officielle du Maroc, chargée de la production des statistiques nationales, des comptes nationaux, du recensement et de la publication des indicateurs conjoncturels comme le PIB, l'inflation et le chômage.",
-        "category": "institutional"
+        "category": "institutional",
+        "language": "fr"
     },
     {
         "question": "Quelles sont les conditions d'introduction en bourse au Maroc ?",
         "ground_truth": "Les conditions d'introduction en bourse au Maroc incluent un capital minimum, la publication de comptes certifiés sur les 3 derniers exercices, un flottant minimum, et l'obtention d'un visa de l'AMMC sur la note d'information destinée aux investisseurs.",
-        "category": "regulatory"
+        "category": "regulatory",
+        "language": "fr"
     },
     {
         "question": "Quelle est la dette du Trésor au Maroc ?",
         "ground_truth": "La dette du Trésor au Maroc devrait revenir à 67% du PIB en 2025 puis à 65,6% en 2026, grâce à l'accroissement des recettes fiscales et la baisse de la charge de compensation. Le FMI a évalué la soutenabilité de la dette en avril 2025.",
-        "category": "macro"
+        "category": "macro",
+        "language": "fr"
     },
     {
         "question": "Comment Bank Al-Maghrib gère la liquidité bancaire ?",
         "ground_truth": "Le besoin de liquidité des banques a atteint 128 milliards de dirhams à fin 2024. Bank Al-Maghrib intervient via des opérations d'injection de liquidité, des opérations de pension, et a élargi le collatéral accepté pour les opérations de politique monétaire.",
-        "category": "macro"
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "What is the current GDP growth rate of Morocco?",
+        "ground_truth": "Morocco's GDP growth is projected at 3.4% in 2025 and 3.7% in 2026, driven by the recovery of agricultural activity after drought years and sustained growth in non-agricultural sectors, particularly services and industry.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What is the role of the AMMC in Morocco?",
+        "ground_truth": "The AMMC (Autorité Marocaine du Marché des Capitaux) is the financial markets regulator in Morocco. It supervises stock exchanges, collective investment schemes, ensures investor protection, and monitors market integrity and transparency.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "How does the Casablanca Stock Exchange work?",
+        "ground_truth": "The Casablanca Stock Exchange (BVC) operates with the MASI as its main index covering all listed stocks. Trading occurs through market-making and order-driven systems. The exchange is regulated by the AMMC and serves as the primary capital market for Morocco.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "What are the main monetary policy instruments of Bank Al-Maghrib?",
+        "ground_truth": "Bank Al-Maghrib uses the key interest rate, reserve requirements, open market operations, standing facilities (lending and deposit), and liquidity injection operations as its main monetary policy instruments.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What is Morocco's fiscal deficit?",
+        "ground_truth": "Morocco's fiscal deficit is projected to narrow to 3.5% of GDP in 2025, down from 4.0% in 2024, supported by improved tax revenues and rationalization of subsidy expenditures.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What are the main exports of Morocco?",
+        "ground_truth": "Morocco's main exports include phosphates and derivatives (OCP Group), automotive sector components, textiles, agriculture products (citrus, vegetables), and electronic components. The automotive sector has become the leading export sector.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "ما هو مؤشر MASI وكيف يتم حسابه؟",
+        "ground_truth": "مؤشر MASI هو المؤشر الرئيسي لبورصة الدار البيضاء، يضم جميع الأسهم المدرجة ويُحسب على أساس الرسملة السوقية المعدلة بالتعويم. وقد سجل ارتفاعاً بنسبة 27,57% خلال سنة 2025.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي السياسة النقدية لبنك المغرب؟",
+        "ground_truth": "تستند السياسة النقدية لبنك المغرب إلى سعر الفائدة الرئيسي المحدد حالياً في 2,25%، مع استخدام أدوات تدخل تشمل عمليات ضخ السيولة وعمليات إعادة الشراء والتسهيلات الدائمة.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هو دور الهيئة المغربية لسوق الرساميل؟",
+        "ground_truth": "الهيئة المغربية لسوق الرساميل (AMMC) هي الجهة المنظمة للأسواق المالية بالمغرب. تشرف على البورصة وصناديق الاستثمار وتضمن حماية المستثمرين ومراقبة سلامة السوق وشفافيته.",
+        "category": "institutional",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يتطور التضخم في المغرب؟",
+        "ground_truth": "انخفض معدل التضخم في المغرب إلى 0,9% سنة 2024 بعد أن بلغ 6,6% سنة 2022 و6,1% سنة 2023. ويُتوقع أن يستقر حول 2% في 2025 و2026.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي شروط الإدراج في بورصة الدار البيضاء؟",
+        "ground_truth": "تشمل شروط الإدراج حداً أدنى لرأس المال، ونشر حسابات مصادق عليها لآخر ثلاث سنوات، ونسبة تعويم دنيا، والحصول على تأشيرة الهيئة المغربية لسوق الرساميل على مذكرة الإعلام الموجهة للمستثمرين.",
+        "category": "regulatory",
+        "language": "ar"
+    },
+    {
+        "question": "Quel est le taux de chômage au Maroc ?",
+        "ground_truth": "Le taux de chômage au Maroc s'est établi à 13,3% au troisième trimestre 2024 selon le HCP, en hausse par rapport aux années précédentes. Le chômage touche particulièrement les jeunes (35,8%) et les diplômés.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les réformes fiscales récentes au Maroc ?",
+        "ground_truth": "Les réformes fiscales récentes incluent la révision de l'IR avec un relèvement du seuil d'exonération, la baisse progressive de l'IS pour les PME, la généralisation de la TVA, et la réforme des droits d'enregistrement dans le cadre de la loi de finances 2025.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Comment évolue le dirham marocain par rapport à l'euro ?",
+        "ground_truth": "Le dirham marocain évolue dans un régime de flottement dirigé par rapport à un panier composé de l'euro (60%) et du dollar US (40%). Bank Al-Maghrib a élargi la bande de fluctuation à ±5% depuis 2020.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelle est la stratégie de développement du marché des capitaux au Maroc ?",
+        "ground_truth": "La stratégie de développement du marché des capitaux repose sur la diversification des instruments financiers, le renforcement de la gouvernance, l'encouragement de l'épargne longue, le développement du marché de la dette privée et l'alignement avec les standards internationaux.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est le rôle de l'OCP dans l'économie marocaine ?",
+        "ground_truth": "L'OCP (Office Chérifien des Phosphates) est le leader mondial des phosphates et de la nutrition des plantes. Il contribue significativement aux recettes d'exportation du Maroc et investit massivement dans la transformation locale et les engrais durables.",
+        "category": "institutional",
+        "language": "fr"
+    },
+    {
+        "question": "What is the current state of Morocco's banking sector?",
+        "ground_truth": "Morocco's banking sector is well-capitalized with a solvency ratio above 15%. The three largest banks (Attijariwafa Bank, BCP, Bank of Africa) hold over 60% of total assets. Non-performing loans represent about 8% of total credit.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "How does Morocco manage its public debt?",
+        "ground_truth": "Morocco manages its public debt through a mix of domestic Treasury bonds (representing about 75% of total debt) and external borrowing from multilateral institutions and international markets. The debt-to-GDP ratio is projected at 67% in 2025.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What is the impact of climate change on Morocco's economy?",
+        "ground_truth": "Climate change impacts Morocco through recurring droughts affecting agricultural GDP (12-14% of total GDP), water stress, and the need for massive investment in renewable energy and water infrastructure. Agricultural GDP contracted significantly during drought years.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What are the main challenges of the Moroccan insurance sector?",
+        "ground_truth": "The main challenges include low insurance penetration rate (3.7% of GDP), concentration of premiums in auto insurance, the need for digital transformation, and strengthening governance and risk management frameworks as required by the ACAPS.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "How does the Moroccan pension system work?",
+        "ground_truth": "The Moroccan pension system operates through multiple funds: CNSS for private sector employees, CMR for civil servants, RCAR for contract workers, and CIMR as a supplementary scheme. The system faces structural deficits due to demographic transitions.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "ما هو حجم الاستثمارات الأجنبية المباشرة في المغرب؟",
+        "ground_truth": "بلغت الاستثمارات الأجنبية المباشرة في المغرب حوالي 35 مليار درهم سنوياً، موجهة أساساً نحو قطاعات الصناعة والعقار والطاقات المتجددة والسياحة.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي خصائص سوق السندات بالمغرب؟",
+        "ground_truth": "يتميز سوق السندات المغربي بهيمنة سندات الخزينة، مع تطور تدريجي لسوق السندات الخاصة. تتراوح آجال الاستحقاق بين 13 أسبوعاً و30 سنة، وتُصدر عبر مزادات ينظمها بنك المغرب.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يعمل نظام الصرف في المغرب؟",
+        "ground_truth": "يعتمد نظام الصرف المغربي على التعويم الموجه في إطار سلة عملات مكونة من الأورو (60%) والدولار (40%)، مع هامش تذبذب يبلغ ±5% يديره بنك المغرب.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "Quelle est la contribution du secteur touristique au PIB marocain ?",
+        "ground_truth": "Le secteur touristique contribue à environ 7% du PIB marocain directement et jusqu'à 12% en incluant les effets indirects. Le Maroc a accueilli un record de 17,4 millions de touristes en 2024, avec des recettes dépassant 105 milliards de dirhams.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les principales sociétés de gestion d'OPCVM au Maroc ?",
+        "ground_truth": "Les principales sociétés de gestion d'OPCVM au Maroc incluent Wafa Gestion, CDG Capital Gestion, BMCE Capital Gestion, Valoris Management et Upline Capital Management. L'actif net global des OPCVM dépasse 600 milliards de dirhams.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Comment fonctionne le système de compensation au Maroc ?",
+        "ground_truth": "Le système de compensation (Caisse de Compensation) subventionne les prix du gaz butane, du sucre et de la farine nationale. Le budget de compensation a été réduit grâce à la décompensation partielle des carburants et à la mise en place d'aides directes ciblées.",
+        "category": "institutional",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est l'impact du Nouveau Modèle de Développement sur la finance marocaine ?",
+        "ground_truth": "Le Nouveau Modèle de Développement préconise le doublement du PIB d'ici 2035, la mobilisation de l'épargne nationale, le développement de la finance verte et durable, le renforcement de l'inclusion financière et la digitalisation des services financiers.",
+        "category": "institutional",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est le taux de croissance économique prévu pour le Maroc en 2026 ?",
+        "ground_truth": "Le taux de croissance économique du Maroc est prévu à 3,7% en 2026, porté par la reprise agricole et la dynamique des secteurs non agricoles, notamment les services et l'industrie.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelle est la politique de change du Maroc ?",
+        "ground_truth": "Le Maroc applique un régime de flottement dirigé du dirham par rapport à un panier composé de l'euro (60%) et du dollar américain (40%), avec une bande de fluctuation de ±5% depuis 2020.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est le montant des réserves de change du Maroc ?",
+        "ground_truth": "Les réserves de change du Maroc couvrent plus de 5 mois d'importations de biens et services, gérées par Bank Al-Maghrib et investies dans des actifs sûrs et liquides.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Comment évolue le crédit bancaire au Maroc ?",
+        "ground_truth": "Le crédit bancaire au Maroc a progressé d'environ 5% en 2024, porté par le crédit à l'équipement et le crédit immobilier. Les créances en souffrance représentent environ 8% de l'encours total.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est le poids de l'agriculture dans le PIB marocain ?",
+        "ground_truth": "L'agriculture représente entre 12% et 14% du PIB marocain selon les années, avec une forte volatilité liée aux conditions climatiques. Elle emploie environ 33% de la population active.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les recettes fiscales du Maroc en 2025 ?",
+        "ground_truth": "Les recettes fiscales du Maroc ont connu une progression significative en 2025, soutenues par la réforme de l'IS, l'élargissement de l'assiette TVA et l'amélioration du recouvrement.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Comment se comporte le marché de l'emploi au Maroc ?",
+        "ground_truth": "Le marché de l'emploi marocain est caractérisé par un taux de chômage de 13,3% au T3 2024, touchant particulièrement les jeunes (35,8%) et les diplômés. L'économie informelle représente une part importante.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelle est la balance commerciale du Maroc ?",
+        "ground_truth": "La balance commerciale du Maroc affiche un déficit d'environ 297 milliards de dirhams en 2024. Les exportations sont tirées par les phosphates, l'automobile et l'agroalimentaire.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quel est l'impact de la sécheresse sur l'économie marocaine ?",
+        "ground_truth": "La sécheresse affecte directement le PIB agricole (12-14% du PIB total), provoque un stress hydrique, et nécessite des investissements massifs en infrastructure hydraulique et dessalement.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Comment le Maroc finance-t-il son déficit budgétaire ?",
+        "ground_truth": "Le Maroc finance son déficit budgétaire principalement par l'émission de bons du Trésor sur le marché domestique (75% de la dette) et par des emprunts extérieurs auprès d'institutions multilatérales et sur les marchés internationaux.",
+        "category": "macro",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les performances du secteur bancaire coté à la BVC ?",
+        "ground_truth": "Le secteur bancaire est le plus capitalisé à la BVC, représentant plus de 30% de la capitalisation totale. Les trois grandes banques (Attijariwafa, BCP, BOA) affichent des PER moyens de 15-20x.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Comment fonctionne le marché des changes au Maroc ?",
+        "ground_truth": "Le marché des changes marocain est un marché interbancaire où Bank Al-Maghrib intervient pour maintenir la stabilité du dirham dans la bande de fluctuation autorisée de ±5%.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Quelle est la liquidité du marché boursier marocain ?",
+        "ground_truth": "La liquidité du marché boursier marocain, mesurée par le taux de rotation, s'établit autour de 9-10%. Le volume moyen quotidien des échanges est d'environ 300-400 millions de dirhams.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Quels sont les principaux indices de la Bourse de Casablanca ?",
+        "ground_truth": "Les principaux indices sont le MASI (toutes valeurs), le MASI 20 (20 valeurs les plus liquides), le MADEX (valeurs les plus actives) et les indices sectoriels.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Comment évolue le marché des OPCVM au Maroc ?",
+        "ground_truth": "Le marché des OPCVM au Maroc dépasse 600 milliards de dirhams d'actifs nets gérés, dominé par les fonds obligataires et monétaires. La progression est soutenue par l'épargne institutionnelle.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les exigences de Bâle III au Maroc ?",
+        "ground_truth": "Les banques marocaines doivent respecter un ratio de solvabilité minimum de 12%, un ratio de liquidité LCR supérieur à 100%, et des exigences de fonds propres renforcées conformément à Bâle III.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Comment est régulé le secteur des assurances au Maroc ?",
+        "ground_truth": "Le secteur des assurances est régulé par l'ACAPS (Autorité de Contrôle des Assurances et de la Prévoyance Sociale), qui veille au respect des normes prudentielles et à la protection des assurés.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les règles de gouvernance des sociétés cotées au Maroc ?",
+        "ground_truth": "Les sociétés cotées doivent respecter le Code de gouvernance de l'AMMC, incluant la composition du conseil d'administration, les comités spécialisés, la transparence de l'information et les règles relatives aux conflits d'intérêts.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Comment fonctionne la protection des investisseurs au Maroc ?",
+        "ground_truth": "La protection des investisseurs est assurée par l'AMMC via l'obligation d'information permanente des émetteurs, le contrôle des opérations d'initiés, la régulation des offres publiques et le fonds de garantie des déposants.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "Quelles sont les obligations des émetteurs d'obligations au Maroc ?",
+        "ground_truth": "Les émetteurs d'obligations doivent obtenir une notation financière, publier une note d'information visée par l'AMMC, respecter des ratios financiers et assurer une information continue aux porteurs.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "What is Morocco's strategy for renewable energy?",
+        "ground_truth": "Morocco aims for 52% renewable energy capacity by 2030 through massive investments in solar (Noor Ouarzazate complex), wind, and hydroelectric projects, exceeding $30 billion in total investment.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "How does Morocco attract foreign direct investment?",
+        "ground_truth": "Morocco attracts FDI through free trade agreements, industrial zones (Tanger Med, Kenitra), competitive labor costs, geographic proximity to Europe, and political stability. Annual FDI averages 35 billion dirhams.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What is the structure of Morocco's external debt?",
+        "ground_truth": "Morocco's external debt is primarily owed to multilateral institutions (World Bank, IMF, AfDB) and European bilateral creditors. External debt represents about 25% of total public debt, with the rest being domestic.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "How is Morocco's industrial sector performing?",
+        "ground_truth": "Morocco's industrial sector contributes about 25% of GDP, led by automotive (700,000+ vehicles/year), aerospace, pharmaceuticals, and food processing. The automotive sector is now the top export earner.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What is the role of remittances in Morocco's economy?",
+        "ground_truth": "Remittances from Moroccans abroad represent about 7-8% of GDP, exceeding 100 billion dirhams annually. They constitute a major source of foreign currency and support household consumption.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "How is Morocco managing water scarcity?",
+        "ground_truth": "Morocco addresses water scarcity through dam construction, desalination plants (Casablanca mega-project), drip irrigation subsidies, and inter-basin water transfers. Investment exceeds 140 billion dirhams by 2027.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What are Morocco's main trading partners?",
+        "ground_truth": "Morocco's main trading partners are the European Union (especially France and Spain) for exports, and China, the US, and the EU for imports. The EU accounts for about 60% of Morocco's trade.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "How is digital transformation impacting Morocco's financial sector?",
+        "ground_truth": "Digital transformation has led to 30+ million mobile payment accounts, growth of fintech startups, bank digitalization programs, and the development of Casablanca Finance City as a regional hub.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "What are the listing requirements for the Casablanca Stock Exchange?",
+        "ground_truth": "Listing requirements include minimum capital, 3 years of audited financial statements, minimum free float, and obtaining AMMC approval on the information memorandum for investors.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "How does the Moroccan bond market function?",
+        "ground_truth": "The Moroccan bond market operates through Treasury bill auctions organized by Bank Al-Maghrib, supplemented by corporate bond issuances. Maturities range from 13 weeks to 30 years.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "What is the performance of Moroccan banks' stocks?",
+        "ground_truth": "Moroccan banking stocks represent over 30% of total market capitalization. The big three (Attijariwafa Bank, BCP, Bank of Africa) show strong dividend yields averaging 3-4% and P/E ratios of 15-20x.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "How liquid is the Casablanca Stock Exchange?",
+        "ground_truth": "The Casablanca Stock Exchange has a turnover ratio of about 9-10%, with average daily trading volumes of 300-400 million dirhams. Liquidity is concentrated in the top 20 stocks (MASI 20).",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "What is the role of institutional investors in Morocco's capital markets?",
+        "ground_truth": "Institutional investors (insurance companies, pension funds, OPCVM) dominate Morocco's capital markets, holding over 70% of Treasury bonds and a significant share of listed equities.",
+        "category": "market",
+        "language": "en"
+    },
+    {
+        "question": "What is Casablanca Finance City?",
+        "ground_truth": "Casablanca Finance City (CFC) is a financial hub offering preferential tax rates (0% corporate tax for 5 years, then 8.75%), streamlined regulations, and positioning Casablanca as a gateway for investment in Africa.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "How does Morocco's social protection system work?",
+        "ground_truth": "Morocco is implementing a generalized social protection reform covering health insurance (AMO), family allowances, pensions, and unemployment benefits, aiming to cover all citizens by 2025.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "What is the role of CDG in Morocco's financial system?",
+        "ground_truth": "The Caisse de Dépôt et de Gestion (CDG) is a public financial institution managing long-term savings (notary deposits, pension funds) and investing in strategic infrastructure and development projects.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "How does Morocco's tax system work for businesses?",
+        "ground_truth": "Morocco's corporate tax (IS) has progressive rates: 10% for profits under 300K MAD, 20% up to 1M MAD, and 31% above. Financial institutions and large companies pay 37%. The PLF 2025 introduced further reforms.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "What is the National Financial Inclusion Strategy?",
+        "ground_truth": "Morocco's National Financial Inclusion Strategy targets 90% adult access to financial services by 2030, through mobile banking expansion, payment institutions, microfinance, and financial education programs.",
+        "category": "institutional",
+        "language": "en"
+    },
+    {
+        "question": "ما هي أهم القطاعات الاقتصادية في المغرب؟",
+        "ground_truth": "أهم القطاعات الاقتصادية في المغرب هي الخدمات (57% من الناتج المحلي)، الصناعة (25%)، والفلاحة (12-14%). يتميز قطاع السيارات بنمو قوي كأول قطاع تصديري.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يعمل نظام التقاعد في المغرب؟",
+        "ground_truth": "يعمل نظام التقاعد في المغرب عبر عدة صناديق: الصندوق الوطني للضمان الاجتماعي (CNSS) للقطاع الخاص، الصندوق المغربي للتقاعد (CMR) للموظفين، والنظام الجماعي لمنح رواتب التقاعد (RCAR).",
+        "category": "institutional",
+        "language": "ar"
+    },
+    {
+        "question": "ما هو دور صندوق الإيداع والتدبير؟",
+        "ground_truth": "صندوق الإيداع والتدبير (CDG) مؤسسة مالية عمومية تدير الادخار طويل الأمد (ودائع الموثقين، صناديق التقاعد) وتستثمر في المشاريع الاستراتيجية والبنية التحتية.",
+        "category": "institutional",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي السياسة الطاقية للمغرب؟",
+        "ground_truth": "تهدف السياسة الطاقية للمغرب إلى بلوغ 52% من الطاقات المتجددة بحلول 2030، عبر استثمارات ضخمة في الطاقة الشمسية (مركب نور) والريحية والكهرومائية.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يتم تنظيم سوق التأمينات بالمغرب؟",
+        "ground_truth": "يخضع قطاع التأمينات لرقابة هيئة مراقبة التأمينات والاحتياط الاجتماعي (ACAPS) التي تسهر على احترام المعايير الاحترازية وحماية المؤمن لهم.",
+        "category": "regulatory",
+        "language": "ar"
+    },
+    {
+        "question": "ما هو وضع الشمول المالي في المغرب؟",
+        "ground_truth": "تطور الشمول المالي في المغرب عبر الدفع عبر الهاتف المحمول (أكثر من 30 مليون حساب)، وانتشار مؤسسات الأداء، وتوسيع التمويل الأصغر، مع استهداف 90% من البالغين بحلول 2030.",
+        "category": "institutional",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي خصائص النظام الضريبي المغربي للشركات؟",
+        "ground_truth": "الضريبة على الشركات (IS) بمعدلات تصاعدية: 10% للأرباح أقل من 300 ألف درهم، 20% حتى مليون درهم، و31% فوق ذلك. المؤسسات المالية والشركات الكبرى تؤدي 37%.",
+        "category": "regulatory",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يدير المغرب دينه العمومي؟",
+        "ground_truth": "يدير المغرب دينه العمومي من خلال مزيج من سندات الخزينة المحلية (75% من الدين الإجمالي) والاقتراض الخارجي من المؤسسات المتعددة الأطراف والأسواق الدولية.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هو تأثير التحول الرقمي على القطاع المالي المغربي؟",
+        "ground_truth": "أدى التحول الرقمي إلى ظهور أكثر من 30 مليون حساب دفع عبر الهاتف، ونمو الشركات الناشئة في التكنولوجيا المالية، وبرامج رقمنة البنوك.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي آفاق قطاع السيارات في المغرب؟",
+        "ground_truth": "أصبح قطاع السيارات أول قطاع تصديري بالمغرب بإنتاج يفوق 700 ألف سيارة سنوياً، مستفيداً من اتفاقيات التبادل الحر والقرب الجغرافي من أوروبا ومنظومة تضم أكثر من 250 مصنعاً للمكونات.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي شروط إصدار السندات بالمغرب؟",
+        "ground_truth": "يجب على مصدري السندات الحصول على تنقيط مالي، ونشر مذكرة إعلامية مؤشر عليها من الهيئة المغربية لسوق الرساميل، واحترام نسب مالية محددة.",
+        "category": "regulatory",
+        "language": "ar"
+    },
+    {
+        "question": "ما هو دور الوسطاء الماليين في بورصة الدار البيضاء؟",
+        "ground_truth": "يتولى الوسطاء الماليون (شركات البورصة) تنفيذ أوامر البيع والشراء نيابة عن المستثمرين، وتقديم خدمات الاستشارة والتدبير المالي، تحت إشراف الهيئة المغربية لسوق الرساميل.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "Quel est le rôle de Maroclear dans le marché financier ?",
+        "ground_truth": "Maroclear est le dépositaire central des titres au Maroc. Il assure la conservation des valeurs mobilières, le règlement-livraison des transactions boursières et la gestion des opérations sur titres.",
+        "category": "institutional",
+        "language": "fr"
+    },
+    {
+        "question": "What are the main challenges facing Morocco's agricultural sector?",
+        "ground_truth": "Main challenges include water scarcity and recurring droughts, land fragmentation, low mechanization rates, climate change vulnerability, and the need to modernize irrigation systems.",
+        "category": "macro",
+        "language": "en"
+    },
+    {
+        "question": "Quels sont les mécanismes de titrisation au Maroc ?",
+        "ground_truth": "La titrisation au Maroc est encadrée par la loi et permet aux banques de transformer des créances en titres négociables. Les FPCT sont supervisés par l'AMMC.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "ما هو دور المركز المالي للدار البيضاء؟",
+        "ground_truth": "المركز المالي للدار البيضاء (CFC) هو قطب مالي يوفر امتيازات ضريبية ويهدف لجعل الدار البيضاء بوابة للاستثمار في إفريقيا.",
+        "category": "institutional",
+        "language": "ar"
+    },
+    {
+        "question": "Quelle est la stratégie du Maroc en matière de finance verte ?",
+        "ground_truth": "Le Maroc a émis des obligations vertes, établi des directives ESG via l'AMMC, et mobilisé plus de 1,2 milliard de dirhams en financements durables.",
+        "category": "market",
+        "language": "fr"
+    },
+    {
+        "question": "كيف يعمل سوق الرهن العقاري في المغرب؟",
+        "ground_truth": "يعمل سوق الرهن العقاري عبر البنوك التجارية ومؤسسات التمويل المتخصصة بمعدلات فائدة تتراوح بين 4% و6%.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "Quel est le cadre juridique des fintechs au Maroc ?",
+        "ground_truth": "Les fintechs au Maroc sont encadrées par la loi bancaire. Bank Al-Maghrib délivre les agréments et supervise les activités de paiement mobile.",
+        "category": "regulatory",
+        "language": "fr"
+    },
+    {
+        "question": "ما هو معدل البطالة في المغرب حسب الفئات العمرية؟",
+        "ground_truth": "بلغ معدل البطالة الإجمالي 13,3% في 2024، مع تباين كبير حسب الفئات: 35,8% لدى الشباب (15-24 سنة)، 19,2% لدى حاملي الشهادات، و7,5% في الوسط القروي مقابل 16,3% في الحضري.",
+        "category": "macro",
+        "language": "ar"
+    },
+    {
+        "question": "ما هي آليات تمويل المقاولات الصغرى والمتوسطة بالمغرب؟",
+        "ground_truth": "تشمل آليات التمويل: القروض البنكية المدعومة عبر ضمانات CCG، صناديق رأس المال المخاطر، القروض الصغرى، والتمويل التشاركي (crowdfunding) المنظم بقانون 15-18.",
+        "category": "market",
+        "language": "ar"
+    },
+    {
+        "question": "كيف يعمل نظام التقاعد بالمغرب؟",
+        "ground_truth": "يعمل نظام التقاعد عبر عدة صناديق: الصندوق الوطني للضمان الاجتماعي (CNSS) للقطاع الخاص، الصندوق المغربي للتقاعد (CMR) للموظفين، والنظام الجماعي لمنح رواتب التقاعد (RCAR) للتعاقديين.",
+        "category": "institutional",
+        "language": "ar"
     }
 ]
-
-
-
-
-

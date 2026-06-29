@@ -152,13 +152,6 @@ Both methods issue a JWT session token used for all protected API calls.
 
 ---
 
-## Models (Fine-tuning Notebooks)
-
-| Notebook | Purpose | Dataset |
-|----------|---------|---------|
-| `models/speech_to_text_model.ipynb` | Fine-tune Whisper Tiny for AR/FR/EN | Google FLEURS |
-| `models/text_to_sql_model.ipynb` | Fine-tune SQLCoder for financial SQL generation | Spider + custom |
-
 ---
 
 ## API Endpoints

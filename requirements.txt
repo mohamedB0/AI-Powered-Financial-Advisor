@@ -2,11 +2,9 @@
 langchain>=0.2.0
 langchain-community>=0.2.0
 langgraph>=0.1.0
-llama-index>=0.10.0
 
 # ─── LLM & Embeddings ────────────────────────────────────────────────────────
 sentence-transformers>=2.7.0
-ollama>=0.2.0
 langchain-openai>=0.1.0
 langsmith>=0.1.81
 
@@ -35,6 +33,9 @@ pdfplumber>=0.11.0
 beautifulsoup4>=4.12.0
 lxml>=5.2.0
 python-dotenv>=1.0.0
+openpyxl>=3.1.0
+tiktoken>=0.7.0
+chardet>=5.2.0
 
 # ─── API ─────────────────────────────────────────────────────────────────────
 fastapi>=0.111.0

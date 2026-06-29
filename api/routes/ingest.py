@@ -27,6 +27,8 @@ load_dotenv()
 router = APIRouter(prefix="/ingest", tags=["Ingestion"])
 
 USE_CELERY = os.getenv("USE_CELERY", "false").lower() == "true"
+MAX_UPLOAD_SIZE_MB = int(os.getenv("MAX_UPLOAD_SIZE_MB", "100"))
+MAX_UPLOAD_SIZE_BYTES = MAX_UPLOAD_SIZE_MB * 1024 * 1024
 
 
 class IngestResponse(BaseModel):
@@ -102,6 +104,11 @@ async def ingest_file_sync(
 
     try:
         content = await file.read()
+        if len(content) > MAX_UPLOAD_SIZE_BYTES:
+            raise HTTPException(
+                status_code=413,
+                detail=f"File too large. Maximum upload size is {MAX_UPLOAD_SIZE_MB}MB.",
+            )
         with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
             tmp.write(content)
             tmp_path = tmp.name
@@ -120,7 +127,9 @@ async def ingest_file_sync(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.getLogger(__name__).exception("Ingestion failed")
+        raise HTTPException(status_code=500, detail="Document ingestion failed. Please try again.")
 
 
 @router.post("/async", response_model=AsyncIngestResponse)
