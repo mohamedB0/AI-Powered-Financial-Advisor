@@ -81,20 +81,10 @@ class IngestionPipeline:
         elif ext in (".csv", ".tsv", ".xlsx", ".xls"):
             # Use ParserAI for XLSX/CSV (faster, better chunking, financial statement detection)
             from ingestion.loaders.financial_parser_loader import FinancialParserLoader
-            from storage.chroma_store import CHROMA_COLLECTION_USER_SPREADSHEETS
-            
             loader = FinancialParserLoader()
             records = loader.load(file_path)
             # ParserAI already returns properly chunked data, skip standard chunking
-            # Use dedicated spreadsheet collection
-            if records and self._collection_override != CHROMA_COLLECTION_USER_SPREADSHEETS:
-                # Create a new pipeline with spreadsheet collection
-                from ingestion import IngestionPipeline
-                spreadsheet_pipeline = IngestionPipeline(
-                    collection_override=CHROMA_COLLECTION_USER_SPREADSHEETS
-                )
-                return spreadsheet_pipeline.ingest_records(records)
-            elif records:
+            if records:
                 return self.ingest_records(records)
         elif ext == ".docx":
             from ingestion.loaders.docx_loader import DocxLoader

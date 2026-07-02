@@ -38,10 +38,6 @@ CHROMA_COLLECTION_FINANCIAL   = "financial_data"
 # User collection: stores user-uploaded documents from the chat UI
 CHROMA_COLLECTION_USER_DATA   = "user_data"
 
-# User spreadsheet collection: stores user-uploaded XLSX/CSV files
-# Uses ParserAI for better chunking and financial statement detection
-CHROMA_COLLECTION_USER_SPREADSHEETS = "user_spreadsheets"
-
 # Active collection — controlled via CHROMA_COLLECTION env var
 CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", CHROMA_COLLECTION_FINANCIAL)
 
