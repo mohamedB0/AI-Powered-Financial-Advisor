@@ -23,7 +23,7 @@ NUMERO 12
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image is a blank page with a diagonal line pattern and contains no text to extract.
 
 
 ---
@@ -452,7 +452,7 @@ de fiabilité et de disponibilité satisfaisants.
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+No text found in the image.
 
 
 ---
@@ -471,7 +471,7 @@ macroéconomiques
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided is a blank white page and contains no text or tables to extract.
 
 
 ---
@@ -1647,7 +1647,7 @@ Source : BAM et ANCFCC
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image contains no text.
 
 
 ---
@@ -1666,7 +1666,7 @@ agents non financiers
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided is a blank white page. No text or tables are present to extract.
 
 
 ---
@@ -3660,7 +3660,7 @@ TRANSPORTS ET ENTREPOSAGE
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image does not contain any text.
 
 
 ---
@@ -3679,7 +3679,7 @@ financières
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image is blank. No text or tables were found.
 
 
 ---
@@ -7034,7 +7034,7 @@ de long terme.
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided does not contain any text.
 
 
 ---
@@ -7055,7 +7055,7 @@ fiduciaire
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided is a blank white page and contains no text to extract.
 
 
 ---
@@ -10750,7 +10750,7 @@ Valeurs non cotées
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided is blank. No text or tables were found to extract.
 
 
 ---
@@ -10759,7 +10759,7 @@ Valeurs non cotées
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The image provided is blank. There is no text to extract.
 
 
 ---
@@ -10768,7 +10768,8 @@ Valeurs non cotées
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+Dépôt Légal : 2022PE0032
+ISSN : 2820-719X
 
 
 ---
@@ -10777,7 +10778,7 @@ Valeurs non cotées
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image is blank and contains no text to extract.
 
 
 ---
@@ -10786,7 +10787,7 @@ Valeurs non cotées
 
 *(Scanned Page / OCR Extraction)*
 
-*[Error analyzing image: 402 Client Error: Payment Required for url: https://openrouter.ai/api/v1/chat/completions]*
+The provided image contains no text.
 
 
 ---
