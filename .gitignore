@@ -37,3 +37,6 @@ Thumbs.db
 
 # Ignore data folder to prevent pushing massive PDFs
 data/
+
+# OCR intermediate output (generated markdown files)
+OCR_Processing/output/

@@ -75,6 +75,9 @@ task_routes = {
     "tasks.bvc_fetch.*": {"queue": "data_fetch"},
 }
 
+# The 'user_ingestion' queue is dispatched explicitly by api/routes/ingest.py
+# (apply_async(..., queue="user_ingestion")) so it doesn't need a wildcard route.
+
 task_default_queue = "default"
 
 beat_schedule = {

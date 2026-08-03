@@ -22,9 +22,6 @@ load_dotenv()
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage, BaseMessage
 from langgraph.graph import StateGraph, END
-from langgraph.prebuilt import ToolNode
-from pydantic import BaseModel, Field
-
 from retrieval.query_router import route_query, QueryRoute
 from retrieval.vector_search import VectorSearch
 from retrieval.sql_search import SQLSearch
@@ -34,7 +31,6 @@ from retrieval.reranker import Reranker
 from retrieval.bm25_search import BM25Search
 from retrieval.rrf_fusion import reciprocal_rank_fusion
 from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT, CONTEXTUALIZE_PROMPT
-from agents.tools import TOOLS
 
 
 # ── Agent State ───────────────────────────────────────────────────────────────
@@ -141,10 +137,6 @@ def _get_fast_llm():
         temperature=0.0, max_tokens=256, max_retries=0, request_timeout=15,
     )
 
-class GradeDocuments(BaseModel):
-    """Binary score for relevance check on retrieved documents."""
-    binary_score: str = Field(description="Documents are relevant to the question, 'yes' or 'no'")
-
 
 # ── Lazy-loaded retrieval singletons (avoid 25s+ init at import time) ─────────
 
@@ -209,27 +201,6 @@ def _get_bm25_search():
 
 UNSUPPORTED_REGIONS: list = []  # All regions supported; BVC tickers are in the DB
 US_TICKERS = ["AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "NVDA"]
-
-
-def _expand_query(question: str) -> str:
-    """
-    Generate an alternative search query to improve recall.
-    Uses the Fast LLM to rephrase the question with different keywords.
-    """
-    try:
-        from langchain_core.messages import SystemMessage
-        llm = _get_fast_llm()
-        prompt = (
-            "Generate ONE alternative search query for the following question. "
-            "Use different keywords and synonyms but keep the same intent. "
-            "Output ONLY the alternative query, nothing else.\n\n"
-            f"Original: {question}\nAlternative:"
-        )
-        res = llm.invoke([SystemMessage(content=prompt)])
-        alt = res.content.strip().split("\n")[0].strip().strip('"').strip("'")
-        return alt[:200] if alt else ""
-    except Exception:
-        return ""
 
 
 def _results_match_query(results: list, question: str) -> bool:
@@ -421,24 +392,8 @@ def retrieve_context(state: AgentState) -> AgentState:
             except Exception as e:
                 print(f"[Router] BM25 search error (non-fatal): {e}")
 
-            # 2c. Query expansion — disabled by default for speed.
-            # Costs ~1.5s (Fast LLM call + extra vector search) for marginal recall gain
-            # since BM25 already handles keyword variants. Re-enable via env if needed.
-            expanded_results = []
-            if os.getenv("ENABLE_QUERY_EXPANSION", "false").lower() == "true":
-                try:
-                    alt_query = _expand_query(question)
-                    if alt_query and alt_query.lower() != question.lower():
-                        print(f"[Router] Query expansion: '{alt_query[:60]}'")
-                        expanded_dense = _get_vector_search().search(alt_query, top_k=10, collection=coll_filter)
-                        for r in expanded_dense:
-                            r["retrieval_method"] = "dense_expanded"
-                        expanded_results = expanded_dense
-                except Exception as e:
-                    print(f"[Router] Query expansion error (non-fatal): {e}")
-
-            # 2d. Reciprocal Rank Fusion — merge all retrieval streams
-            all_streams = [s for s in [dense_results, bm25_results, expanded_results] if s]
+            # 2c. Reciprocal Rank Fusion — merge all retrieval streams
+            all_streams = [s for s in [dense_results, bm25_results] if s]
             if all_streams:
                 if len(all_streams) > 1:
                     total_docs = sum(len(s) for s in all_streams)
@@ -670,13 +625,6 @@ def generate_answer(state: AgentState) -> AgentState:
     )
     return {"messages": [], "answer": fallback}
 
-
-def should_use_tools(state: AgentState) -> str:
-    """Edge: decide whether to call a tool or end."""
-    last = state["messages"][-1] if state["messages"] else None
-    if last and hasattr(last, "tool_calls") and last.tool_calls:
-        return "tools"
-    return END
 
 # ── Guardrail Node ────────────────────────────────────────────────────────────
 
@@ -934,7 +882,6 @@ def build_agent():
     graph.add_node("rewrite_query", rewrite_query)
     graph.add_node("web_search_fallback", web_search_fallback)
     graph.add_node("generate",  generate_answer)
-    graph.add_node("tools",     ToolNode(TOOLS))
 
     graph.set_entry_point("guardrail")
     
@@ -963,8 +910,7 @@ def build_agent():
     graph.add_edge("rewrite_query", "web_search_fallback")
     graph.add_edge("web_search_fallback", "generate")
     
-    graph.add_conditional_edges("generate", should_use_tools, {"tools": "tools", END: END})
-    graph.add_edge("tools", "generate")
+    graph.add_edge("generate", END)
 
     return graph.compile()
 
