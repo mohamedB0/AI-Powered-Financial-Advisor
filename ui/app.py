@@ -43,9 +43,16 @@ def api_pipeline_tasks():
     # Try Redis result backend first (current configuration)
     try:
         import redis
-        r = redis.Redis.from_url(
-            f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/{os.getenv('REDIS_DB', '0')}"
+        redis_host = os.getenv('REDIS_HOST', 'localhost')
+        redis_port = os.getenv('REDIS_PORT', '6379')
+        redis_db = os.getenv('REDIS_DB', '0')
+        redis_password = os.getenv('REDIS_PASSWORD', '')
+        redis_url = (
+            f"redis://:{redis_password}@{redis_host}:{redis_port}/{redis_db}"
+            if redis_password
+            else f"redis://{redis_host}:{redis_port}/{redis_db}"
         )
+        r = redis.Redis.from_url(redis_url)
         # Celery stores results in Redis as keys: celery-task-meta-{task_id}
         for key in r.scan_iter("celery-task-meta-*"):
             try:

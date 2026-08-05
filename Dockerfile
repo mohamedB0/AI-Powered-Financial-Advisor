@@ -35,7 +35,7 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 COPY . .
 
 # Ensure data directories exist
-RUN mkdir -p /app/data/uploads /app/data/collected_data /app/chroma_db /app/logs
+RUN mkdir -p /app/data/uploads /app/data/collected_data /app/chroma_db /app/logs /app/.hf_cache
 
 # Security: Run as non-root user
 RUN useradd --create-home --shell /bin/bash appuser && \

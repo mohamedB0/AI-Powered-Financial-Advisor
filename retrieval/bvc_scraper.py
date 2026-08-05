@@ -16,6 +16,15 @@ HEADERS = {
 
 _build_id_cache: Dict[str, Any] = {"id": None, "ts": 0}
 
+def _clean(value: Any) -> Any:
+    """Normalize BVC API field values: turn empty lists and '-' into None,
+    and extract the first element when the API returns a single-element list."""
+    if isinstance(value, list):
+        return value[0] if value else None
+    if value == "-":
+        return None
+    return value
+
 def _get_build_id() -> Optional[str]:
     now = time.time()
     if _build_id_cache["id"] and (now - _build_id_cache["ts"]) < 3600:
@@ -47,22 +56,22 @@ def get_market_live() -> List[Dict[str, Any]]:
             result = []
             for s in stocks:
                 result.append({
-                    "ticker":         s.get("ticker", ""),
-                    "name":           s.get("label", ""),
-                    "sector":         s.get("sous_secteur", ""),
-                    "last_price":     s.get("field_cours_courant"),
-                    "ref_price":      s.get("field_static_reference_price"),
-                    "open":           s.get("field_opening_price"),
-                    "high":           s.get("field_high_price"),
-                    "low":            s.get("field_low_price"),
-                    "variation_pct":  s.get("field_var_veille"),
-                    "volume":         s.get("field_cumul_volume_echange"),
-                    "qty_traded":     s.get("field_cumul_titres_echanges"),
-                    "nb_trades":      s.get("field_total_trades"),
-                    "capitalisation": s.get("field_capitalisation"),
-                    "status":         s.get("field_etat_cot_val"),
-                    "bid_price":      s.get("field_best_bid_price"),
-                    "ask_price":      s.get("field_best_ask_price"),
+                    "ticker":         _clean(s.get("ticker", "")),
+                    "name":           _clean(s.get("label", "")),
+                    "sector":         _clean(s.get("sous_secteur", "")),
+                    "last_price":     _clean(s.get("field_cours_courant")),
+                    "ref_price":      _clean(s.get("field_static_reference_price")),
+                    "open":           _clean(s.get("field_opening_price")),
+                    "high":           _clean(s.get("field_high_price")),
+                    "low":            _clean(s.get("field_low_price")),
+                    "variation_pct":  _clean(s.get("field_var_veille")),
+                    "volume":         _clean(s.get("field_cumul_volume_echange")),
+                    "qty_traded":     _clean(s.get("field_cumul_titres_echanges")),
+                    "nb_trades":      _clean(s.get("field_total_trades")),
+                    "capitalisation": _clean(s.get("field_capitalisation")),
+                    "status":         _clean(s.get("field_etat_cot_val")),
+                    "bid_price":      _clean(s.get("field_best_bid_price")),
+                    "ask_price":      _clean(s.get("field_best_ask_price")),
                 })
             return result
     except Exception as e:
@@ -92,16 +101,16 @@ def get_indices() -> List[Dict[str, Any]]:
                     index_url = item.get("index_url", "")
                     code = index_url.split("/")[-1] if index_url else ""
                     result.append({
-                        "category":       cat_name,
-                        "name":           item.get("index", ""),
-                        "code":           code,
-                        "value":          item.get("field_index_value"),
-                        "previous":       item.get("veille"),
-                        "variation_pct":  item.get("field_var_veille"),
-                        "variation_ytd":  item.get("field_var_year"),
-                        "high":           item.get("field_index_high_value"),
-                        "low":            item.get("field_index_low_value"),
-                        "capitalisation": item.get("field_market_capitalisation"),
+                        "category":       _clean(cat_name),
+                        "name":           _clean(item.get("index", "")),
+                        "code":           _clean(code),
+                        "value":          _clean(item.get("field_index_value")),
+                        "previous":       _clean(item.get("veille")),
+                        "variation_pct":  _clean(item.get("field_var_veille")),
+                        "variation_ytd":  _clean(item.get("field_var_year")),
+                        "high":           _clean(item.get("field_index_high_value")),
+                        "low":            _clean(item.get("field_index_low_value")),
+                        "capitalisation": _clean(item.get("field_market_capitalisation")),
                     })
             return result
     except Exception as e:

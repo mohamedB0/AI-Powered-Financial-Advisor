@@ -410,13 +410,6 @@ mark.ctx-highlight {
         display: flex !important;
     }
 
-    /* Market panel hidden */
-    #market-panel {
-        width: 0 !important;
-        min-width: 0 !important;
-        overflow: hidden !important;
-    }
-
     /* Empty state: 1 column grid */
     #empty-state .grid {
         grid-template-columns: 1fr !important;
@@ -426,13 +419,6 @@ mark.ctx-highlight {
 
 /* ── Medium-large screens (1024px - 1280px) ──────────────────────────────── */
 @media (min-width: 1025px) and (max-width: 1280px) {
-    /* Market panel collapsed by default */
-    #market-panel {
-        width: 0 !important;
-        min-width: 0 !important;
-        overflow: hidden !important;
-    }
-
     /* Narrower history sidebar */
     #history-sidebar {
         width: 220px;
