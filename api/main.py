@@ -146,7 +146,7 @@ app.add_middleware(
     allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
 )
 
 app.include_router(auth_router)
@@ -189,6 +189,15 @@ def health() -> dict:
         checks["vector_store"] = f"ok ({cs.count()} vectors)"
     except Exception as e:
         checks["vector_store"] = f"error: {str(e)[:80]}"
+
+    # Check Redis session store
+    try:
+        from api.auth import get_redis
+        r = get_redis()
+        r.ping()
+        checks["redis_sessions"] = "ok"
+    except Exception as e:
+        checks["redis_sessions"] = f"error: {str(e)[:80]}"
 
     all_ok = all(v == "ok" or v.startswith("ok") for k, v in checks.items() if k not in ("api", "version", "timestamp"))
     checks["status"] = "healthy" if all_ok else "degraded"

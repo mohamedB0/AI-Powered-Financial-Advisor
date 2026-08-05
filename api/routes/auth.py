@@ -6,21 +6,27 @@ POST /auth/register — Create a new user account
 POST /auth/login    — Authenticate with email + password
 POST /auth/google   — Authenticate with a Google ID token
 GET  /auth/me       — Get current user profile (protected)
+POST /auth/logout   — Destroy the server-side session (real revocation)
 """
 
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, Request, status
 from pydantic import BaseModel, EmailStr, Field
 
 from api.auth import (
-    create_access_token,
+    AUTH_COOKIE_NAME,
+    AUTH_COOKIE_SAMESITE,
+    AUTH_COOKIE_SECURE,
+    SESSION_COOKIE_NAME,
+    SESSION_TTL_SECONDS,
+    create_session,
+    delete_session,
     get_current_user,
     hash_password,
     verify_password,
     verify_google_token,
-    JWT_EXPIRATION_HOURS,
 )
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -45,10 +51,10 @@ class GoogleAuthRequest(BaseModel):
     id_token: str
 
 
-class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
-    expires_in_hours: int
+class SessionResponse(BaseModel):
+    """Returned on successful login/register.  No token is exposed to JS."""
+    token_type: str = "session"
+    expires_in_seconds: int
     user: dict
 
 
@@ -64,6 +70,33 @@ class ProfileResponse(BaseModel):
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 
+def _set_session_cookie(response: Response, session_id: str) -> None:
+    """
+    Store the session ID in an httpOnly cookie.
+
+    The session ID is opaque — it carries no user data itself. The actual
+    user payload lives in Redis server-side.
+    """
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=session_id,
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        samesite=AUTH_COOKIE_SAMESITE,
+        secure=AUTH_COOKIE_SECURE,
+        path="/",
+    )
+
+
+def _clear_session_cookie(response: Response) -> None:
+    response.delete_cookie(
+        key=SESSION_COOKIE_NAME,
+        path="/",
+        samesite=AUTH_COOKIE_SAMESITE,
+        secure=AUTH_COOKIE_SECURE,
+    )
+
+
 def _get_db():
     from storage.relational_db import RelationalDB
     return RelationalDB()
@@ -73,7 +106,7 @@ def _get_user_by_email(email: str):
     """Query the users table for a user by email."""
     db = _get_db()
     rows = db.execute_sql(
-        "SELECT id, email, full_name, picture, google_sub, role, is_active, created_at "
+        "SELECT id, email, full_name, picture, google_sub, role, is_active, hashed_password, created_at "
         "FROM users WHERE email = :email LIMIT 1",
         {"email": email},
     )
@@ -118,8 +151,8 @@ def _create_google_user(email: str, full_name: str, picture: str, google_sub: st
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 
-@router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register(req: RegisterRequest):
+@router.post("/register", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
+def register(req: RegisterRequest, response: Response):
     """Create a new user account with email + password."""
     from api.tracing import trace_stage
 
@@ -157,15 +190,15 @@ def register(req: RegisterRequest):
             span.set_attribute("auth.result", "error")
             raise HTTPException(status_code=500, detail="User creation failed.")
 
-        token = create_access_token(user["id"], user["email"], user["role"])
+        session_id = create_session(user["id"], user["email"], user["role"])
+        _set_session_cookie(response, session_id)
 
         span.set_attribute("auth.result", "success")
         span.set_attribute("auth.user_id", user["id"])
         span.set_attribute("auth.role", user["role"])
 
-    return TokenResponse(
-        access_token=token,
-        expires_in_hours=JWT_EXPIRATION_HOURS,
+    return SessionResponse(
+        expires_in_seconds=SESSION_TTL_SECONDS,
         user={
             "id": user["id"],
             "email": user["email"],
@@ -176,9 +209,9 @@ def register(req: RegisterRequest):
     )
 
 
-@router.post("/login", response_model=TokenResponse)
-def login(req: LoginRequest):
-    """Authenticate with email + password and receive a JWT token."""
+@router.post("/login", response_model=SessionResponse)
+def login(req: LoginRequest, response: Response):
+    """Authenticate with email + password and create a server-side session."""
     from api.tracing import trace_stage
 
     with trace_stage("auth_login", {"auth.method": "email", "auth.email": req.email}) as span:
@@ -215,16 +248,16 @@ def login(req: LoginRequest):
         except Exception:
             pass
 
-        token = create_access_token(user["id"], user["email"], user["role"])
+        session_id = create_session(user["id"], user["email"], user["role"])
+        _set_session_cookie(response, session_id)
 
         span.set_attribute("auth.result", "success")
         span.set_attribute("auth.user_id", user["id"])
         span.set_attribute("auth.user_name", user.get("full_name", ""))
         span.set_attribute("auth.role", user["role"])
 
-    return TokenResponse(
-        access_token=token,
-        expires_in_hours=JWT_EXPIRATION_HOURS,
+    return SessionResponse(
+        expires_in_seconds=SESSION_TTL_SECONDS,
         user={
             "id": user["id"],
             "email": user["email"],
@@ -235,15 +268,12 @@ def login(req: LoginRequest):
     )
 
 
-@router.post("/google", response_model=TokenResponse)
-def google_auth(req: GoogleAuthRequest):
-    """
-    Authenticate using a Google ID token.
-    """
+@router.post("/google", response_model=SessionResponse)
+def google_auth(req: GoogleAuthRequest, response: Response):
+    """Authenticate using a Google ID token."""
     from api.tracing import trace_stage
 
     with trace_stage("auth_google", {"auth.method": "google"}) as span:
-        # Verify the Google ID token
         google_info = verify_google_token(req.id_token)
 
         if not google_info.get("email_verified"):
@@ -306,17 +336,16 @@ def google_auth(req: GoogleAuthRequest):
         except Exception:
             pass  # Non-critical
 
-        # Generate session JWT
-        token = create_access_token(user["id"], user["email"], user["role"])
+        session_id = create_session(user["id"], user["email"], user["role"])
+        _set_session_cookie(response, session_id)
 
         span.set_attribute("auth.result", "success")
         span.set_attribute("auth.user_id", user["id"])
         span.set_attribute("auth.user_name", user.get("full_name", ""))
         span.set_attribute("auth.role", user["role"])
 
-    return TokenResponse(
-        access_token=token,
-        expires_in_hours=JWT_EXPIRATION_HOURS,
+    return SessionResponse(
+        expires_in_seconds=SESSION_TTL_SECONDS,
         user={
             "id": user["id"],
             "email": user["email"],
@@ -331,7 +360,7 @@ def google_auth(req: GoogleAuthRequest):
 def get_profile(current_user: dict = Depends(get_current_user)):
     """
     Get the authenticated user's profile.
-    Requires a valid Bearer token.
+    Requires a valid session cookie or Bearer session ID header.
     """
     user = _get_user_by_email(current_user["email"])
     if not user:
@@ -345,3 +374,19 @@ def get_profile(current_user: dict = Depends(get_current_user)):
         role=user["role"],
         created_at=str(user.get("created_at", "")),
     )
+
+
+@router.post("/logout")
+def logout(request: Request, response: Response):
+    """
+    Destroy the server-side session in Redis and clear the session cookie.
+
+    Unlike the old JWT approach, this truly revokes the session immediately —
+    the session ID is deleted from Redis so it cannot be reused even if
+    the cookie is somehow retained.
+    """
+    session_id = request.cookies.get(SESSION_COOKIE_NAME)
+    if session_id:
+        delete_session(session_id)
+    _clear_session_cookie(response)
+    return {"detail": "Logged out."}

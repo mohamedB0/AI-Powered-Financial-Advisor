@@ -35,6 +35,9 @@ Thumbs.db
 # Docker
 *.pid
 
+# Cloudflare Tunnel credentials (secret — never commit)
+deploy/cloudflared/*.json
+
 # Ignore data folder to prevent pushing massive PDFs
 data/
 

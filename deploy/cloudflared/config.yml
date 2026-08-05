@@ -1,0 +1,20 @@
+# Cloudflare Tunnel config — the public entrypoint.
+#
+# Before first run (see DEPLOY_CLOUDFLARE.md):
+#   1. cloudflared tunnel login            (authorize your Cloudflare account/domain)
+#   2. cloudflared tunnel create financial-advisor   → prints the TUNNEL_ID
+#   3. copy ~/.cloudflared/<TUNNEL_ID>.json → deploy/cloudflared/<TUNNEL_ID>.json
+#   4. replace YOUR_TUNNEL_ID and yourdomain.com below
+#   5. cloudflared tunnel route dns financial-advisor yourdomain.com
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /etc/cloudflared/YOUR_TUNNEL_ID.json
+
+ingress:
+  # All traffic for the public domain goes to the internal Caddy origin,
+  # which path-routes to the UI (:5000) and API (:8000).
+  - hostname: yourdomain.com
+    service: http://caddy:80
+
+  # Catch-all: reject anything that doesn't match the hostname above.
+  - service: http_status:404

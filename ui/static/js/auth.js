@@ -4,21 +4,21 @@
  */
 
 // API base URL (defined here so it's available before main.js loads)
-// In development: Flask on :5000, FastAPI on :8000 → use explicit port
-// In production behind Nginx: both on same domain → no port needed
+// Dev: Flask on :5000, FastAPI on :8000 → same host, different port (same-site,
+// so the httpOnly cookie set by the API also applies to the UI origin).
+// Production behind Nginx/Caddy: both on same origin → no port needed.
 const API_BASE = (() => {
     if (window.location.protocol === "file:") return "http://127.0.0.1:8000";
     const port = window.location.port;
-    // If we're on port 5000 (dev Flask), point to :8000 (dev FastAPI)
+    // If we're on port 5000 (dev Flask), point to :8000 (dev FastAPI).
+    // Keep the hostname identical to the page so the auth cookie host matches.
     if (port === "5000") {
-        const host = window.location.hostname === 'localhost' ? '127.0.0.1' : window.location.hostname;
-        return window.location.protocol + "//" + host + ":8000";
+        return window.location.protocol + "//" + window.location.hostname + ":8000";
     }
-    // Production: API is proxied on the same origin (Nginx handles routing)
+    // Production: API is proxied on the same origin (Nginx/Caddy handles routing)
     return window.location.origin;
 })();
 
-const AUTH_TOKEN_KEY = 'fin_advisor_token';
 const AUTH_USER_KEY = 'fin_advisor_user';
 
 // ── Shared Utilities ─────────────────────────────────────────────────────────
@@ -127,14 +127,18 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// ── Token Management ─────────────────────────────────────────────────────────
+// ── Session Management ───────────────────────────────────────────────────────
+// The session ID lives in an httpOnly cookie set by the server — JS never
+// reads it. We only cache the user profile locally so the UI updates instantly
+// after login/logout; the cookie (and /auth/me) is the source of truth.
+// Actual session data is stored server-side in Redis.
 
 function getToken() {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
+    return null;  // session_id is httpOnly — not readable from JS
 }
 
-function setToken(token) {
-    localStorage.setItem(AUTH_TOKEN_KEY, token);
+function setToken() {
+    // Token is stored server-side in an httpOnly cookie by the auth routes.
 }
 
 function getUser() {
@@ -147,35 +151,26 @@ function setUser(user) {
 }
 
 function clearAuth() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);
 }
 
 function isAuthenticated() {
-    const token = getToken();
-    if (!token) return false;
-    try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        return payload.exp * 1000 > Date.now();
-    } catch {
-        return false;
-    }
+    return !!getUser();
 }
 
 // ── Auth-aware fetch wrapper ─────────────────────────────────────────────────
 
 /**
- * Wrapper around fetch() that automatically injects the Authorization header.
- * If the response is 401, redirects to login.
+ * Wrapper around fetch() that sends the httpOnly auth cookie (credentials:
+ * 'include') and the CSRF-defense header. If the response is 401, redirects
+ * to login.
  */
 async function authFetch(url, options = {}) {
-    const token = getToken();
     if (!options.headers) {
         options.headers = {};
     }
-    if (token) {
-        options.headers['Authorization'] = `Bearer ${token}`;
-    }
+    options.credentials = 'include';
+    options.headers['X-Requested-With'] = 'XMLHttpRequest';
     const response = await fetch(url, options);
     if (response.status === 401) {
         clearAuth();
@@ -204,7 +199,8 @@ async function handleGoogleCredentialResponse(response) {
     try {
         const res = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include',
             body: JSON.stringify({ id_token: response.credential }),
         });
         console.log('[Auth] Response status:', res.status);
@@ -214,7 +210,6 @@ async function handleGoogleCredentialResponse(response) {
             throw new Error(data.detail || 'Authentication failed');
         }
 
-        setToken(data.access_token);
         setUser(data.user);
 
         // Remove the modal
@@ -240,7 +235,16 @@ async function handleGoogleCredentialResponse(response) {
     }
 }
 
-function logout() {
+async function logout() {
+    try {
+        await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include',
+        });
+    } catch (e) {
+        // Ignore — we clear local state regardless
+    }
     clearAuth();
     showToast('You have been signed out.', 'info', 3000);
     // Revoke Google session if available
@@ -378,13 +382,13 @@ async function handleLogin(e) {
     try {
         const res = await fetch('/api/auth/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include',
             body: JSON.stringify({ email, password }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Login failed');
 
-        setToken(data.access_token);
         setUser(data.user);
         document.getElementById('auth-modal').remove();
         showToast(`Welcome, ${data.user.full_name || data.user.email.split('@')[0]}!`, 'success', 3000);
@@ -413,13 +417,13 @@ async function handleRegister(e) {
     try {
         const res = await fetch('/api/auth/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'include',
             body: JSON.stringify({ email, password, full_name: name }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Registration failed');
 
-        setToken(data.access_token);
         setUser(data.user);
         document.getElementById('auth-modal').remove();
         showToast(`Account created! Welcome, ${data.user.full_name || data.user.email.split('@')[0]}!`, 'success', 3000);
@@ -614,11 +618,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
     }
 
-    // Verify token is still valid server-side
+    // Verify session is still valid server-side (cookie is sent automatically)
     try {
-        const res = await fetch(`${API_BASE}/auth/me`, {
-            headers: { 'Authorization': `Bearer ${getToken()}` }
-        });
+        const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
         if (res.status === 401) {
             clearAuth();
             updateAuthUI();
@@ -628,34 +630,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         // API not reachable — don't force logout
     }
 
-    // ── Token expiry watcher ─────────────────────────────────────────────
-    // Check every 5 minutes if the token is about to expire. Warn the user
-    // 30 minutes before expiry so they can re-login without losing work.
+    // ── Session expiry watcher ────────────────────────────────────────────
+    // The session_id is inside the httpOnly cookie (not readable by JS), so
+    // we ping /auth/me every 5 minutes; a 401 means the Redis session expired.
     _startTokenExpiryWatcher();
 });
 
 function _startTokenExpiryWatcher() {
-    setInterval(() => {
-        const token = getToken();
-        if (!token) return;
+    setInterval(async () => {
         try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const expiresAt = payload.exp * 1000;
-            const now = Date.now();
-            const remaining = expiresAt - now;
-
-            // Warn 30 minutes before expiry
-            if (remaining > 0 && remaining < 30 * 60 * 1000) {
-                const mins = Math.round(remaining / 60000);
-                showToast(`Session expires in ${mins} min. Save your work and re-login.`, 'warning', 8000);
-            }
-            // Already expired
-            if (remaining <= 0) {
+            const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'include' });
+            if (res.status === 401) {
                 clearAuth();
                 updateAuthUI();
                 showToast('Session expired. Please sign in again.', 'warning');
                 showLoginModal();
             }
-        } catch (e) { /* malformed token, ignore */ }
+        } catch (e) {
+            // API unreachable — ignore
+        }
     }, 5 * 60 * 1000); // Check every 5 minutes
 }

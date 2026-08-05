@@ -1,0 +1,20 @@
+# Caddy origin server — sits inside the Docker network, in front of the UI and API.
+# Cloudflare Tunnel (cloudflared) sends all public traffic here over plain HTTP
+# (the HTTPS termination happens at the Cloudflare edge), so Caddy binds :80 only.
+#
+# Path routing mirrors how the frontend calls the backend:
+#   - /api/*            → Flask UI (:5000) which proxies /api/auth/* and /api/pipeline/*
+#   - API browser paths  → FastAPI (:8000)
+#   - everything else    → Flask UI (:5000)
+
+:80 {
+	encode gzip
+
+	@flask path /api/*
+	reverse_proxy @flask ui:5000
+
+	@api path /auth/* /query/* /conversations/* /ingest/* /stocks/* /bvc/* /pdf/* /speech/* /vision/* /health
+	reverse_proxy @api api:8000
+
+	reverse_proxy ui:5000
+}

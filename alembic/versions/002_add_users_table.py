@@ -1,4 +1,4 @@
-"""Add users table for JWT authentication
+"""Add users table for authentication (email/password + Google OAuth)
 
 Revision ID: 002_add_users_table
 Revises: 001_initial

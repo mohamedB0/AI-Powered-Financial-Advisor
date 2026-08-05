@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import sqlite3
+from http.cookies import SimpleCookie
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -12,6 +13,39 @@ from flask import Flask, render_template, request, jsonify
 from retrieval.sql_search import SQLSearch
 
 app = Flask(__name__)
+
+
+def _forward_response(resp):
+    """Build a Flask response from an upstream requests.Response, forwarding
+    Set-Cookie headers (the httpOnly auth cookie) to the browser."""
+    try:
+        data = resp.json()
+    except Exception:
+        data = {"detail": f"Backend returned non-JSON (status {resp.status_code}): {resp.text[:200]}"}
+    flask_resp = jsonify(data)
+    flask_resp.status_code = resp.status_code
+    for set_cookie in resp.raw.headers.getlist("Set-Cookie"):
+        parsed = SimpleCookie()
+        parsed.load(set_cookie)
+        for name, morsel in parsed.items():
+            kwargs = {}
+            if morsel["path"]:
+                kwargs["path"] = morsel["path"]
+            if morsel["httponly"]:
+                kwargs["httponly"] = True
+            if morsel["samesite"]:
+                kwargs["samesite"] = morsel["samesite"]
+            if morsel["secure"]:
+                kwargs["secure"] = True
+            if morsel["max-age"]:
+                try:
+                    kwargs["max_age"] = int(morsel["max-age"])
+                except (TypeError, ValueError):
+                    pass
+            if morsel["expires"]:
+                kwargs["expires"] = morsel["expires"]
+            flask_resp.set_cookie(name, morsel.value, **kwargs)
+    return flask_resp
 
 # Pass GOOGLE_CLIENT_ID to all templates
 @app.context_processor
@@ -115,11 +149,7 @@ def proxy_google_auth():
             headers={"Content-Type": "application/json"},
             timeout=30,
         )
-        try:
-            data = resp.json()
-        except Exception:
-            data = {"detail": f"Backend returned non-JSON (status {resp.status_code}): {resp.text[:200]}"}
-        return jsonify(data), resp.status_code
+        return _forward_response(resp)
     except http_requests.exceptions.ConnectionError:
         return jsonify({"detail": "Cannot connect to FastAPI backend. Is it running?"}), 502
     except Exception as e:
@@ -138,11 +168,7 @@ def proxy_register():
             headers={"Content-Type": "application/json"},
             timeout=30,
         )
-        try:
-            data = resp.json()
-        except Exception:
-            data = {"detail": f"Backend error (status {resp.status_code})"}
-        return jsonify(data), resp.status_code
+        return _forward_response(resp)
     except http_requests.exceptions.ConnectionError:
         return jsonify({"detail": "Cannot connect to FastAPI backend."}), 502
     except Exception as e:
@@ -161,11 +187,31 @@ def proxy_login():
             headers={"Content-Type": "application/json"},
             timeout=30,
         )
-        try:
-            data = resp.json()
-        except Exception:
-            data = {"detail": f"Backend error (status {resp.status_code})"}
-        return jsonify(data), resp.status_code
+        return _forward_response(resp)
+    except http_requests.exceptions.ConnectionError:
+        return jsonify({"detail": "Cannot connect to FastAPI backend."}), 502
+    except Exception as e:
+        return jsonify({"detail": f"Proxy error: {str(e)}"}), 502
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def proxy_logout():
+    """Proxy logout to FastAPI backend.
+
+    The session_id cookie must be forwarded so FastAPI can delete the session
+    from Redis.  Without it, the server-side session would linger until TTL.
+    """
+    import requests as http_requests
+    api_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+    try:
+        # Forward the browser cookies so FastAPI can identify & destroy the session
+        cookies = {k: v for k, v in request.cookies.items()}
+        resp = http_requests.post(
+            f"{api_url}/auth/logout",
+            cookies=cookies,
+            timeout=30,
+        )
+        return _forward_response(resp)
     except http_requests.exceptions.ConnectionError:
         return jsonify({"detail": "Cannot connect to FastAPI backend."}), 502
     except Exception as e:

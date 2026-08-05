@@ -71,7 +71,7 @@ def trace_query_span(
     All pipeline stages traced inside this context become child spans.
 
     Args:
-        user:            Decoded JWT payload (sub, email, role)
+        user:            Session payload dict (sub, email, role)
         question:        The user's original natural-language question
         persona:         Investment persona setting
         focus_mode:      Focus tab (New Chat / Company Analysis / Market Macro)

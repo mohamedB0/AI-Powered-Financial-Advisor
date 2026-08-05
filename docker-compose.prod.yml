@@ -1,0 +1,79 @@
+# ════════════════════════════════════════════════════════════════════════════════
+#  Production override — Cloudflare Tunnel + internal Caddy origin
+#
+#  Run with the base file:
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#  Stop:
+#    docker compose -f docker-compose.yml -f docker-compose.prod.yml down
+#
+#  What this changes vs the base file:
+#    * rebinds every host-published port to 127.0.0.1 (admin/debug only —
+#      nothing is exposed to the internet except through Cloudflare)
+#    * enables the httpOnly auth cookie over HTTPS (AUTH_COOKIE_SECURE=true)
+#    * adds an internal Caddy origin that path-routes UI vs API
+#    * adds a cloudflared container as the public entrypoint
+# ════════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ─── Loopback-only port bindings ───────────────────────────────────────────
+  # Same ports as the base file, but bound to localhost so only SSH/tunnel
+  # traffic reaches the server. Delete a block to expose that port publicly.
+
+  postgres:
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  redis:
+    ports:
+      - "127.0.0.1:6379:6379"
+
+  phoenix:
+    ports:
+      - "127.0.0.1:6006:6006"
+
+  api:
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      # Cookie auth requires HTTPS — Cloudflare edge provides it.
+      - AUTH_COOKIE_SECURE=true
+      # Same-origin in prod (everything arrives via yourdomain.com), kept for safety.
+      - CORS_ORIGINS=https://yourdomain.com
+
+  ui:
+    ports:
+      - "127.0.0.1:5000:5000"
+
+  flower:
+    ports:
+      - "127.0.0.1:5555:5555"
+
+  # ─── Internal reverse proxy ────────────────────────────────────────────────
+  # No published ports — only reachable inside the Docker network by cloudflared.
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: fin_caddy
+    restart: unless-stopped
+    volumes:
+      - ./deploy/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_started
+
+  # ─── Cloudflare Tunnel (public entrypoint) ─────────────────────────────────
+  # Maps yourdomain.com → http://caddy:80. Uses deploy/cloudflared/config.yml
+  # and the tunnel credentials JSON mounted read-only.
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: fin_cloudflared
+    restart: unless-stopped
+    command: tunnel run
+    volumes:
+      - ./deploy/cloudflared:/etc/cloudflared:ro
+    depends_on:
+      - caddy
