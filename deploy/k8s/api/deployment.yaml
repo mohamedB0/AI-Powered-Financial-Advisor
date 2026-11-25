@@ -1,0 +1,98 @@
+# FastAPI backend Deployment
+# Runs uvicorn with 2 workers. Mounts all shared volumes (chroma, data, logs, hf-cache).
+# All env vars are sourced from ConfigMap + Secret via envFrom.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: api
+spec:
+  replicas: 1  # Reduced to 1 for minikube local dev — scale up in production
+  selector:
+    matchLabels:
+      app: api
+  template:
+    metadata:
+      labels:
+        app: api
+        app.kubernetes.io/name: financial-advisor
+        app.kubernetes.io/component: api
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: api
+          image: financial-advisor:latest
+          imagePullPolicy: Never  # Local image — minikube / kind
+          command:
+            - uvicorn
+            - api.main:app
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "8000"
+            - --workers
+            - "2"
+            - --timeout-keep-alive
+            - "120"
+          ports:
+            - containerPort: 8000
+              name: http
+          # Load all non-sensitive vars from ConfigMap, then all sensitive from Secret
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          volumeMounts:
+            - name: chroma-db
+              mountPath: /app/chroma_db
+            - name: app-data
+              mountPath: /app/data
+            - name: app-logs
+              mountPath: /app/logs
+            - name: hf-cache
+              mountPath: /app/.hf_cache
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 6Gi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            failureThreshold: 60  # Gives up to 600s (10 min) for BGE-M3 model download on startup
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+      volumes:
+        - name: chroma-db
+          persistentVolumeClaim:
+            claimName: chroma-db
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: app-logs
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache

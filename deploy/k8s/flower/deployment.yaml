@@ -1,0 +1,83 @@
+# Flower — Celery task monitoring dashboard
+# Exposes a web UI at port 5555.
+# REDIS_PASSWORD, FLOWER_USER, FLOWER_PASSWORD are injected individually from the Secret
+# so they can be referenced in the command string via $(VAR_NAME) shell expansion.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flower
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: flower
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flower
+  template:
+    metadata:
+      labels:
+        app: flower
+        app.kubernetes.io/name: financial-advisor
+        app.kubernetes.io/component: flower
+    spec:
+      enableServiceLinks: false
+      containers:
+        - name: flower
+          image: financial-advisor:latest
+          imagePullPolicy: Never  # Local image — minikube / kind
+          command:
+            - celery
+            - -A
+            - tasks.celery_app:celery_app
+            - flower
+            - --port=5555
+            - --basic-auth=$(FLOWER_USER):$(FLOWER_PASSWORD)
+          ports:
+            - containerPort: 5555
+              name: http
+          env:
+            # Credentials from Secret (individual valueFrom for command interpolation)
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: REDIS_PASSWORD
+            - name: FLOWER_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FLOWER_USER
+            - name: FLOWER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: FLOWER_PASSWORD
+            # Non-sensitive config
+            - name: REDIS_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: REDIS_HOST
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          livenessProbe:
+            tcpSocket:
+              port: 5555
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            tcpSocket:
+              port: 5555
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

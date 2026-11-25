@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: config
+data:
+  # --- General ---
+  ENVIRONMENT: "production"
+  MAX_UPLOAD_SIZE_MB: "100"
+
+  # --- Redis ---
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  REDIS_DB: "0"
+  USE_UPSTASH: "false"
+
+  # --- PostgreSQL ---
+  POSTGRES_HOST: "postgres"
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: "financial_advisor"
+  POSTGRES_USER: "postgres"
+
+  # --- ChromaDB ---
+  CHROMA_PERSIST_DIR: "/app/chroma_db"
+  CHROMA_COLLECTION: "financial_data"
+
+  # --- Internal service URLs ---
+  API_BASE_URL: "http://api:8000"
+  PHOENIX_COLLECTOR_ENDPOINT: "http://phoenix:6006/v1/traces"
+
+  # --- Celery ---
+  USE_CELERY: "true"
+  CELERY_WORKER_IN_DOCKER: "true"
+
+  # --- Session ---
+  REDIS_SESSION_DB: "1"
+  SESSION_TTL_SECONDS: "86400"
+
+  # --- Auth cookie ---
+  AUTH_COOKIE_SECURE: "true"
+  AUTH_COOKIE_SAMESITE: "lax"
+  JWT_EXPIRATION_HOURS: "24"
+
+  # --- ML / HuggingFace ---
+  EMBEDDING_MODEL: "BAAI/bge-m3"
+  EMBEDDING_DIMENSION: "1024"
+  HF_HOME: "/app/.hf_cache"
+
+  # --- LLM models ---
+  OPENROUTER_MODEL: "qwen/qwen-2.5-72b-instruct"
+  GROQ_MODEL: "openai/gpt-oss-120b"
+  GROQ_FAST_MODEL: "openai/gpt-oss-20b"
+  GROQ_BASE_URL: "https://api.groq.com/openai/v1"
+
+  # --- CORS origins (also in secrets for sensitive override) ---
+  CORS_ORIGINS: "http://localhost:5000,http://127.0.0.1:5000,http://localhost:3000,http://localhost:8000,http://127.0.0.1:8000"

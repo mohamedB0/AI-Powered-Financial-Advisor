@@ -1,0 +1,68 @@
+# Flask UI Deployment
+# Runs waitress with 4 threads. Only needs API_BASE_URL from ConfigMap.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ui
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: ui
+spec:
+  replicas: 1  # Reduced to 1 for minikube local dev — scale up in production
+  selector:
+    matchLabels:
+      app: ui
+  template:
+    metadata:
+      labels:
+        app: ui
+        app.kubernetes.io/name: financial-advisor
+        app.kubernetes.io/component: ui
+    spec:
+      containers:
+        - name: ui
+          image: financial-advisor:latest
+          imagePullPolicy: Never  # Local image — minikube / kind
+          command:
+            - waitress-serve
+            - --host
+            - "0.0.0.0"
+            - --port
+            - "5000"
+            - --threads
+            - "4"
+            - ui.app:app
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            # Only inject the env var this service actually needs
+            - name: API_BASE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: API_BASE_URL
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3

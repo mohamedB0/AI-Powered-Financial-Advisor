@@ -1,0 +1,18 @@
+# Flower ClusterIP Service — reachable inside the cluster as "flower:5555"
+apiVersion: v1
+kind: Service
+metadata:
+  name: flower
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: flower
+spec:
+  type: ClusterIP
+  selector:
+    app: flower
+  ports:
+    - name: http
+      port: 5555
+      targetPort: 5555
+      protocol: TCP

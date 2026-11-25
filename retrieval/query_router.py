@@ -16,8 +16,8 @@ import re
 from enum import Enum
 from typing import List, Optional, Tuple
 
-# ── Lazy LLM for fallback classification ──────────────────────────────────────
-# ⚡ Speed: Groq is used when available (same key as the main agent).
+# â”€â”€ Lazy LLM for fallback classification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# âš¡ Speed: Groq is used when available (same key as the main agent).
 _router_llm = None
 
 def _get_router_llm():
@@ -27,7 +27,7 @@ def _get_router_llm():
         groq_key = os.getenv("GROQ_API_KEY")
         if groq_key:
             _router_llm = ChatOpenAI(
-                model="llama-3.1-8b-instant",
+                model=os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b"),
                 base_url="https://api.groq.com/openai/v1",
                 api_key=groq_key,
                 temperature=0.0,
@@ -53,7 +53,7 @@ class QueryRoute(str, Enum):
     HYBRID = "hybrid"
 
 
-# ── Ticker Extraction (Standardized helper) ──────────────────────────────
+# â”€â”€ Ticker Extraction (Standardized helper) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 def _extract_ticker(query: str) -> Optional[str]:
     us_tickers = {
         "AAPL": r"\b(aapl|apple)\b", "MSFT": r"\b(msft|microsoft)\b",
@@ -142,7 +142,7 @@ def classify_query(query: str) -> dict:
     """
     Classify a query and return routing information via Semantic LLM Routing.
     """
-    # ── ⚡ Hard off-domain pre-router (overrides LLM in trilingual queries) ──
+    # â”€â”€ âš¡ Hard off-domain pre-router (overrides LLM in trilingual queries) â”€â”€
     # The LLM router has a Moroccan corpus prior and tends to mis-route US/EU
     # finance questions to VECTOR. We detect off-domain finance entities and
     # force WEB regardless of language so the answer comes from current sources.
@@ -155,19 +155,19 @@ def classify_query(query: str) -> dict:
         "tesla", "nvidia", "bitcoin", "ethereum", "crypto",
         "s&p 500", "dow jones", "nasdaq", "wall street",
         # French
-        "réserve fédérale", "fed américaine", "bce", "banque centrale européenne",
+        "rÃ©serve fÃ©dÃ©rale", "fed amÃ©ricaine", "bce", "banque centrale europÃ©enne",
         "banque d'angleterre",
         # Arabic
-        "الفيدرالي", "الاحتياطي الفيدرالي", "البنك المركزي الأوروبي",
-        "وول ستريت", "بيتكوين", "ناسداك", "أبل", "تسلا", "أمازون", "مايكروسوفت",
-        "إنفيديا", "ميتا", "غوغل", "جوجل",
+        "Ø§Ù„ÙÙŠØ¯Ø±Ø§Ù„ÙŠ", "Ø§Ù„Ø§Ø­ØªÙŠØ§Ø·ÙŠ Ø§Ù„ÙÙŠØ¯Ø±Ø§Ù„ÙŠ", "Ø§Ù„Ø¨Ù†Ùƒ Ø§Ù„Ù…Ø±ÙƒØ²ÙŠ Ø§Ù„Ø£ÙˆØ±ÙˆØ¨ÙŠ",
+        "ÙˆÙˆÙ„ Ø³ØªØ±ÙŠØª", "Ø¨ÙŠØªÙƒÙˆÙŠÙ†", "Ù†Ø§Ø³Ø¯Ø§Ùƒ", "Ø£Ø¨Ù„", "ØªØ³Ù„Ø§", "Ø£Ù…Ø§Ø²ÙˆÙ†", "Ù…Ø§ÙŠÙƒØ±ÙˆØ³ÙˆÙØª",
+        "Ø¥Ù†ÙÙŠØ¯ÙŠØ§", "Ù…ÙŠØªØ§", "ØºÙˆØºÙ„", "Ø¬ÙˆØ¬Ù„",
         # Live-data time markers (latest news, today, this week)
         "today's", "this week", "currently", "latest news",
-        "اليوم", "هذا الأسبوع", "حالياً", "أحدث",
-        "aujourd'hui", "cette semaine", "actuellement", "dernières nouvelles",
+        "Ø§Ù„ÙŠÙˆÙ…", "Ù‡Ø°Ø§ Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹", "Ø­Ø§Ù„ÙŠØ§Ù‹", "Ø£Ø­Ø¯Ø«",
+        "aujourd'hui", "cette semaine", "actuellement", "derniÃ¨res nouvelles",
     ]
     if any(tok in q_lower for tok in OFF_DOMAIN_TOKENS):
-        print(f"[Router] Off-domain entity / live-data marker detected — forcing WEB route")
+        print(f"[Router] Off-domain entity / live-data marker detected â€” forcing WEB route")
         return {
             "route": QueryRoute.WEB.value,
             "detail": None,

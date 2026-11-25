@@ -117,10 +117,12 @@ def verify_google_token(id_token_str: str) -> dict:
         )
 
     try:
+        # clock_skew_in_seconds=60 handles local time drift (e.g. Docker/WSL2 clock skew)
         idinfo = id_token.verify_oauth2_token(
             id_token_str,
             google_requests.Request(),
             GOOGLE_CLIENT_ID,
+            clock_skew_in_seconds=60,
         )
 
         if idinfo["iss"] not in ("accounts.google.com", "https://accounts.google.com"):

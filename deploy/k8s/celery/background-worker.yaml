@@ -1,0 +1,74 @@
+# Celery Background Worker
+# Handles multiple queues: scraping, data_fetch, ingestion, local_ingestion, default.
+# Runs 2 replicas with concurrency=2 for higher throughput on background tasks.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery-background-worker
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: celery-background-worker
+spec:
+  replicas: 1  # Reduced to 1 for minikube local dev — scale up in production
+  selector:
+    matchLabels:
+      app: celery-background-worker
+  template:
+    metadata:
+      labels:
+        app: celery-background-worker
+        app.kubernetes.io/name: financial-advisor
+        app.kubernetes.io/component: celery-background-worker
+    spec:
+      containers:
+        - name: celery-background-worker
+          image: financial-advisor:latest
+          imagePullPolicy: Never  # Local image — minikube / kind
+          command:
+            - celery
+            - -A
+            - tasks.celery_app:celery_app
+            - worker
+            - --loglevel=info
+            - -Q
+            - scraping,data_fetch,ingestion,local_ingestion,default
+            - -c
+            - "2"
+            - --pool=solo
+            - -n
+            - bg_worker@%h
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secrets
+          volumeMounts:
+            - name: chroma-db
+              mountPath: /app/chroma_db
+            - name: app-data
+              mountPath: /app/data
+            - name: app-logs
+              mountPath: /app/logs
+            - name: hf-cache
+              mountPath: /app/.hf_cache
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+      volumes:
+        - name: chroma-db
+          persistentVolumeClaim:
+            claimName: chroma-db
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: app-data
+        - name: app-logs
+          persistentVolumeClaim:
+            claimName: app-logs
+        - name: hf-cache
+          persistentVolumeClaim:
+            claimName: hf-cache

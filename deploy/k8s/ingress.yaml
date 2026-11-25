@@ -1,0 +1,54 @@
+# Nginx Ingress — routes external traffic to internal services
+# Replace "your-domain.com" with your actual domain before deploying.
+# TLS/cert-manager configuration should be added per your cluster setup.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: financial-advisor-ingress
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: ingress
+  annotations:
+    # Allow long-running API/AI requests (e.g. LLM inference)
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    # Allow large file uploads (financial documents, datasets)
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: your-domain.com
+      http:
+        paths:
+          # Flask UI — serves the main web frontend
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ui
+                port:
+                  number: 5000
+          # FastAPI backend — all /api/* requests
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api
+                port:
+                  number: 8000
+          # Flower dashboard — Celery task monitor (protect with VPN or IP allowlist)
+          - path: /flower
+            pathType: Prefix
+            backend:
+              service:
+                name: flower
+                port:
+                  number: 5555
+          # Arize Phoenix — LLM tracing UI (internal use only)
+          - path: /phoenix
+            pathType: Prefix
+            backend:
+              service:
+                name: phoenix
+                port:
+                  number: 6006

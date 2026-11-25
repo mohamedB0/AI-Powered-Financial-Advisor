@@ -1,0 +1,124 @@
+# PersistentVolumeClaims for the financial-advisor stack
+# RWO  = ReadWriteOnce  (single node — suitable for stateful databases)
+# RWX  = ReadWriteOnce  (multi-node — requires an RWX-capable StorageClass, e.g. NFS, CephFS, or EFS)
+# No storageClassName is set → uses the cluster default StorageClass.
+
+# ------------------------------------------------------------------------------
+# PostgreSQL data directory
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-data
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: postgres
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# ------------------------------------------------------------------------------
+# Arize Phoenix tracing data
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: phoenix-data
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: phoenix
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# ------------------------------------------------------------------------------
+# HuggingFace model cache — shared by api + celery workers
+# Changed to RWO for minikube local dev � use RWX in production (NFS, CephFS, EFS)
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: hf-cache
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: shared-storage
+  annotations:
+    note: "RWO for minikube � change to RWX with NFS/CephFS/EFS in production"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+---
+# ------------------------------------------------------------------------------
+# ChromaDB vector store — shared by api + celery workers
+# Changed to RWO for minikube local dev � use RWX in production
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: chroma-db
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: shared-storage
+  annotations:
+    note: "RWO for minikube � change to RWX with NFS/CephFS/EFS in production"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+---
+# ------------------------------------------------------------------------------
+# Application data directory — shared by api + celery workers
+# Changed to RWO for minikube local dev � use RWX in production
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-data
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: shared-storage
+  annotations:
+    note: "RWO for minikube � change to RWX with NFS/CephFS/EFS in production"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# ------------------------------------------------------------------------------
+# Application logs — shared by all app pods
+# Changed to RWO for minikube local dev � use RWX in production
+# ------------------------------------------------------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-logs
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: shared-storage
+  annotations:
+    note: "RWO for minikube � change to RWX with NFS/CephFS/EFS in production"
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi

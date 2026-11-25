@@ -135,7 +135,7 @@ async def ingest_file_sync(
 @router.post("/async", response_model=AsyncIngestResponse)
 async def ingest_file_async(
     file: UploadFile = File(),
-    chunker_type: str = Query("recursive", enum=["recursive", "semantic"]),
+    chunker_type: str = Query("recursive", pattern="^(recursive|semantic)$"),
     chunk_size: int = Query(512, ge=64, le=4096),
     chunk_overlap: int = Query(64, ge=0, le=512),
     user: dict = Depends(get_current_user),
@@ -250,7 +250,7 @@ async def get_task_status(task_id: str) -> TaskStatusResponse:
 @router.post("/batch", response_model=AsyncIngestResponse)
 async def ingest_batch_async(
     files: list[UploadFile] = File(...),
-    chunker_type: str = Query("recursive", enum=["recursive", "semantic"]),
+    chunker_type: str = Query("recursive", pattern="^(recursive|semantic)$"),
     user: dict = Depends(get_current_user),
 ) -> AsyncIngestResponse:
     """

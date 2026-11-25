@@ -3,7 +3,7 @@ agents/financial_agent.py
 LangGraph-based financial analysis agent.
 
 Uses:
-  - OpenRouter API for LLM inference (meta-llama/llama-3.1-8b-instruct)
+  - OpenRouter API for LLM inference (qwen/qwen-2.5-72b-instruct)
   - Query Router for routing to SQL/Web/Vector
   - LangGraph StateGraph for agentic orchestration
 """
@@ -33,7 +33,7 @@ from retrieval.rrf_fusion import reciprocal_rank_fusion
 from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE, GRADER_PROMPT, REWRITE_PROMPT, GUARDRAIL_PROMPT, CONTEXTUALIZE_PROMPT
 
 
-# ── Agent State ───────────────────────────────────────────────────────────────
+# â”€â”€ Agent State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class AgentState(TypedDict):
     messages         : Annotated[List[BaseMessage], lambda a, b: a + b]
@@ -52,26 +52,26 @@ class AgentState(TypedDict):
     collection       : str                        # Target collection: "all", "financial_data", "user_data"
 
 
-# ── LLM Setup ─────────────────────────────────────────────────────────────────
+# â”€â”€ LLM Setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-# ── Speed: Groq is ~10-20x faster than OpenRouter for equivalent models ───────
+# â”€â”€ Speed: Groq is ~10-20x faster than OpenRouter for equivalent models â”€â”€â”€â”€â”€â”€â”€
 # Primary path: Groq (ultra-fast inference)
 # Fallback path: OpenRouter (if Groq key missing or quota exceeded)
 
 _GROQ_MODELS = [
-    "llama-3.3-70b-versatile",   # Fastest high-quality Groq model
+    "openai/gpt-oss-120b", "qwen/qwen3.8-27b", "llama-3.3-70b-versatile",   # Fastest high-quality Groq model
     "llama-3.1-8b-instant",       # Ultra-fast fallback
 ]
 
 _FALLBACK_MODELS = [
     "qwen/qwen-2.5-72b-instruct",
     "meta-llama/llama-3.3-70b-instruct",
-    "meta-llama/llama-3.1-8b-instruct:free",
+    "qwen/qwen-2.5-72b-instruct:free",
 ]
 
 def _get_llm(model: str | None = None):
     """Returns the best available LLM. Prefers Groq for speed."""
-    # ⚡ Read at call-time so a fresh GROQ_API_KEY in .env takes effect
+    # âš¡ Read at call-time so a fresh GROQ_API_KEY in .env takes effect
     # without needing to restart the worker.
     groq_key = os.getenv("GROQ_API_KEY")
     # Anti-repetition penalties: Llama 3.3 70B has a known habit of looping
@@ -79,7 +79,7 @@ def _get_llm(model: str | None = None):
     # hurting French or English quality.
     _anti_loop = {"frequency_penalty": 0.4, "presence_penalty": 0.2}
     if groq_key and model is None:
-        # Use Groq primary model — significantly faster inference
+        # Use Groq primary model â€” significantly faster inference
         groq_model = os.getenv("GROQ_MODEL", _GROQ_MODELS[0])
         return ChatOpenAI(
             model=groq_model,
@@ -97,7 +97,7 @@ def _get_llm(model: str | None = None):
             temperature=0.3, max_tokens=2048, max_retries=0, request_timeout=20,
             model_kwargs=_anti_loop,
         )
-    # Try Groq fallback key on the same primary model — handles rate limits
+    # Try Groq fallback key on the same primary model â€” handles rate limits
     # without paying the 60s+ OpenRouter latency.
     if model == "_GROQ_FALLBACK_KEY":
         fallback_key = os.getenv("GROQ_API_KEY_Fallback")
@@ -111,7 +111,7 @@ def _get_llm(model: str | None = None):
             )
     # OpenRouter fallback (or explicit model override)
     if model is None:
-        model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+        model = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-72b-instruct")
     return ChatOpenAI(
         model=model,
         base_url="https://openrouter.ai/api/v1",
@@ -125,12 +125,12 @@ def _get_fast_llm():
     groq_key = os.getenv("GROQ_API_KEY")
     if groq_key:
         return ChatOpenAI(
-            model="llama-3.1-8b-instant",
+            model=os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b"),
             base_url="https://api.groq.com/openai/v1",
             api_key=groq_key,
             temperature=0.0, max_tokens=256, max_retries=0, request_timeout=8,
         )
-    model = os.getenv("FAST_LLM_MODEL", "meta-llama/llama-3.1-8b-instruct")
+    model = os.getenv("FAST_LLM_MODEL", "qwen/qwen-2.5-72b-instruct")
     return ChatOpenAI(
         model=model, base_url="https://openrouter.ai/api/v1",
         api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -138,7 +138,7 @@ def _get_fast_llm():
     )
 
 
-# ── Lazy-loaded retrieval singletons (avoid 25s+ init at import time) ─────────
+# â”€â”€ Lazy-loaded retrieval singletons (avoid 25s+ init at import time) â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 import threading
 _init_lock = threading.Lock()
@@ -243,7 +243,7 @@ def _results_match_query(results: list, question: str) -> bool:
     # expresses a concrete market-data intent (movers, prices, revenue, volume).
     # Conceptual/definitional questions ("how to measure inflation") fall here
     # and are rejected so irrelevant tables don't pollute the context.
-    # NOTE: deliberately excludes broad words like "market"/"marché", since a
+    # NOTE: deliberately excludes broad words like "market"/"marchÃ©", since a
     # conceptual question can mention "the market" without wanting price data.
     generic_market_intent = (
         is_revenue_query
@@ -254,7 +254,7 @@ def _results_match_query(results: list, question: str) -> bool:
         ])
     )
     if not generic_market_intent:
-        print("[Router] SQL results have no concrete relevance to the question — discarding.")
+        print("[Router] SQL results have no concrete relevance to the question â€” discarding.")
         return False
     return True
 
@@ -306,10 +306,10 @@ def retrieve_context(state: AgentState) -> AgentState:
         need_web = False
         print("[Router] FOCUS MODE: Market Macro. Forcing Vector Search.")
 
-    # ── 1. SQL Search ────────────────────────────────────────────────────────
+    # â”€â”€ 1. SQL Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if need_sql:
         try:
-            # Explicit intent detection — we only hit the structured DB when the
+            # Explicit intent detection â€” we only hit the structured DB when the
             # question actually asks for market/financial figures. A vague or
             # conceptual question (e.g. "how to measure inflation") must NOT
             # trigger a generic top-movers dump that then leaks into the answer.
@@ -319,10 +319,10 @@ def retrieve_context(state: AgentState) -> AgentState:
                 "trending", "most active", "top stock", "best stock",
             ])
 
-            # Comparison detection: "compare X vs Y", "X contre Y", "مقارنة"
+            # Comparison detection: "compare X vs Y", "X contre Y", "Ù…Ù‚Ø§Ø±Ù†Ø©"
             compare_intent = any(k in q_lower for k in [
                 "compare", "compar", "versus", " vs ", " vs.", "contre",
-                "مقارنة", "قارن", "difference between", "différence entre",
+                "Ù…Ù‚Ø§Ø±Ù†Ø©", "Ù‚Ø§Ø±Ù†", "difference between", "diffÃ©rence entre",
             ])
 
             if compare_intent and routing.get("detail"):
@@ -344,7 +344,7 @@ def retrieve_context(state: AgentState) -> AgentState:
             elif movers_intent:
                 sql_results = _get_sql_search().get_top_movers()
             elif compare_intent:
-                # Comparison without a specific detail — try to find tickers in the question
+                # Comparison without a specific detail â€” try to find tickers in the question
                 import re
                 tickers_found = re.findall(r'\b([A-Z]{2,5})\b', question)
                 if len(tickers_found) >= 2:
@@ -354,19 +354,19 @@ def retrieve_context(state: AgentState) -> AgentState:
                 else:
                     sql_results = []
             else:
-                # No concrete structured-data intent — skip SQL entirely rather
+                # No concrete structured-data intent â€” skip SQL entirely rather
                 # than fabricating an irrelevant table.
-                print("[Router] SQL routed but no concrete data intent — skipping SQL fetch.")
+                print("[Router] SQL routed but no concrete data intent â€” skipping SQL fetch.")
                 sql_results = []
 
             # Validate: do SQL results actually match what the user asked?
             if sql_results and not _results_match_query(sql_results, question):
-                print(f"[Router] SQL results don't match query — discarding")
+                print(f"[Router] SQL results don't match query â€” discarding")
                 sql_results = []
         except Exception as e:
             print(f"[Router] SQL error: {e}")
 
-    # ── 2. Hybrid Retrieval: Dense (BGE-M3) + Sparse (BM25) + RRF + Reranker ──
+    # â”€â”€ 2. Hybrid Retrieval: Dense (BGE-M3) + Sparse (BM25) + RRF + Reranker â”€â”€
     vector_quality = "none"  # Track: "none", "weak", "strong"
     # Detect if user explicitly selected a specific collection (not "all")
     user_forced_collection = state.get("collection", "all") != "all"
@@ -376,47 +376,47 @@ def retrieve_context(state: AgentState) -> AgentState:
         coll_filter = None if target_collection == "all" else target_collection
 
         try:
-            # 2a. Dense retrieval (semantic embeddings via ChromaDB) — wider pool for better recall
+            # 2a. Dense retrieval (semantic embeddings via ChromaDB) â€” wider pool for better recall
             # Use more candidates for user-selected collections (smaller, need higher recall)
-            # ⚡ Speed: trimmed pool for institutional collection (BM25 already covers keyword variants)
+            # âš¡ Speed: trimmed pool for institutional collection (BM25 already covers keyword variants)
             search_top_k = 40 if user_forced_collection else 20
             dense_results = _get_vector_search().search(question, top_k=search_top_k, collection=coll_filter)
             # Tag results for RRF source tracking
             for r in dense_results:
                 r["retrieval_method"] = "dense"
 
-            # 2b. Sparse retrieval (BM25 keyword matching) — wider pool
+            # 2b. Sparse retrieval (BM25 keyword matching) â€” wider pool
             bm25_results = []
             try:
                 bm25_results = _get_bm25_search().search(question, top_k=15)
             except Exception as e:
                 print(f"[Router] BM25 search error (non-fatal): {e}")
 
-            # 2c. Reciprocal Rank Fusion — merge all retrieval streams
+            # 2c. Reciprocal Rank Fusion â€” merge all retrieval streams
             all_streams = [s for s in [dense_results, bm25_results] if s]
             if all_streams:
                 if len(all_streams) > 1:
                     total_docs = sum(len(s) for s in all_streams)
                     print(f"[Router] Hybrid retrieval: {total_docs} total docs from {len(all_streams)} streams -> RRF merge")
-                    # ⚡ Trimmed fused pool for faster reranker call
+                    # âš¡ Trimmed fused pool for faster reranker call
                     vector_results = reciprocal_rank_fusion(*all_streams, top_k=15)
                 else:
                     vector_results = all_streams[0][:15]
 
             # 2e. Rerank fused results with Jina cross-encoder
-            #     ⚡ Skip when one dense result clearly dominates (saves API roundtrip).
+            #     âš¡ Skip when one dense result clearly dominates (saves API roundtrip).
             if vector_results:
                 dynamic_top_n = state.get("top_n", 5)
 
                 # Fast-path: if dense top score is already very high and gap to #2 is large,
-                # the reranker would just confirm the order — skip it.
+                # the reranker would just confirm the order â€” skip it.
                 _can_skip_rerank = False
                 if dense_results and len(dense_results) >= 2:
                     s1 = dense_results[0].get("score", 0)
                     s2 = dense_results[1].get("score", 0)
                     if s1 >= 0.85 and (s1 - s2) >= 0.15 and not user_forced_collection:
                         _can_skip_rerank = True
-                        print(f"[Router] Skipping reranker — dense top dominates ({s1:.2f} vs {s2:.2f})")
+                        print(f"[Router] Skipping reranker â€” dense top dominates ({s1:.2f} vs {s2:.2f})")
                         vector_results = vector_results[:dynamic_top_n]
                         # Synthesise a rerank_score so downstream filters/quality keep working
                         for r in vector_results:
@@ -427,7 +427,7 @@ def retrieve_context(state: AgentState) -> AgentState:
                     vector_results = _get_reranker().rerank(question, vector_results, top_n=dynamic_top_n)
 
                 # 2f. Filter out low-confidence results (improves Context Precision)
-                # Use a lower threshold for user-selected collections — the user
+                # Use a lower threshold for user-selected collections â€” the user
                 # knows their document has the answer, so be more permissive.
                 if vector_results:
                     min_score = 0.08 if user_forced_collection else 0.25
@@ -446,8 +446,8 @@ def retrieve_context(state: AgentState) -> AgentState:
                     else:
                         vector_quality = "strong" if best_score >= 0.3 else "weak"
 
-            # 2g. Context window expansion for user collections — fetch neighboring
-            # chunks (±1) to give the LLM surrounding context for fragmented chunks.
+            # 2g. Context window expansion for user collections â€” fetch neighboring
+            # chunks (Â±1) to give the LLM surrounding context for fragmented chunks.
             if user_forced_collection and vector_results:
                 try:
                     expanded = []
@@ -473,7 +473,7 @@ def retrieve_context(state: AgentState) -> AgentState:
                                     neighbors[0]["score"] = r.get("score", 0) * 0.8  # slightly lower
                                     expanded.append(neighbors[0])
                     if len(expanded) > len(vector_results):
-                        print(f"[Router] Context expansion: {len(vector_results)} → {len(expanded)} chunks")
+                        print(f"[Router] Context expansion: {len(vector_results)} â†’ {len(expanded)} chunks")
                         vector_results = expanded
                 except Exception as e:
                     print(f"[Router] Context expansion error (non-fatal): {e}")
@@ -481,10 +481,10 @@ def retrieve_context(state: AgentState) -> AgentState:
         except Exception as e:
             print(f"[Router] Hybrid retrieval error: {e}")
 
-    # ── 3. Web Search ────────────────────────────────────────────────────
+    # â”€â”€ 3. Web Search â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     #   Always runs if:
     #     a) Router explicitly asked for web  OR
-    #     b) Vector results are weak/absent (auto-supplement to avoid "je n'ai pas trouvé")
+    #     b) Vector results are weak/absent (auto-supplement to avoid "je n'ai pas trouvÃ©")
     #   BUT: if the user explicitly selected a specific collection (not "all"),
     #   respect their choice and do NOT override with web results.
 
@@ -494,15 +494,15 @@ def retrieve_context(state: AgentState) -> AgentState:
         except Exception as e:
             print(f"[Router] Web search error: {e}")
     elif not user_forced_collection and vector_quality in ("none", "weak"):
-        print(f"[Router] Vector quality '{vector_quality}' — auto-supplementing with web search.")
+        print(f"[Router] Vector quality '{vector_quality}' â€” auto-supplementing with web search.")
         try:
             web_results = _get_web_search().search(question, max_results=3)
         except Exception as e:
             print(f"[Router] Web search error: {e}")
     elif user_forced_collection:
-        print(f"[Router] User selected specific collection '{state.get('collection')}' — skipping web supplement.")
+        print(f"[Router] User selected specific collection '{state.get('collection')}' â€” skipping web supplement.")
 
-    # ── 4. Merge only the sources that were fetched ──────────────────────
+    # â”€â”€ 4. Merge only the sources that were fetched â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     # If vector quality is weak but web returned results, drop weak vectors to avoid confusion
     # BUT: if user explicitly chose a collection, always keep their vector results.
     if vector_quality == "weak" and web_results and not user_forced_collection:
@@ -551,7 +551,7 @@ def generate_answer(state: AgentState) -> AgentState:
     )
 
     # Add explicit language enforcement at the end of the prompt
-    lang_instruction = f"\n\n⚠️ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
+    lang_instruction = f"\n\nâš ï¸ MANDATORY: Your entire response MUST be written in {detected_lang}. The user asked in {detected_lang}, so reply ONLY in {detected_lang}."
     prompt += lang_instruction
 
     # Prepend prior conversation history (last 4 messages = 2 turns) to save tokens
@@ -562,10 +562,10 @@ def generate_answer(state: AgentState) -> AgentState:
         HumanMessage(content=prompt),
     ]
 
-    # ⚡ Speed: Try Groq first (None → uses Groq if key present), then Groq
+    # âš¡ Speed: Try Groq first (None â†’ uses Groq if key present), then Groq
     # fallback key (handles rate limits without 60s+ OpenRouter latency),
     # then OpenRouter fallbacks. Passing None lets _get_llm() pick Groq automatically.
-    openrouter_primary = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct")
+    openrouter_primary = os.getenv("OPENROUTER_MODEL", "qwen/qwen-2.5-72b-instruct")
     # (None sentinel = Groq preferred path)
     models_to_try = (
         [None]
@@ -608,7 +608,7 @@ def generate_answer(state: AgentState) -> AgentState:
                         "answer": "I encountered an issue processing your request. Please try rephrasing your question.",
                     }
 
-                # Other unexpected error — log and try next model
+                # Other unexpected error â€” log and try next model
                 print(f"[LLM] Unexpected error on {model_name} attempt {attempt + 1}: {error_msg[:120]}")
                 if attempt == 0:
                     time.sleep(1)
@@ -617,7 +617,7 @@ def generate_answer(state: AgentState) -> AgentState:
 
     # All models exhausted
     fallback = (
-        "**⚠️ Service Temporarily Unavailable**\n\n"
+        "**âš ï¸ Service Temporarily Unavailable**\n\n"
         "The AI provider is currently experiencing issues. "
         "Please try again in a moment.\n\n"
         "Here is the raw evidence retrieved from your documents:\n\n"
@@ -626,12 +626,12 @@ def generate_answer(state: AgentState) -> AgentState:
     return {"messages": [], "answer": fallback}
 
 
-# ── Guardrail Node ────────────────────────────────────────────────────────────
+# â”€â”€ Guardrail Node â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _OBVIOUSLY_SAFE_PATTERNS = [
     # Finance / econ terms in French, English, Arabic
-    "marché", "bourse", "action", "obligation", "inflation", "taux", "pib", "croissance",
-    "dividende", "rendement", "risque", "portefeuille", "investissement", "bénéfice",
+    "marchÃ©", "bourse", "action", "obligation", "inflation", "taux", "pib", "croissance",
+    "dividende", "rendement", "risque", "portefeuille", "investissement", "bÃ©nÃ©fice",
     "stock", "market", "price", "revenue", "gdp", "interest", "bond", "equity",
     "earnings", "income", "ebitda", "eps", "share", "dividend", "profit", "margin",
     "debt", "asset", "liability", "balance sheet", "cash flow", "annual report",
@@ -639,35 +639,35 @@ _OBVIOUSLY_SAFE_PATTERNS = [
     "company", "financial", "capital", "valuation", "p/e", "ratio",
     "mosaic", "ocp", "attijariwafa", "bcp", "iam", "managem", "cosumar",
     # Arabic finance / market terms (covers ~95% of typical Arabic queries)
-    "سهم", "أسهم", "سوق", "أسواق", "تضخم", "فائدة", "ناتج", "استثمار", "عائد",
-    "أرباح", "إيرادات", "شركة", "شركات", "بورصة", "إدراج", "اقتصاد", "اقتصادي",
-    "بنك", "البنك", "مصرف", "مصرفي", "قرض", "قروض", "صندوق", "ميزانية", "مالي",
-    "مالية", "تمويل", "أصول", "خصوم", "ربحية", "نمو", "ركود", "تداول", "سند",
-    "سندات", "أداء", "مؤشر", "الدار البيضاء", "المغرب", "بنك المغرب",
+    "Ø³Ù‡Ù…", "Ø£Ø³Ù‡Ù…", "Ø³ÙˆÙ‚", "Ø£Ø³ÙˆØ§Ù‚", "ØªØ¶Ø®Ù…", "ÙØ§Ø¦Ø¯Ø©", "Ù†Ø§ØªØ¬", "Ø§Ø³ØªØ«Ù…Ø§Ø±", "Ø¹Ø§Ø¦Ø¯",
+    "Ø£Ø±Ø¨Ø§Ø­", "Ø¥ÙŠØ±Ø§Ø¯Ø§Øª", "Ø´Ø±ÙƒØ©", "Ø´Ø±ÙƒØ§Øª", "Ø¨ÙˆØ±ØµØ©", "Ø¥Ø¯Ø±Ø§Ø¬", "Ø§Ù‚ØªØµØ§Ø¯", "Ø§Ù‚ØªØµØ§Ø¯ÙŠ",
+    "Ø¨Ù†Ùƒ", "Ø§Ù„Ø¨Ù†Ùƒ", "Ù…ØµØ±Ù", "Ù…ØµØ±ÙÙŠ", "Ù‚Ø±Ø¶", "Ù‚Ø±ÙˆØ¶", "ØµÙ†Ø¯ÙˆÙ‚", "Ù…ÙŠØ²Ø§Ù†ÙŠØ©", "Ù…Ø§Ù„ÙŠ",
+    "Ù…Ø§Ù„ÙŠØ©", "ØªÙ…ÙˆÙŠÙ„", "Ø£ØµÙˆÙ„", "Ø®ØµÙˆÙ…", "Ø±Ø¨Ø­ÙŠØ©", "Ù†Ù…Ùˆ", "Ø±ÙƒÙˆØ¯", "ØªØ¯Ø§ÙˆÙ„", "Ø³Ù†Ø¯",
+    "Ø³Ù†Ø¯Ø§Øª", "Ø£Ø¯Ø§Ø¡", "Ù…Ø¤Ø´Ø±", "Ø§Ù„Ø¯Ø§Ø± Ø§Ù„Ø¨ÙŠØ¶Ø§Ø¡", "Ø§Ù„Ù…ØºØ±Ø¨", "Ø¨Ù†Ùƒ Ø§Ù„Ù…ØºØ±Ø¨",
     "budget", "dette", "fiscal", "hcp", "bank al-maghrib", "ammc", "bkam",
 ]
 
-# ⚠️ Red-flag patterns: even if a question contains safe financial keywords,
+# âš ï¸ Red-flag patterns: even if a question contains safe financial keywords,
 # these intent markers force the full LLM safety check (or direct refusal).
 # Covers tax evasion, money laundering, insider trading, scam attempts,
 # and other malicious intent in FR/EN/AR.
 _UNSAFE_INTENT_PATTERNS = [
-    # English — illegal intent
+    # English â€” illegal intent
     "how to evade", "how to avoid tax", "tax evasion", "money laundering",
     "launder money", "insider trading", "manipulate the market", "pump and dump",
     "ponzi", "scam", "fraud", "embezzle", "bribe", "kickback",
     "hide money", "hide income", "offshore evasion", "shell company to hide",
-    # French — intention illégale
-    "comment échapper", "échapper aux impôts", "échapper à l'impôt",
-    "évasion fiscale", "fraude fiscale", "blanchiment", "blanchir",
-    "délit d'initié", "manipuler le marché", "cacher de l'argent",
+    # French â€” intention illÃ©gale
+    "comment Ã©chapper", "Ã©chapper aux impÃ´ts", "Ã©chapper Ã  l'impÃ´t",
+    "Ã©vasion fiscale", "fraude fiscale", "blanchiment", "blanchir",
+    "dÃ©lit d'initiÃ©", "manipuler le marchÃ©", "cacher de l'argent",
     "cacher des revenus", "dissimuler", "frauder le fisc",
-    "comment frauder", "détournement de fonds", "pot-de-vin", "corruption",
-    # Arabic — نية غير مشروعة
-    "كيف أهرب من الضرائب", "الهروب من الضرائب", "التهرب الضريبي",
-    "غسيل الأموال", "غسل الأموال", "الاحتيال", "احتيال", "نصب",
-    "إخفاء الأموال", "إخفاء الدخل", "كيف أخفي", "كيف أحتال",
-    "تبييض الاموال","التداول من الداخل", "التلاعب بالسوق", "اختلاس", "رشوة",
+    "comment frauder", "dÃ©tournement de fonds", "pot-de-vin", "corruption",
+    # Arabic â€” Ù†ÙŠØ© ØºÙŠØ± Ù…Ø´Ø±ÙˆØ¹Ø©
+    "ÙƒÙŠÙ Ø£Ù‡Ø±Ø¨ Ù…Ù† Ø§Ù„Ø¶Ø±Ø§Ø¦Ø¨", "Ø§Ù„Ù‡Ø±ÙˆØ¨ Ù…Ù† Ø§Ù„Ø¶Ø±Ø§Ø¦Ø¨", "Ø§Ù„ØªÙ‡Ø±Ø¨ Ø§Ù„Ø¶Ø±ÙŠØ¨ÙŠ",
+    "ØºØ³ÙŠÙ„ Ø§Ù„Ø£Ù…ÙˆØ§Ù„", "ØºØ³Ù„ Ø§Ù„Ø£Ù…ÙˆØ§Ù„", "Ø§Ù„Ø§Ø­ØªÙŠØ§Ù„", "Ø§Ø­ØªÙŠØ§Ù„", "Ù†ØµØ¨",
+    "Ø¥Ø®ÙØ§Ø¡ Ø§Ù„Ø£Ù…ÙˆØ§Ù„", "Ø¥Ø®ÙØ§Ø¡ Ø§Ù„Ø¯Ø®Ù„", "ÙƒÙŠÙ Ø£Ø®ÙÙŠ", "ÙƒÙŠÙ Ø£Ø­ØªØ§Ù„",
+    "ØªØ¨ÙŠÙŠØ¶ Ø§Ù„Ø§Ù…ÙˆØ§Ù„","Ø§Ù„ØªØ¯Ø§ÙˆÙ„ Ù…Ù† Ø§Ù„Ø¯Ø§Ø®Ù„", "Ø§Ù„ØªÙ„Ø§Ø¹Ø¨ Ø¨Ø§Ù„Ø³ÙˆÙ‚", "Ø§Ø®ØªÙ„Ø§Ø³", "Ø±Ø´ÙˆØ©",
 ]
 
 
@@ -689,12 +689,12 @@ def guardrail_check(state: AgentState) -> dict:
     """
     question = state["question"].lower()
 
-    # ⛔ Hard refusal: explicit malicious intent overrides any safe keyword
+    # â›” Hard refusal: explicit malicious intent overrides any safe keyword
     if _is_obviously_unsafe(question):
         print("[Guardrail] Hard refusal: explicit unsafe intent detected.")
         return {"is_safe": "no"}
 
-    # ⚡ Fast path: if question contains known-safe financial keywords, skip LLM call
+    # âš¡ Fast path: if question contains known-safe financial keywords, skip LLM call
     if any(kw in question for kw in _OBVIOUSLY_SAFE_PATTERNS):
         print("[Guardrail] Fast-pass: question contains safe financial keywords.")
         return {"is_safe": "yes"}
@@ -725,24 +725,24 @@ def generate_blocked(state: AgentState) -> dict:
 
     if lang == "Arabic":
         blocked_msg = (
-            "⛔ لا يمكنني الإجابة على هذا السؤال. "
-            "بصفتي مساعدًا للتحليل المالي، لا يمكنني تقديم معلومات حول "
-            "أنشطة غير قانونية أو مخالفة للأخلاقيات (التهرب الضريبي، "
-            "غسيل الأموال، التداول من الداخل، الاحتيال، إلخ). "
-            "يمكنني مساعدتك في فهم القوانين الضريبية أو الاستثمار المشروع."
+            "â›” Ù„Ø§ ÙŠÙ…ÙƒÙ†Ù†ÙŠ Ø§Ù„Ø¥Ø¬Ø§Ø¨Ø© Ø¹Ù„Ù‰ Ù‡Ø°Ø§ Ø§Ù„Ø³Ø¤Ø§Ù„. "
+            "Ø¨ØµÙØªÙŠ Ù…Ø³Ø§Ø¹Ø¯Ù‹Ø§ Ù„Ù„ØªØ­Ù„ÙŠÙ„ Ø§Ù„Ù…Ø§Ù„ÙŠØŒ Ù„Ø§ ÙŠÙ…ÙƒÙ†Ù†ÙŠ ØªÙ‚Ø¯ÙŠÙ… Ù…Ø¹Ù„ÙˆÙ…Ø§Øª Ø­ÙˆÙ„ "
+            "Ø£Ù†Ø´Ø·Ø© ØºÙŠØ± Ù‚Ø§Ù†ÙˆÙ†ÙŠØ© Ø£Ùˆ Ù…Ø®Ø§Ù„ÙØ© Ù„Ù„Ø£Ø®Ù„Ø§Ù‚ÙŠØ§Øª (Ø§Ù„ØªÙ‡Ø±Ø¨ Ø§Ù„Ø¶Ø±ÙŠØ¨ÙŠØŒ "
+            "ØºØ³ÙŠÙ„ Ø§Ù„Ø£Ù…ÙˆØ§Ù„ØŒ Ø§Ù„ØªØ¯Ø§ÙˆÙ„ Ù…Ù† Ø§Ù„Ø¯Ø§Ø®Ù„ØŒ Ø§Ù„Ø§Ø­ØªÙŠØ§Ù„ØŒ Ø¥Ù„Ø®). "
+            "ÙŠÙ…ÙƒÙ†Ù†ÙŠ Ù…Ø³Ø§Ø¹Ø¯ØªÙƒ ÙÙŠ ÙÙ‡Ù… Ø§Ù„Ù‚ÙˆØ§Ù†ÙŠÙ† Ø§Ù„Ø¶Ø±ÙŠØ¨ÙŠØ© Ø£Ùˆ Ø§Ù„Ø§Ø³ØªØ«Ù…Ø§Ø± Ø§Ù„Ù…Ø´Ø±ÙˆØ¹."
         )
     elif lang == "French":
         blocked_msg = (
-            "⛔ Je ne peux pas répondre à cette question. En tant "
-            "qu'assistant d'analyse financière, je ne peux pas fournir "
-            "d'informations sur des activités illégales ou contraires "
-            "à l'éthique (évasion fiscale, blanchiment, délit d'initié, "
-            "fraude, etc.). Je peux en revanche vous aider à comprendre "
-            "le cadre fiscal légal ou les bonnes pratiques d'investissement."
+            "â›” Je ne peux pas rÃ©pondre Ã  cette question. En tant "
+            "qu'assistant d'analyse financiÃ¨re, je ne peux pas fournir "
+            "d'informations sur des activitÃ©s illÃ©gales ou contraires "
+            "Ã  l'Ã©thique (Ã©vasion fiscale, blanchiment, dÃ©lit d'initiÃ©, "
+            "fraude, etc.). Je peux en revanche vous aider Ã  comprendre "
+            "le cadre fiscal lÃ©gal ou les bonnes pratiques d'investissement."
         )
     else:
         blocked_msg = (
-            "⛔ I cannot answer this question. As a financial analysis "
+            "â›” I cannot answer this question. As a financial analysis "
             "assistant, I cannot provide information on illegal or "
             "unethical activities (tax evasion, money laundering, insider "
             "trading, fraud, etc.). I can however help you understand the "
@@ -751,7 +751,7 @@ def generate_blocked(state: AgentState) -> dict:
 
     return {"answer": blocked_msg, "messages": [AIMessage(content=blocked_msg)]}
 
-# ── Conversational Context ────────────────────────────────────────────────────
+# â”€â”€ Conversational Context â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def contextualize_query(state: AgentState) -> dict:
     """Node: Contextualizes the query using the conversation history.
@@ -762,18 +762,18 @@ def contextualize_query(state: AgentState) -> dict:
     history = state.get("history", [])
     question = state["question"]
     
-    # ⚡ Fast path: no history → no LLM call needed
+    # âš¡ Fast path: no history â†’ no LLM call needed
     if not history:
         return {"question": question}
     
     # Only bother contextualizing if the question seems to reference prior context
     _ref_words = ["it", "this", "that", "they", "them", "he", "she",
                   "il", "elle", "ce", "cet", "cette", "ils", "elles",
-                  "هذا", "هذه", "هم", "هي", "ذلك"]
+                  "Ù‡Ø°Ø§", "Ù‡Ø°Ù‡", "Ù‡Ù…", "Ù‡ÙŠ", "Ø°Ù„Ùƒ"]
     q_lower = question.lower()
     has_reference = any(f" {w} " in f" {q_lower} " or q_lower.startswith(f"{w} ") for w in _ref_words)
     if not has_reference and len(question.split()) > 4:
-        # Long enough standalone question with no pronouns — skip the LLM call
+        # Long enough standalone question with no pronouns â€” skip the LLM call
         print("[Contextualizer] Skipped (question appears self-contained).")
         return {"question": question}
         
@@ -797,7 +797,7 @@ def contextualize_query(state: AgentState) -> dict:
         print(f"[Contextualizer] Error: {e}. Keeping original.")
         return {"question": question}
 
-# ── CRAG Reflection Nodes ─────────────────────────────────────────────────────
+# â”€â”€ CRAG Reflection Nodes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def grade_documents(state: AgentState) -> dict:
     """Node: Evaluate if the retrieved context is relevant.
@@ -808,9 +808,9 @@ def grade_documents(state: AgentState) -> dict:
     """
     context = state.get("context", "").strip()
     
-    # Empty or no-results context → trigger CRAG fallback to web search
+    # Empty or no-results context â†’ trigger CRAG fallback to web search
     if not context or context == "No relevant documents found." or len(context) < 50:
-        print("[Grader] Context is empty/insufficient — marking for web fallback.")
+        print("[Grader] Context is empty/insufficient â€” marking for web fallback.")
         return {"context_relevant": "no", "retry_count": state.get("retry_count", 0)}
     
     print("[Grader] Context looks sufficient (pre-graded by Jina reranker).")
@@ -826,7 +826,7 @@ def rewrite_query(state: AgentState) -> dict:
     try:
         res = llm.invoke([SystemMessage(content=prompt)])
         new_q = res.content.strip()
-        # Extract only the first line — LLMs sometimes add explanations after
+        # Extract only the first line â€” LLMs sometimes add explanations after
         new_q = new_q.split("\n")[0].strip().strip('"').strip("'")
         # Hard cap at 300 chars (Tavily limit is 400)
         new_q = new_q[:300] if len(new_q) > 300 else new_q
@@ -843,7 +843,7 @@ def rewrite_query(state: AgentState) -> dict:
 def web_search_fallback(state: AgentState) -> dict:
     """Node: Fallback Web Search using the rewritten query.
     
-    Supplements rather than replaces existing context — if vector search
+    Supplements rather than replaces existing context â€” if vector search
     found something partial, we keep it and add web results on top.
     """
     q = state["question"]
@@ -869,7 +869,7 @@ def web_search_fallback(state: AgentState) -> dict:
     }
 
 
-# ── Build Graph ───────────────────────────────────────────────────────────────
+# â”€â”€ Build Graph â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def build_agent():
     graph = StateGraph(AgentState)
@@ -915,7 +915,7 @@ def build_agent():
     return graph.compile()
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _agent = None
 

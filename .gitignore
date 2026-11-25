@@ -43,3 +43,6 @@ data/
 
 # OCR intermediate output (generated markdown files)
 OCR_Processing/output/
+
+# Kubernetes secrets (plain-text API keys — never commit)
+deploy/k8s/02-secrets.yaml

@@ -1,0 +1,18 @@
+# UI ClusterIP Service — reachable inside the cluster as "ui:5000"
+apiVersion: v1
+kind: Service
+metadata:
+  name: ui
+  namespace: financial-advisor
+  labels:
+    app.kubernetes.io/name: financial-advisor
+    app.kubernetes.io/component: ui
+spec:
+  type: ClusterIP
+  selector:
+    app: ui
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      protocol: TCP

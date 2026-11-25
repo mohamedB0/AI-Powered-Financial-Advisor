@@ -422,7 +422,11 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
                     except Exception as e:
                         error_msg = str(e)
                         is_provider_error = (
-                            "provider" in error_msg.lower()
+                            "404" in error_msg
+                            or "not exist" in error_msg
+                            or "do not have access" in error_msg
+                            or "model" in error_msg.lower()
+                            or "provider" in error_msg.lower()
                             or "502" in error_msg
                             or "503" in error_msg
                             or "rate_limit" in error_msg
