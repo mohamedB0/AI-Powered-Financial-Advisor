@@ -18,9 +18,8 @@ from storage.chroma_store import (
     CHROMA_COLLECTION_FINANCIAL,
     CHROMA_COLLECTION_USER_DATA,
     CHROMA_PERSIST_DIR,
+    get_vector_client,
 )
-import chromadb
-from chromadb.config import Settings
 
 
 class VectorSearch:
@@ -41,11 +40,8 @@ class VectorSearch:
 
     def __init__(self, embedder: Embedder = None):
         self.embedder = embedder or Embedder()
-        # Connect to the ChromaDB client once
-        self._client = chromadb.PersistentClient(
-            path=CHROMA_PERSIST_DIR,
-            settings=Settings(anonymized_telemetry=False),
-        )
+        # Connect to the vector store client once (ChromaDB or Supabase pgvector)
+        self._client = get_vector_client(CHROMA_PERSIST_DIR)
         # Get handles to active BGE-M3 collections only
         self._collections = {
             name: self._client.get_or_create_collection(

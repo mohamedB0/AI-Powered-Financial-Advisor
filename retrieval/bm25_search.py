@@ -188,15 +188,29 @@ class BM25Search:
     ) -> List[Dict[str, Any]]:
         """
         Search the BM25 index with a natural language query.
-
-        Args:
-            query:           User's question.
-            top_k:           Number of results to return.
-            filter_metadata: Optional metadata filter (applied post-retrieval).
-
-        Returns:
-            List of dicts with: text, score, source, page, collection, metadata
+        When VECTOR_BACKEND=pgvector, delegates to PostgreSQL native full-text search
+        to avoid loading 29k+ documents into memory on low-RAM cloud instances.
         """
+        from storage.chroma_store import (
+            is_pgvector_enabled,
+            get_vector_client,
+            CHROMA_COLLECTION_FINANCIAL,
+            CHROMA_COLLECTION_USER_DATA,
+        )
+        if is_pgvector_enabled():
+            client = get_vector_client()
+            fts_results: List[Dict[str, Any]] = []
+            for coll_name in [CHROMA_COLLECTION_FINANCIAL, CHROMA_COLLECTION_USER_DATA]:
+                coll = client.get_or_create_collection(coll_name)
+                fts_results.extend(coll.search_fts(query, top_k=top_k))
+            if filter_metadata:
+                fts_results = [
+                    r for r in fts_results
+                    if all(r.get("metadata", {}).get(k) == v for k, v in filter_metadata.items())
+                ]
+            fts_results.sort(key=lambda x: x["score"], reverse=True)
+            return fts_results[:top_k]
+
         self._ensure_index()
 
         if self._index is None or not self._corpus:

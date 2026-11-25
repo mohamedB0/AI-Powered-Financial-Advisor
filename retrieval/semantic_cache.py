@@ -7,25 +7,20 @@ import hashlib
 import logging
 from typing import Optional, Dict, Any
 
-import chromadb
-from chromadb.config import Settings
 from ingestion.embeddings import Embedder
-from storage.chroma_store import CHROMA_PERSIST_DIR
+from storage.chroma_store import CHROMA_PERSIST_DIR, get_vector_client
 
 logger = logging.getLogger(__name__)
 
 class SemanticCache:
     """
-    Semantic cache using a dedicated ChromaDB collection.
+    Semantic cache using ChromaDB or Supabase pgvector.
     Matches incoming user questions against past questions using cosine similarity.
     If similarity > 0.95 (distance < 0.05), we bypass the entire RAG pipeline and LLM.
     """
     def __init__(self, embedder: Optional[Embedder] = None, collection_name: str = "semantic_cache"):
         self.embedder = embedder or Embedder()
-        self.client = chromadb.PersistentClient(
-             path=CHROMA_PERSIST_DIR,
-             settings=Settings(anonymized_telemetry=False),
-        )
+        self.client = get_vector_client(CHROMA_PERSIST_DIR)
         # Note: hnsw:space=cosine configures ChromaDB to return cosine distance (1 - similarity)
         self.collection = self.client.get_or_create_collection(
             name=collection_name,

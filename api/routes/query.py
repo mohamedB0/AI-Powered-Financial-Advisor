@@ -77,20 +77,16 @@ def list_collections() -> dict:
           ]
         }
     """
-    import chromadb
-    from chromadb.config import Settings as ChromaSettings
     from storage.chroma_store import (
         CHROMA_PERSIST_DIR,
         CHROMA_COLLECTION_FINANCIAL,
         CHROMA_COLLECTION_USER_DATA,
+        get_vector_client,
     )
 
     counts = {CHROMA_COLLECTION_FINANCIAL: 0, CHROMA_COLLECTION_USER_DATA: 0}
     try:
-        client = chromadb.PersistentClient(
-            path=CHROMA_PERSIST_DIR,
-            settings=ChromaSettings(anonymized_telemetry=False),
-        )
+        client = get_vector_client(CHROMA_PERSIST_DIR)
         for name in counts:
             try:
                 coll = client.get_or_create_collection(

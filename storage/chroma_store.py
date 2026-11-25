@@ -15,8 +15,12 @@ import hashlib
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import chromadb
-from chromadb.config import Settings
+try:
+    import chromadb
+    from chromadb.config import Settings
+except ImportError:
+    chromadb = None
+    Settings = None
 
 logger = logging.getLogger(__name__)
 
@@ -42,10 +46,30 @@ CHROMA_COLLECTION_USER_DATA   = "user_data"
 CHROMA_COLLECTION = os.getenv("CHROMA_COLLECTION", CHROMA_COLLECTION_FINANCIAL)
 
 
+def is_pgvector_enabled() -> bool:
+    """Return True if VECTOR_BACKEND=pgvector or chromadb is not installed."""
+    backend = os.getenv("VECTOR_BACKEND", "auto").lower()
+    if backend == "pgvector":
+        return True
+    if backend == "chroma":
+        return False
+    return chromadb is None
+
+
+def get_vector_client(persist_dir: str = CHROMA_PERSIST_DIR):
+    """Return PgVectorClient when pgvector is active, else chromadb.PersistentClient."""
+    if is_pgvector_enabled():
+        from storage.pgvector_store import PgVectorClient
+        return PgVectorClient()
+    return chromadb.PersistentClient(
+        path=persist_dir,
+        settings=Settings(anonymized_telemetry=False),
+    )
+
+
 class ChromaStore:
     """
-    Manages ChromaDB persistence for scraped financial documents
-    from all pipeline sources (CDC, HCP, config-driven, local docs).
+    Manages vector store persistence (ChromaDB locally, or Supabase pgvector in cloud).
     """
 
     def __init__(
@@ -54,16 +78,14 @@ class ChromaStore:
         persist_dir: str = CHROMA_PERSIST_DIR,
     ):
         self.collection_name = collection_name
-        self.client = chromadb.PersistentClient(
-            path=persist_dir,
-            settings=Settings(anonymized_telemetry=False),
-        )
+        self.client = get_vector_client(persist_dir)
         self.collection = self.client.get_or_create_collection(
             name=collection_name,
             metadata={"hnsw:space": "cosine"},
         )
         logger.info(
-            "ChromaStore: collection '%s' ready (%d existing docs)",
+            "VectorStore (%s): collection '%s' ready (%d existing docs)",
+            "pgvector" if is_pgvector_enabled() else "chroma",
             collection_name,
             self.collection.count(),
         )
