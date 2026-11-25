@@ -145,6 +145,16 @@ def query(request: QueryRequest, user: dict = Depends(get_current_user)) -> Quer
     if not request.question.strip():
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     try:
+        # 0. Greeting short-circuit — no retrieval needed
+        from agents.financial_agent import _is_greeting, _generate_greeting_response
+        if _is_greeting(request.question.lower()):
+            return QueryResponse(
+                question=request.question,
+                answer=_generate_greeting_response(request.question),
+                context="",
+                route="greeting",
+            )
+
         # 1. Check Semantic Cache
         cache = _get_cache()
         cached = cache.get(request.question)
@@ -209,6 +219,7 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
             retrieve_context, grade_documents, rewrite_query,
             web_search_fallback, guardrail_check, generate_blocked,
             contextualize_query, AgentState,
+            _is_greeting, _generate_greeting_response,
         )
         from agents.prompts import SYSTEM_PROMPT, QUERY_PROMPT_TEMPLATE
         from api.tracing import trace_query_span, trace_stage, set_output
@@ -259,6 +270,16 @@ def query_stream(request: QueryRequest, user: dict = Depends(get_current_user)):
         ) as root_span:
 
             # ── 1. Contextualize + Guardrail + Retrieve (parallel) ────────
+            # ⚡ Greeting short-circuit — skip the entire pipeline for greetings
+            if _is_greeting(request.question.lower()):
+                greeting = _generate_greeting_response(request.question)
+                root_span.set_attribute("query.route", "greeting")
+                # Stream the greeting in small chunks for nice UX
+                for i in range(0, len(greeting), 80):
+                    yield f"data: {json.dumps({'token': greeting[i:i+80]})}\n\n"
+                yield f"data: {json.dumps({'done': True, 'context': '', 'route': 'greeting'})}\n\n"
+                return
+
             with trace_stage("contextualize") as ctx_span:
                 state.update(contextualize_query(state))
                 ctx_span.set_attribute("contextualize.output_question", state["question"][:300])

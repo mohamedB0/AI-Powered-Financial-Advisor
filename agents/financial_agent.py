@@ -670,6 +670,68 @@ _UNSAFE_INTENT_PATTERNS = [
     "ØªØ¨ÙŠÙŠØ¶ Ø§Ù„Ø§Ù…ÙˆØ§Ù„","Ø§Ù„ØªØ¯Ø§ÙˆÙ„ Ù…Ù† Ø§Ù„Ø¯Ø§Ø®Ù„", "Ø§Ù„ØªÙ„Ø§Ø¹Ø¨ Ø¨Ø§Ù„Ø³ÙˆÙ‚", "Ø§Ø®ØªÙ„Ø§Ø³", "Ø±Ø´ÙˆØ©",
 ]
 
+# Greetings and casual conversational phrases -- always safe.
+# These are handled with a friendly response rather than the full retrieval pipeline.
+_GREETING_PATTERNS = [
+    # English
+    "hello", "hi", "hey", "good morning", "good afternoon", "good evening",
+    "how are you", "what's up", "howdy", "greetings", "thanks", "thank you",
+    "who are you", "what can you do", "help me", "what are you",
+    # French
+    "bonjour", "bonsoir", "salut", "coucou", "merci", "comment ca va",
+    "bonne journee", "bienvenue", "qui es-tu", "que fais-tu",
+    # Darija / Arabic
+    "salam", "slm", "labas", "cv", "ahlan", "marhaba", "choukran",
+]
+
+
+def _is_greeting(question_lower: str) -> bool:
+    """Check if the query is a simple greeting/conversational phrase."""
+    q = question_lower.strip().rstrip("?!.,")
+    # Exact match or very short greeting
+    if q in _GREETING_PATTERNS:
+        return True
+    # Starts with a greeting and is short (< 30 chars)
+    if len(q) < 30 and any(q.startswith(g) for g in _GREETING_PATTERNS):
+        return True
+    return False
+
+
+def _generate_greeting_response(question: str) -> str:
+    """Generate a friendly greeting response."""
+    from agents.financial_agent import _detect_language
+    lang = _detect_language(question)
+    if lang == "French":
+        return (
+            "Bonjour ! Je suis votre assistant d'analyse financiere. "
+            "Je peux vous aider avec :\n\n"
+            "- **Analyse des marches** : cours en direct de la Bourse de Casablanca\n"
+            "- **Donnees financieres** : revenus, benefices, bilans des entreprises\n"
+            "- **Indicateurs economiques** : PIB, inflation, taux directeur\n"
+            "- **Strategies d'investissement** : analyse de portefeuille, risque\n\n"
+            "Posez-moi une question pour commencer !"
+        )
+    elif lang == "Arabic":
+        return (
+            "! Ahlan\n\n"
+            "I am your financial analysis assistant. I can help you with:\n\n"
+            "- **Live market data** from Casablanca Stock Exchange\n"
+            "- **Company financials**: revenue, earnings, balance sheets\n"
+            "- **Economic indicators**: GDP, inflation, interest rates\n"
+            "- **Investment strategies**: portfolio analysis, risk assessment\n\n"
+            "Ask me anything about finance to get started!"
+        )
+    else:
+        return (
+            "Hello! I'm your AI financial analysis assistant. "
+            "I can help you with:\n\n"
+            "- **Live market data** from Casablanca Stock Exchange (MASI, all 83 stocks)\n"
+            "- **Company financials**: revenue, earnings, balance sheets, segments\n"
+            "- **Economic indicators**: GDP, inflation, interest rates, fiscal policy\n"
+            "- **Investment strategies**: portfolio analysis, risk assessment\n\n"
+            "Ask me anything about finance or the Moroccan market to get started!"
+        )
+
 
 def _is_obviously_unsafe(question_lower: str) -> bool:
     """Detect malicious intent regardless of finance vocabulary used."""
@@ -688,6 +750,12 @@ def guardrail_check(state: AgentState) -> dict:
       3. LLM safety check for everything else
     """
     question = state["question"].lower()
+
+    # Greetings and conversational queries are always safe
+    if _is_greeting(question):
+        print("[Guardrail] Fast-pass: greeting/conversational query detected.")
+        return {"is_safe": "yes", "is_greeting": True}
+
 
     # â›” Hard refusal: explicit malicious intent overrides any safe keyword
     if _is_obviously_unsafe(question):
