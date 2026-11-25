@@ -80,8 +80,8 @@ services:
     environment:
       - ENVIRONMENT=production
       - REDIS_HOST=redis
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}}
       - CHROMA_PERSIST_DIR=/app/chroma_db
       - API_BASE_URL=http://api:8000
       - PHOENIX_COLLECTOR_ENDPOINT=http://phoenix:6006/v1/traces
@@ -149,8 +149,8 @@ services:
     env_file: .env
     environment:
       - REDIS_HOST=redis
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}}
       - CHROMA_PERSIST_DIR=/app/chroma_db
     volumes:
       - ./data:/app/data
@@ -182,8 +182,8 @@ services:
     env_file: .env
     environment:
       - REDIS_HOST=redis
-      - POSTGRES_HOST=postgres
-      - DATABASE_URL=postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - DATABASE_URL=${DATABASE_URL:-postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-root}@postgres:5432/${POSTGRES_DB:-financial_advisor}}
       - CHROMA_PERSIST_DIR=/app/chroma_db
     volumes:
       - ./data:/app/data

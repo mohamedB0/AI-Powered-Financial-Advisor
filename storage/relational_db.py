@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.pool import NullPool
 
 from storage.models import Base, StockPrice, FinancialMetric, Document, ExcelData, JSONData, WordDocument
 
@@ -26,18 +27,28 @@ class RelationalDB:
     def __init__(self, database_url: str | None = None):
         if database_url:
             self.database_url = database_url
+        elif os.getenv("DATABASE_URL"):
+            self.database_url = os.getenv("DATABASE_URL", "")
         else:
             pg_host = os.getenv("POSTGRES_HOST", "localhost")
             pg_port = os.getenv("POSTGRES_PORT", "5432")
             pg_db = os.getenv("POSTGRES_DB", "financial_advisor")
             pg_user = os.getenv("POSTGRES_USER", "postgres")
             pg_pass = os.getenv("POSTGRES_PASSWORD", "root")
-            self.database_url = f"postgresql+psycopg2://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}"
-        
-        self.engine = create_engine(
-            self.database_url,
-            pool_pre_ping=True,
+            sslmode = os.getenv("POSTGRES_SSLMODE", "")
+            query = f"?sslmode={sslmode}" if sslmode else ""
+            self.database_url = f"postgresql+psycopg2://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}{query}"
+
+        # Disable client-side pooling when using external poolers (e.g. Supabase)
+        use_null_pool = (
+            "pooler.supabase.com" in self.database_url
+            or os.getenv("POSTGRES_POOL_NULL", "").lower() == "true"
         )
+        engine_kwargs: Dict[str, Any] = {"pool_pre_ping": True}
+        if use_null_pool:
+            engine_kwargs["poolclass"] = NullPool
+
+        self.engine = create_engine(self.database_url, **engine_kwargs)
         self.SessionLocal = sessionmaker(bind=self.engine)
         logger.info("RelationalDB: connected to %s", self.database_url.split("@")[-1])
 
