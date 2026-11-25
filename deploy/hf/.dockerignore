@@ -1,0 +1,24 @@
+# Hugging Face Spaces .dockerignore (includes chroma_db/!)
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+.vscode/
+.idea/
+.pytest_cache/
+.yfinance_cache/
+tests/
+htmlcov/
+data/
+logs/
+.env
+*.sqlite
+*.sqlite3
+celerybeat-schedule.db
+flower.db.*
+.DS_Store
+Thumbs.db
+desktop.ini
